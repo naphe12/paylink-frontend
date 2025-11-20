@@ -1,0 +1,278 @@
+// src/services/api.js
+const API_URL = import.meta.env.VITE_API_URL;
+
+const api = {
+  async get(path) {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: {
+        Accept: "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+
+    if (!res.ok) throw new Error(`GET ${path} → ${res.status}`);
+    return res.json();
+  },
+
+  async post(path, data) {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) throw new Error(`POST ${path} → ${res.status}`);
+    return res.json();
+  },
+
+  async patch(path, data) {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) throw new Error(`PATCH ${path} -> ${res.status}`);
+    return res.json();
+  },
+
+  // ----------- TONTINES -----------
+  async getTontines() {
+    return this.get("/tontines/");
+  },
+
+  async getTontine(id) {
+    return this.get(`/tontines/${id}`);
+  },
+
+  async createTontine(data) {
+    return this.post("/tontines/", data);
+  },
+
+  async contributeTontine(id, amount) {
+    return this.post(`/tontines/${id}/contribute`, { amount });
+  },
+
+  async claimTontine(id) {
+    return this.post(`/tontines/${id}/claim`);
+  },
+
+  async getWalletLedger(walletId, params = {}) {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        search.append(key, value);
+      }
+    });
+    const query = search.toString();
+    return this.get(`/wallet/ledger/${walletId}${query ? `?${query}` : ""}`);
+  },
+
+  async getAgentHistory(params = {}) {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        search.append(key, value);
+      }
+    });
+    const query = search.toString();
+    return this.get(`/agent/history${query ? `?${query}` : ""}`);
+  },
+
+  async getAgentDashboard() {
+    return this.get("/agent/dashboard");
+  },
+
+  async scanAgentQr(payload) {
+    return this.post("/agent/qr/scan", payload);
+  },
+
+  async confirmAgentQr(payload) {
+    return this.post("/agent/qr/confirm", payload);
+  },
+
+  async getAdminPremiumAnalytics() {
+    return this.get("/admin/analytics/premium");
+  },
+
+  async getAdminTontineAnalytics() {
+    return this.get("/admin/analytics/tontines");
+  },
+
+  async getTontineArrears() {
+    return this.get("/admin/tontines/arrears");
+  },
+
+  async notifyTontineArrears(tontineId) {
+    return this.post(`/admin/tontines/arrears/notify/${tontineId}`);
+  },
+
+  async blockTontine(tontineId) {
+    return this.post(`/admin/tontines/arrears/block/${tontineId}`);
+  },
+
+  async getAgents(params = {}) {
+    const search = new URLSearchParams(params).toString();
+    return this.get(`/admin/agents${search ? `?${search}` : ""}`);
+  },
+
+  async toggleAgent(agentId) {
+    return this.patch(`/admin/agents/${agentId}/toggle`);
+  },
+
+  async updateAgentCommission(agentId, payload) {
+    return this.patch(`/admin/agents/${agentId}/commission`, payload);
+  },
+
+  async getAgentAdminHistory(agentId, limit = 50) {
+    return this.get(`/admin/agents/${agentId}/history?limit=${limit}`);
+  },
+
+  async getAdminWalletHistory(walletId, params = {}) {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        search.append(key, value);
+      }
+    });
+    const query = search.toString();
+    return this.get(`/admin/wallets/${walletId}/history${query ? `?${query}` : ""}`);
+  },
+
+  async getAdminNotifications(params = {}) {
+    const search = new URLSearchParams(params).toString();
+    return this.get(`/admin/notifications${search ? `?${search}` : ""}`);
+  },
+
+  async getMobileMoneyJournal(params = {}) {
+    const search = new URLSearchParams(params).toString();
+    return this.get(`/admin/mobilemoney/journal${search ? `?${search}` : ""}`);
+  },
+
+  async getPendingExternalTransfers() {
+    return this.get("/agent/external/pending");
+  },
+
+  async getReadyExternalTransfers() {
+    return this.get("/agent/external/ready");
+  },
+
+  async completeExternalTransfer(transferId) {
+    return this.post(`/agent/external/${transferId}/close`, {});
+  },
+
+  async approveExternalTransfer(transferId) {
+    return this.post(
+      `/wallet/transfer/transfer/external/${transferId}/approve`,
+      {}
+    );
+  },
+
+  // ----------- LOANS -----------
+  async getLoanPortfolio() {
+    return this.get("/loans/me");
+  },
+
+  async applyLoan(payload) {
+    return this.post("/loans/apply", payload);
+  },
+
+  async repayLoan(loanId, amount) {
+    return this.post(`/loans/${loanId}/repay`, { amount });
+  },
+
+  async getAdminLoans(params = {}) {
+    const search = new URLSearchParams();
+    if (params.status) search.append("status", params.status);
+    if (typeof params.overdue_only === "boolean") {
+      search.append("overdue_only", params.overdue_only ? "1" : "0");
+    }
+    if (params.limit) search.append("limit", params.limit);
+    const query = search.toString();
+    return this.get(`/loans${query ? `?${query}` : ""}`);
+  },
+
+  async analyzeLoan(loanId) {
+    return this.post(`/loans/${loanId}/analyze`, {});
+  },
+
+  async disburseLoan(loanId) {
+    return this.post(`/loans/${loanId}/disburse`, {});
+  },
+
+  async remindLoan(loanId, message) {
+    return this.post(`/loans/${loanId}/remind`, { message });
+  },
+
+  async getLoanStats() {
+    return this.get("/admin/loans/stats");
+  },
+
+  // ----------- CASH REQUESTS -----------
+  async requestCashDeposit(payload) {
+    return this.post("/wallet/cash/deposit", payload);
+  },
+
+  async requestCashWithdraw(payload) {
+    return this.post("/wallet/cash/withdraw", payload);
+  },
+
+  async getCashRequests(params = {}) {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        search.append(key, value);
+      }
+    });
+    const query = search.toString();
+    return this.get(`/wallet/cash/requests${query ? `?${query}` : ""}`);
+  },
+
+  async getAdminCashRequests(params = {}) {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        search.append(key, value);
+      }
+    });
+    const query = search.toString();
+    return this.get(`/admin/cash-requests${query ? `?${query}` : ""}`);
+  },
+
+  async approveCashRequest(requestId, payload = {}) {
+    return this.post(`/admin/cash-requests/${requestId}/approve`, payload);
+  },
+
+  async rejectCashRequest(requestId, payload = {}) {
+    return this.post(`/admin/cash-requests/${requestId}/reject`, payload);
+  },
+
+  // ----------- CREDIT LINE -----------
+  async getCreditHistory() {
+    return this.get("/wallet/credit/history");
+  },
+
+  async getAdminCreditHistory(params = {}) {
+    const search = new URLSearchParams();
+    if (params.user_id) search.append("user_id", params.user_id);
+    if (params.limit) search.append("limit", params.limit);
+    const query = search.toString();
+    return this.get(`/admin/credit-history${query ? `?${query}` : ""}`);
+  },
+};
+
+export default api;
