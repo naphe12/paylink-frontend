@@ -23,6 +23,9 @@ export default function AuthPage() {
   const [selectedCountry, setSelectedCountry] = useState("");
   const navigate = useNavigate();
 
+  const getCountryCode = (c) =>
+    (c?.alpha2 || c?.code || c?.iso2 || "").toUpperCase();
+
   // Redirige si un token existe déjà
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -41,8 +44,9 @@ export default function AuthPage() {
         const data = await res.json();
         const list = data.countries || data;
         setCountries(list);
-        if (!selectedCountry && list?.length) {
-          setSelectedCountry(list[0].code || list[0].alpha2 || "");
+        if (!selectedCountry && Array.isArray(list) && list.length) {
+          const code = getCountryCode(list[0]);
+          if (code) setSelectedCountry(code);
         }
       } catch (err) {
         console.error("Erreur chargement pays:", err);
@@ -56,7 +60,8 @@ export default function AuthPage() {
     setIsLogin((prev) => !prev);
   };
 
-  const handleCountryChange = (e) => setSelectedCountry(e.target.value);
+  const handleCountryChange = (e) =>
+    setSelectedCountry((e.target.value || "").toUpperCase());
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -302,8 +307,8 @@ export default function AuthPage() {
                       </option>
                       {countries.map((c) => (
                         <option
-                          key={c.code || c.alpha2 || c.name}
-                          value={c.code || c.alpha2 || c.name}
+                          key={getCountryCode(c) || c.name}
+                          value={getCountryCode(c)}
                           className="text-indigo-900"
                         >
                           {c.name || c.caption || c.code}
