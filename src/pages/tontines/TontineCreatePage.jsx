@@ -40,7 +40,7 @@ export default function TontineCreatePage() {
         frequency, // "weekly" | "biweekly" | "monthly"
         members, // tableau de paytags
       });
-      navigate(`/tontines/${data.id}`);
+      navigate(`/dashboard/client/tontines/${data.id}`);
     } catch (e) {
       console.error(e);
       alert("Création impossible");

@@ -51,7 +51,7 @@ export default function TontineListPage() {
         {tontines.map((t) => (
           <Link
             key={t.tontine_id}
-            to={`/dashboard/tontines/${t.tontine_id}`}
+            to={`/dashboard/client/tontines/${t.tontine_id}`}
             className="p-4 bg-white shadow-sm border rounded-xl flex justify-between items-center hover:shadow-md transition"
           >
             <div>
