@@ -9,7 +9,7 @@ import {
   Phone,
   Globe,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { getRoleDashboardPath } from "@/utils/roleRoutes";
 
@@ -238,6 +238,13 @@ export default function AuthPage() {
                   Créez-en un
                 </button>
               </p>
+              <button
+                type="button"
+                onClick={() => navigate("/auth/forgot-password")}
+                className="mt-3 text-sm text-yellow-200 hover:underline"
+              >
+                Mot de passe oublié ?
+              </button>
             </motion.div>
           ) : (
             <motion.div

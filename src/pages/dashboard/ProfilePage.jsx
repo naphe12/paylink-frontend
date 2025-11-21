@@ -1,7 +1,7 @@
 // src/pages/dashboard/ProfilePage.jsx
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "@/services/api";
-
 import { User } from "lucide-react";
 
 export default function ProfilePage() {
@@ -26,11 +26,29 @@ export default function ProfilePage() {
         <User /> Mon profil
       </h2>
       <div className="bg-white p-6 rounded-2xl shadow w-full max-w-md">
-        <p><strong>Nom :</strong> {profile.full_name}</p>
-        <p><strong>Email :</strong> {profile.email}</p>
-        <p><strong>Téléphone :</strong> {profile.phone_e164}</p>
-        <p><strong>Pays :</strong> {profile.country_code}</p>
-        <p><strong>Status :</strong> {profile.status}</p>
+        <p>
+          <strong>Nom :</strong> {profile.full_name}
+        </p>
+        <p>
+          <strong>Email :</strong> {profile.email}
+        </p>
+        <p>
+          <strong>Téléphone :</strong> {profile.phone_e164}
+        </p>
+        <p>
+          <strong>Pays :</strong> {profile.country_code}
+        </p>
+        <p>
+          <strong>Status :</strong> {profile.status}
+        </p>
+        <div className="mt-4">
+          <Link
+            to="/auth/reset-password"
+            className="inline-block px-4 py-2 rounded-lg border border-[#0b3b64] text-[#0b3b64] hover:bg-[#0b3b64] hover:text-white transition"
+          >
+            Réinitialiser le mot de passe
+          </Link>
+        </div>
       </div>
     </div>
   );
