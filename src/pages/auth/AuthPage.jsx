@@ -13,9 +13,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { getRoleDashboardPath } from "@/utils/roleRoutes";
 
-
-
 const API_URL = import.meta.env.VITE_API_URL;
+
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -24,7 +23,7 @@ export default function AuthPage() {
   const [selectedCountry, setSelectedCountry] = useState("");
   const navigate = useNavigate();
 
-  // ✅ Vérifie le token existant → redirection auto
+  // Redirige si un token existe déjà
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -33,14 +32,18 @@ export default function AuthPage() {
     }
   }, [navigate]);
 
-  // ✅ Charger les pays depuis le backend
+  // Charge la liste des pays pour l'inscription
   useEffect(() => {
     const fetchCountries = async () => {
       try {
         const res = await fetch(`${API_URL}/api/countries/`);
         if (!res.ok) throw new Error("Erreur de chargement des pays");
         const data = await res.json();
-        setCountries(data.countries || data); // compatibilité deux formats
+        const list = data.countries || data;
+        setCountries(list);
+        if (!selectedCountry && list?.length) {
+          setSelectedCountry(list[0].code || list[0].alpha2 || "");
+        }
       } catch (err) {
         console.error("Erreur chargement pays:", err);
       }
@@ -50,12 +53,11 @@ export default function AuthPage() {
 
   const toggleMode = () => {
     setError("");
-    setIsLogin(!isLogin);
+    setIsLogin((prev) => !prev);
   };
 
-  const handleChange = (e) => setSelectedCountry(e.target.value);
+  const handleCountryChange = (e) => setSelectedCountry(e.target.value);
 
-  // 🔹 LOGIN HANDLER
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -92,9 +94,8 @@ export default function AuthPage() {
         };
       localStorage.setItem("user", JSON.stringify(userPayload));
 
-      toast.success(`🎉 Bienvenue ${userPayload.full_name || ""}`);
+      toast.success(`Bienvenue ${userPayload.full_name || ""}`);
       navigate(getRoleDashboardPath(userRole));
-
     } catch (err) {
       setError(err.message);
       toast.error("Erreur de connexion : " + err.message);
@@ -103,7 +104,6 @@ export default function AuthPage() {
     }
   };
 
-  // 🔹 REGISTER HANDLER
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -128,14 +128,14 @@ export default function AuthPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Erreur d’inscription");
+      if (!res.ok) throw new Error(data.detail || "Erreur d'inscription");
 
       localStorage.setItem("token", data.token || data.access_token);
       const userRole = data.role || data.user?.role || "client";
       localStorage.setItem("role", userRole);
       localStorage.setItem("user", JSON.stringify(data.user || {}));
 
-      toast.success(`Bienvenue ${data.user?.full_name || full_name} 🎉`);
+      toast.success(`Bienvenue ${data.user?.full_name || full_name}`);
       navigate(getRoleDashboardPath(userRole));
     } catch (err) {
       console.error("Erreur d'inscription :", err);
@@ -146,10 +146,8 @@ export default function AuthPage() {
     }
   };
 
-  // 🧱 UI principale
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-700 via-blue-600 to-sky-500 text-white relative overflow-hidden">
-      {/* 🌈 Halo décoratif */}
       <div className="absolute top-[-6rem] right-[-4rem] w-[20rem] h-[20rem] bg-yellow-400/20 blur-3xl rounded-full"></div>
       <div className="absolute bottom-[-6rem] left-[-4rem] w-[20rem] h-[20rem] bg-blue-300/30 blur-3xl rounded-full"></div>
 
@@ -164,7 +162,7 @@ export default function AuthPage() {
           transition={{ repeat: Infinity, duration: 12, ease: "linear" }}
           className="text-[4rem] text-yellow-400 mb-2"
         >
-          ♾️
+          💫
         </motion.div>
         <h1 className="text-4xl font-extrabold tracking-tight mb-8">PayLink</h1>
 
@@ -202,7 +200,7 @@ export default function AuthPage() {
                       name="password"
                       required
                       className="bg-transparent w-full outline-none placeholder-white/60"
-                      placeholder="••••••••"
+                      placeholder="Votre mot de passe"
                     />
                   </div>
                 </div>
@@ -237,8 +235,127 @@ export default function AuthPage() {
               </p>
             </motion.div>
           ) : (
-            // … ton formulaire d’inscription (inchangé)
-            <></>
+            <motion.div
+              key="register"
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 30 }}
+              transition={{ duration: 0.4 }}
+            >
+              <h2 className="text-2xl font-semibold mb-6">Créer un compte</h2>
+              <form onSubmit={handleRegister} className="space-y-4 text-left">
+                <div>
+                  <label className="text-sm">Nom complet</label>
+                  <div className="flex items-center bg-white/20 rounded-xl px-3 py-2 mt-1">
+                    <User className="w-5 h-5 mr-2 opacity-80" />
+                    <input
+                      type="text"
+                      name="full_name"
+                      required
+                      className="bg-transparent w-full outline-none placeholder-white/60"
+                      placeholder="Votre nom"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm">Email</label>
+                  <div className="flex items-center bg-white/20 rounded-xl px-3 py-2 mt-1">
+                    <Mail className="w-5 h-5 mr-2 opacity-80" />
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      className="bg-transparent w-full outline-none placeholder-white/60"
+                      placeholder="votre@email.com"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm">Téléphone</label>
+                  <div className="flex items-center bg-white/20 rounded-xl px-3 py-2 mt-1">
+                    <Phone className="w-5 h-5 mr-2 opacity-80" />
+                    <input
+                      type="tel"
+                      name="phone"
+                      required
+                      className="bg-transparent w-full outline-none placeholder-white/60"
+                      placeholder="+2577xxxxxxx"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm">Pays</label>
+                  <div className="flex items-center bg-white/20 rounded-xl px-3 py-2 mt-1">
+                    <Globe className="w-5 h-5 mr-2 opacity-80" />
+                    <select
+                      name="country"
+                      value={selectedCountry}
+                      onChange={handleCountryChange}
+                      required
+                      className="bg-transparent w-full outline-none text-white placeholder-white/60 appearance-none"
+                    >
+                      <option value="" disabled className="text-indigo-900">
+                        Choisir un pays
+                      </option>
+                      {countries.map((c) => (
+                        <option
+                          key={c.code || c.alpha2 || c.name}
+                          value={c.code || c.alpha2 || c.name}
+                          className="text-indigo-900"
+                        >
+                          {c.name || c.caption || c.code}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm">Mot de passe</label>
+                  <div className="flex items-center bg-white/20 rounded-xl px-3 py-2 mt-1">
+                    <Lock className="w-5 h-5 mr-2 opacity-80" />
+                    <input
+                      type="password"
+                      name="password"
+                      required
+                      className="bg-transparent w-full outline-none placeholder-white/60"
+                      placeholder="Votre mot de passe"
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <p className="text-red-300 text-sm text-center mt-3">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full mt-6 bg-yellow-400 hover:bg-yellow-500 text-indigo-900 font-bold py-3 rounded-xl shadow-md transition-all flex justify-center"
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin w-5 h-5" />
+                  ) : (
+                    "Créer mon compte"
+                  )}
+                </button>
+              </form>
+
+              <p className="mt-6 text-sm opacity-80 text-center">
+                Vous avez déjà un compte ?{" "}
+                <button
+                  onClick={toggleMode}
+                  className="text-yellow-300 hover:underline font-semibold"
+                >
+                  Se connecter
+                </button>
+              </p>
+            </motion.div>
           )}
         </AnimatePresence>
       </motion.div>
@@ -252,6 +369,3 @@ export default function AuthPage() {
     </div>
   );
 }
-
-
-
