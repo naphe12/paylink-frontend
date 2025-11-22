@@ -10,8 +10,16 @@ export default function TransactionsPage() {
 
   const fetchTransactions = async () => {
     try {
-      const data = await api.get("/transactions/");
-      setTransactions(data);
+      const data = await api.get("/wallet/transactions");
+      // Adapter au shape renvoyé par l'API /wallet/transactions
+      const normalized = data.map((t) => ({
+        transaction_id: t.tx_id || t.transaction_id || crypto.randomUUID?.() || Math.random().toString(36).slice(2),
+        created_at: t.created_at,
+        type: t.direction === "in" ? "entrante" : "sortante",
+        amount: t.direction === "in" ? t.amount : -t.amount,
+        status: t.status || "",
+      }));
+      setTransactions(normalized);
     } catch (err) {
       console.error("Erreur chargement transactions :", err);
     } finally {
