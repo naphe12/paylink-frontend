@@ -8,7 +8,7 @@ export default function AdminUsersList() {
   const [q, setQ] = useState("");
 
   const load = async () => {
-    const data = await api.get(`/admin/users?q=${q}`);
+    const data = await api.get(`/admin/users/?q=${q}`);
     setUsers(data);
   };
 
