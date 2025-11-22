@@ -203,7 +203,7 @@ const api = {
     }
     if (params.limit) search.append("limit", params.limit);
     const query = search.toString();
-    const path = `/admin/loans${query ? `?${query}` : ""}`;
+    const path = `/admin/loans/${query ? `?${query}` : ""}`; // slash final pour éviter 307
     try {
       return await this.get(path);
     } catch (e) {
