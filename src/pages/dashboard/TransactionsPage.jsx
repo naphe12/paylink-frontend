@@ -21,7 +21,21 @@ export default function TransactionsPage() {
       }));
       setTransactions(normalized);
     } catch (err) {
-      console.error("Erreur chargement transactions :", err);
+      console.warn("API /wallet/transactions indisponible, tentative /transactions/ :", err);
+      try {
+        const fallback = await api.get("/transactions/");
+        setTransactions(
+          fallback.map((t) => ({
+            transaction_id: t.transaction_id || crypto.randomUUID?.() || Math.random().toString(36).slice(2),
+            created_at: t.created_at,
+            type: t.type || "",
+            amount: t.amount,
+            status: t.status || "",
+          }))
+        );
+      } catch (err2) {
+        console.error("Erreur chargement transactions (fallback) :", err2);
+      }
     } finally {
       setLoading(false);
     }
