@@ -127,7 +127,7 @@ const api = {
 
   async getAgents(params = {}) {
     const search = new URLSearchParams(params).toString();
-    return this.get(`/admin/agents/${search ? `?${search}` : ""}`);
+    return this.get(`/admin/agents${search ? `?${search}` : ""}`);
   },
 
   async toggleAgent(agentId) {
