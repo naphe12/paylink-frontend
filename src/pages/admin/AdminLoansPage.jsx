@@ -45,6 +45,8 @@ export default function AdminLoansPage() {
       setLoans(data);
     } catch (err) {
       console.error(err);
+      setActionMessage(err.message || "Erreur chargement crédits");
+      setLoans([]);
     } finally {
       setLoadingLoans(false);
     }

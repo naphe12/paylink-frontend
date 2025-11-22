@@ -203,7 +203,13 @@ const api = {
     }
     if (params.limit) search.append("limit", params.limit);
     const query = search.toString();
-    return this.get(`/admin/loans${query ? `?${query}` : ""}`);
+    const path = `/admin/loans${query ? `?${query}` : ""}`;
+    try {
+      return await this.get(path);
+    } catch (e) {
+      // Fallback sur alias /admin/loans/list
+      return this.get(`/admin/loans/list${query ? `?${query}` : ""}`);
+    }
   },
 
   async analyzeLoan(loanId) {
