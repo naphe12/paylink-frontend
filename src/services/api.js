@@ -203,7 +203,7 @@ const api = {
     }
     if (params.limit) search.append("limit", params.limit);
     const query = search.toString();
-    return this.get(`/loans${query ? `?${query}` : ""}`);
+    return this.get(`/admin/loans${query ? `?${query}` : ""}`);
   },
 
   async analyzeLoan(loanId) {
