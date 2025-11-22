@@ -76,6 +76,20 @@ export default function AdminLoansPage() {
     }
   };
 
+  const handleApprove = async (loanId) => {
+    setActionLoading(loanId);
+    setActionMessage(null);
+    try {
+      await api.approveAdminLoan(loanId);
+      setActionMessage("Crédit validé (status: active).");
+      await Promise.all([loadLoans(), loadStats()]);
+    } catch (err) {
+      setActionMessage(err.message || "Erreur lors de la validation.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleDisburse = async (loanId) => {
     setActionLoading(loanId);
     setActionMessage(null);
@@ -287,6 +301,14 @@ export default function AdminLoansPage() {
                           className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold hover:bg-slate-50"
                         >
                           {actionLoading === loan.loan_id ? "..." : "Analyser"}
+                        </button>
+                      )}
+                      {loan.status === "draft" && (
+                        <button
+                          onClick={() => handleApprove(loan.loan_id)}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700"
+                        >
+                          {actionLoading === loan.loan_id ? "..." : "Valider"}
                         </button>
                       )}
                       {loan.status === "draft" && (

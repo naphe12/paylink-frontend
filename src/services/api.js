@@ -210,6 +210,10 @@ const api = {
     return this.post(`/loans/${loanId}/analyze`, {});
   },
 
+  async approveAdminLoan(loanId) {
+    return this.post(`/admin/loans/${loanId}/approve`, {});
+  },
+
   async disburseLoan(loanId) {
     return this.post(`/loans/${loanId}/disburse`, {});
   },
