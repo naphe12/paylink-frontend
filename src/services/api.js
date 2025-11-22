@@ -260,7 +260,8 @@ const api = {
       }
     });
     const query = search.toString();
-    return this.get(`/admin/cash-requests${query ? `?${query}` : ""}`);
+    // Ajout d'un slash final pour éviter les 307
+    return this.get(`/admin/cash-requests/${query ? `?${query}` : ""}`);
   },
 
   async approveCashRequest(requestId, payload = {}) {
