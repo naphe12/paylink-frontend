@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/services/api";
-import { ShieldCheck, RefreshCw, Search, BookOpen, Briefcase } from "lucide-react";
+import { ShieldCheck, RefreshCw, Search, BookOpen, Briefcase, AlertTriangle } from "lucide-react";
 
 export default function TransactionAuditPage() {
   const [walletId, setWalletId] = useState("");
@@ -13,6 +13,7 @@ export default function TransactionAuditPage() {
   const [ledgerRows, setLedgerRows] = useState([]);
   const [walletRows, setWalletRows] = useState([]);
   const [agentRows, setAgentRows] = useState([]);
+  const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -40,6 +41,7 @@ export default function TransactionAuditPage() {
       setLedgerRows(Array.isArray(data.ledger) ? data.ledger : []);
       setAgentRows(Array.isArray(data.agent_transactions) ? data.agent_transactions : []);
       setWalletRows(Array.isArray(data.wallet_transactions) ? data.wallet_transactions : []);
+      setAlerts(Array.isArray(data.alerts) ? data.alerts : []);
     } catch (err) {
       setError(err.message || "Chargement impossible.");
     } finally {
@@ -62,6 +64,8 @@ export default function TransactionAuditPage() {
     setLimit(200);
     setLedgerRows([]);
     setAgentRows([]);
+    setWalletRows([]);
+    setAlerts([]);
     setError(null);
   };
 
@@ -73,6 +77,7 @@ export default function TransactionAuditPage() {
   const walletStats = {
     total: walletRows.length,
   };
+  const alertsCount = alerts.length;
 
   return (
     <div className="space-y-6">
@@ -199,6 +204,12 @@ export default function TransactionAuditPage() {
             icon={<Briefcase size={18} />}
             color="bg-sky-100 text-sky-700"
           />
+          <_KpiCard
+            label="Alertes"
+            value={alertsCount}
+            icon={<AlertTriangle size={18} />}
+            color="bg-amber-100 text-amber-700"
+          />
         </div>
       </section>
 
@@ -206,6 +217,30 @@ export default function TransactionAuditPage() {
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {error}
         </div>
+      )}
+
+      {alertsCount > 0 && (
+        <section className="rounded-2xl border bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="text-amber-600" size={18} />
+            <h2 className="text-lg font-semibold text-slate-900">Alertes détectées</h2>
+          </div>
+          <div className="space-y-3">
+            {alerts.map((alert, idx) => (
+              <div
+                key={`${alert.type || "alert"}-${idx}`}
+                className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+              >
+                <p className="font-semibold">{alert.message || alert.type || "Alerte"}</p>
+                {alert.details && (
+                  <pre className="mt-1 rounded bg-white/60 px-2 py-1 text-xs text-amber-900 overflow-auto">
+                    {JSON.stringify(alert.details, null, 2)}
+                  </pre>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       <section className="rounded-2xl border bg-white p-4 shadow-sm">
