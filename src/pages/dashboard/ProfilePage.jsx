@@ -20,6 +20,10 @@ export default function ProfilePage() {
 
   if (!profile) return <p>Chargement...</p>;
 
+  const creditLimit = profile.credit_limit ?? 0;
+  const creditUsed = profile.credit_used ?? 0;
+  const creditAvailable = Math.max(0, creditLimit - creditUsed);
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-[#0b3b64] mb-6 flex items-center gap-2">
@@ -41,6 +45,37 @@ export default function ProfilePage() {
         <p>
           <strong>Status :</strong> {profile.status}
         </p>
+        {profile.paytag && (
+          <p>
+            <strong>PayTag :</strong> {profile.paytag}
+          </p>
+        )}
+        <div className="mt-4 space-y-1">
+          <p>
+            <strong>Crédit total :</strong> {creditLimit.toLocaleString()} €
+          </p>
+          <p>
+            <strong>Crédit utilisé :</strong> {creditUsed.toLocaleString()} €
+          </p>
+          <p>
+            <strong>Crédit disponible :</strong> {creditAvailable.toLocaleString()} €
+          </p>
+          {profile.daily_limit !== undefined && (
+            <p>
+              <strong>Plafond journalier :</strong> {profile.daily_limit} (utilisé {profile.used_daily ?? 0})
+            </p>
+          )}
+          {profile.monthly_limit !== undefined && (
+            <p>
+              <strong>Plafond mensuel :</strong> {profile.monthly_limit} (utilisé {profile.used_monthly ?? 0})
+            </p>
+          )}
+          {profile.risk_score !== undefined && (
+            <p>
+              <strong>Score risque :</strong> {profile.risk_score}
+            </p>
+          )}
+        </div>
         <div className="mt-4">
           <Link
             to="/auth/reset-password"
