@@ -68,12 +68,12 @@ export default function AuthPage() {
     setLoading(true);
     setError("");
 
-    const email = e.target.email.value;
+    const identifier = e.target.identifier.value;
     const password = e.target.password.value;
 
     try {
       const formData = new URLSearchParams();
-      formData.append("username", email);
+      formData.append("username", identifier);
       formData.append("password", password);
 
       const res = await fetch(`${API_URL}/auth/login`, {
@@ -183,15 +183,15 @@ export default function AuthPage() {
               <h2 className="text-2xl font-semibold mb-6">Connexion</h2>
               <form onSubmit={handleLogin} className="space-y-4 text-left">
                 <div>
-                  <label className="text-sm">Email</label>
+                  <label className="text-sm">Email / téléphone / PayTag</label>
                   <div className="flex items-center bg-white/20 rounded-xl px-3 py-2 mt-1">
                     <Mail className="w-5 h-5 mr-2 opacity-80" />
                     <input
-                      type="email"
-                      name="email"
+                      type="text"
+                      name="identifier"
                       required
                       className="bg-transparent w-full outline-none placeholder-white/60"
-                      placeholder="votre@email.com"
+                      placeholder="email, +257..., @paytag"
                     />
                   </div>
                 </div>
