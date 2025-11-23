@@ -13,6 +13,7 @@ import {
   Coins,
   BookOpen,
   ArrowLeftRight,
+  ShieldCheck,
 } from "lucide-react";
 
 export default function AdminSidebar() {
@@ -82,6 +83,9 @@ export default function AdminSidebar() {
           </NavLink>
           <NavLink to="transfer-approvals" className={linkClass}>
             <GitPullRequest size={18} /> Validations transferts
+          </NavLink>
+          <NavLink to="transactions-audit" className={linkClass}>
+            <ShieldCheck size={18} /> Audit transactions
           </NavLink>
           <NavLink to="cash-requests" className={linkClass}>
             <Coins size={18} /> Cash in/out

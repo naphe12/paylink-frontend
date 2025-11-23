@@ -47,6 +47,7 @@ import TontineArrearsPage from "@/pages/admin/TontineArrearsPage";
 import AdminLoansPage from "@/pages/admin/AdminLoansPage";
 import CashRequestsPage from "@/pages/admin/CashRequestsPage";
 import AdminCreditHistoryPage from "@/pages/admin/AdminCreditHistoryPage";
+import TransactionAuditPage from "@/pages/admin/TransactionAuditPage";
 
 import AgentOperationPage from "@/pages/agent/AgentOperationPage";
 import AgentDashboard from "@/pages/agent/AgentDashboard";
@@ -138,6 +139,7 @@ export default function AppRouter() {
         <Route path="loans" element={<AdminLoansPage />} />
         <Route path="cash-requests" element={<CashRequestsPage />} />
         <Route path="credit-history" element={<AdminCreditHistoryPage />} />
+        <Route path="transactions-audit" element={<TransactionAuditPage />} />
       </Route>
 
       {/* Agent dashboard */}
