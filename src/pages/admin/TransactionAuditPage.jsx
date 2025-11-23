@@ -41,7 +41,13 @@ export default function TransactionAuditPage() {
       setLedgerRows(Array.isArray(data.ledger) ? data.ledger : []);
       setAgentRows(Array.isArray(data.agent_transactions) ? data.agent_transactions : []);
       setWalletRows(Array.isArray(data.wallet_transactions) ? data.wallet_transactions : []);
-      setAlerts(Array.isArray(data.alerts) ? data.alerts : []);
+      setAlerts(
+        Array.isArray(data.alerts)
+          ? data.alerts
+          : data.alerts
+          ? [data.alerts]
+          : []
+      );
     } catch (err) {
       setError(err.message || "Chargement impossible.");
     } finally {
@@ -219,12 +225,16 @@ export default function TransactionAuditPage() {
         </div>
       )}
 
-      {alertsCount > 0 && (
-        <section className="rounded-2xl border bg-white p-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="text-amber-600" size={18} />
-            <h2 className="text-lg font-semibold text-slate-900">Alertes détectées</h2>
-          </div>
+      <section className="rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <AlertTriangle className="text-amber-600" size={18} />
+          <h2 className="text-lg font-semibold text-slate-900">
+            Alertes détectées ({alertsCount})
+          </h2>
+        </div>
+        {alertsCount === 0 ? (
+          <p className="text-slate-500 text-sm">Aucune alerte détectée pour cette recherche.</p>
+        ) : (
           <div className="space-y-3">
             {alerts.map((alert, idx) => (
               <div
@@ -240,8 +250,8 @@ export default function TransactionAuditPage() {
               </div>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       <section className="rounded-2xl border bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
