@@ -11,6 +11,8 @@ export default function DepositPage() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
+  const [agentAccounts, setAgentAccounts] = useState([]);
+  const [selectedAccountId, setSelectedAccountId] = useState("");
 
   const fetchRequests = async () => {
     try {
@@ -21,14 +23,29 @@ export default function DepositPage() {
     }
   };
 
+  const fetchAgentAccounts = async () => {
+    try {
+      const data = await api.getAgentAccounts();
+      setAgentAccounts(data || []);
+      if (data?.length && !selectedAccountId) {
+        setSelectedAccountId(data[0].id);
+      }
+    } catch (err) {
+      console.error("Impossible de charger les comptes agents", err);
+    }
+  };
+
   useEffect(() => {
     fetchRequests();
+    fetchAgentAccounts();
   }, []);
 
   const handleSubmit = async () => {
     if (!amount || Number(amount) <= 0) {
       return alert("Indiquez un montant valide.");
     }
+    const selectedAccount =
+      agentAccounts.find((a) => a.id === selectedAccountId) || agentAccounts[0];
     setLoading(true);
     try {
       const res = await api.requestCashDeposit({
@@ -37,14 +54,15 @@ export default function DepositPage() {
       });
       setAmount("");
       setNote("");
-      await fetchRequests();
       const confirmedAmount = Number(res?.amount ?? amount);
       const currency = res?.currency_code || "BIF";
       setConfirmation({
         amount: Number.isFinite(confirmedAmount) ? confirmedAmount : Number(amount),
         currency,
-        agentAccount: agentMobileAccount,
+        agentAccount: selectedAccount?.account_service || agentMobileAccount,
+        agentService: selectedAccount?.service,
       });
+      fetchRequests().catch(() => {});
       alert("Demande enregistrée. Envoyez le montant sur le compte agent indiqué ci-dessous.");
     } catch (err) {
       alert(`Erreur dépôt : ${err.message}`);
@@ -92,6 +110,31 @@ export default function DepositPage() {
             placeholder="Ex: Dépôt effectué via agent PayLink"
           />
         </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-600 mb-1">
+            Service / compte agent
+          </label>
+          <div className="grid gap-2">
+            <select
+              value={selectedAccountId}
+              onChange={(e) => setSelectedAccountId(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              disabled={!agentAccounts.length}
+            >
+              {agentAccounts.length === 0 && (
+                <option value="">Aucun compte agent disponible</option>
+              )}
+              {agentAccounts.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.service} — {acc.account_service}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-slate-500">
+              Envoyez le montant sur le numéro mobile de l'agent choisi.
+            </p>
+          </div>
+        </div>
         <button
           onClick={handleSubmit}
           disabled={loading}
@@ -116,6 +159,11 @@ export default function DepositPage() {
                 Compte mobile agent :{" "}
                 <span className="font-semibold">{confirmation.agentAccount}</span>
               </p>
+              {confirmation.agentService && (
+                <p className="text-slate-700 text-sm">
+                  Service : <span className="font-semibold">{confirmation.agentService}</span>
+                </p>
+              )}
               <p className="text-xs text-slate-500 mt-2">
                 Envoyez le montant sur ce compte mobile money, puis attendez la validation PayLink.
               </p>

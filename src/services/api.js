@@ -252,6 +252,10 @@ const api = {
     return this.get(`/wallet/cash/requests${query ? `?${query}` : ""}`);
   },
 
+  async getAgentAccounts() {
+    return this.get("/wallet/cash/agent-accounts");
+  },
+
   async getAdminCashRequests(params = {}) {
     const search = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
