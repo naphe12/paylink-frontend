@@ -3,11 +3,14 @@ import { ArrowDownCircle } from "lucide-react";
 
 import api from "@/services/api";
 
+const agentMobileAccount = import.meta.env.VITE_AGENT_CASH_ACCOUNT || "+257 71 11 11 11";
+
 export default function DepositPage() {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [confirmation, setConfirmation] = useState(null);
 
   const fetchRequests = async () => {
     try {
@@ -28,14 +31,21 @@ export default function DepositPage() {
     }
     setLoading(true);
     try {
-      await api.requestCashDeposit({
+      const res = await api.requestCashDeposit({
         amount: Number(amount),
         note: note || null,
       });
       setAmount("");
       setNote("");
       await fetchRequests();
-      alert("Demande de dépôt enregistrée.");
+      const confirmedAmount = Number(res?.amount ?? amount);
+      const currency = res?.currency_code || "BIF";
+      setConfirmation({
+        amount: Number.isFinite(confirmedAmount) ? confirmedAmount : Number(amount),
+        currency,
+        agentAccount: agentMobileAccount,
+      });
+      alert("Demande enregistrée. Envoyez le montant sur le compte agent indiqué ci-dessous.");
     } catch (err) {
       alert(`Erreur dépôt : ${err.message}`);
     } finally {
@@ -90,6 +100,35 @@ export default function DepositPage() {
           {loading ? "Envoi..." : "Soumettre la demande"}
         </button>
       </div>
+
+      {confirmation && (
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-blue-700">Récapitulatif de votre demande</p>
+              <p className="text-slate-800 mt-2">
+                Montant déposé :{" "}
+                <span className="font-semibold">
+                  {confirmation.currency} {confirmation.amount.toFixed(2)}
+                </span>
+              </p>
+              <p className="text-slate-800">
+                Compte mobile agent :{" "}
+                <span className="font-semibold">{confirmation.agentAccount}</span>
+              </p>
+              <p className="text-xs text-slate-500 mt-2">
+                Envoyez le montant sur ce compte mobile money, puis attendez la validation PayLink.
+              </p>
+            </div>
+            <button
+              onClick={() => setConfirmation(null)}
+              className="text-xs text-blue-700 hover:underline"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl shadow p-6">
         <div className="flex items-center justify-between mb-4">
