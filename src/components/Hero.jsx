@@ -18,9 +18,9 @@ export default function Hero() {
         <motion.span
           animate={{ rotate: [0, 360] }}
           transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-          className="text-[3rem] sm:text-[3.5rem] md:text-[4.25rem] text-yellow-400 drop-shadow-lg"
+          className="inline-flex h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem] items-center justify-center rounded-2xl bg-white text-indigo-800 text-2xl sm:text-3xl font-extrabold shadow-lg"
         >
-          ƒTó‹÷?
+          PL
         </motion.span>
         <h1 className="text-[2.5rem] sm:text-[3rem] md:text-[3.5rem] font-extrabold tracking-tight">
           PayLink

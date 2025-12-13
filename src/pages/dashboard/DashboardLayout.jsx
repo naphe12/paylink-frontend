@@ -61,14 +61,12 @@ export default function DashboardLayout() {
       <div className="px-6 py-8 border-b border-white/10">
         <p className="text-xs uppercase tracking-[0.35em] text-white/60">PayLink</p>
         <h1 className="text-2xl font-semibold mt-3 flex items-center gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/25 text-lg">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-indigo-900 font-bold">
             PL
           </span>
           Tableau client
         </h1>
-        <p className="text-white/70 text-xs mt-2">
-          Gestion finance & services digitaux
-        </p>
+        <p className="text-white/70 text-xs mt-2">Gestion finance & services digitaux</p>
         <span className="inline-flex mt-4 px-3 py-1 rounded-full bg-white/15 text-[11px] uppercase tracking-[0.3em]">
           {storedRole}
         </span>
@@ -94,7 +92,7 @@ export default function DashboardLayout() {
       <div className="px-4 py-6 border-t border-white/10">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-3 px-4 py-2 rounded-xl bg-white/15 text-white hover:bg-white/25 transition"
+          className="w-full flex items-center justify-center gap-3 px-4 py-2 rounded-xl bg-white text-indigo-900 font-semibold shadow-md hover:shadow-lg transition"
         >
           <LogOut size={18} /> Déconnexion
         </button>
@@ -111,8 +109,13 @@ export default function DashboardLayout() {
 
       {/* Mobile header */}
       <div className="lg:hidden fixed top-0 left-0 w-full bg-gradient-to-r from-indigo-950 to-indigo-800 text-white flex items-center justify-between px-4 py-3 shadow-lg z-30">
-        <h1 className="text-lg font-semibold">PayLink</h1>
-        <button onClick={() => setDrawerOpen(true)}>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-indigo-900 font-bold shadow-md">
+            PL
+          </span>
+          <h1 className="text-lg font-semibold drop-shadow">PayLink</h1>
+        </div>
+        <button aria-label="Ouvrir le menu" onClick={() => setDrawerOpen(true)}>
           <Menu size={26} />
         </button>
       </div>
@@ -152,5 +155,3 @@ export default function DashboardLayout() {
     </div>
   );
 }
-
-
