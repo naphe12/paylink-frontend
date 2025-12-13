@@ -138,12 +138,12 @@ export default function DashboardLayout() {
       )}
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col pt-14 lg:pt-0">
-        <header className="flex justify-between items-center px-6 py-4 bg-white border-b shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-800">Tableau de bord</h2>
+      <div className="flex-1 flex flex-col pt-16 lg:pt-0">
+        <header className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 bg-white border-b shadow-sm">
+          <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Tableau de bord</h2>
           <NotificationsBell />
         </header>
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto bg-slate-50">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-slate-50">
           <Outlet />
         </main>
       </div>
