@@ -25,7 +25,7 @@ export default function WalletCard({ wallet: walletProp = null, onRefresh }) {
           setWallet(data);
         }
       } catch (err) {
-        console.error("Erreur rÇ¸cupÇ¸ration portefeuille :", err);
+        console.error("Erreur récupération portefeuille :", err);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -50,9 +50,9 @@ export default function WalletCard({ wallet: walletProp = null, onRefresh }) {
     currency ||
     "";
   const currencySymbols = {
-    EUR: "ƒ'ª",
+    EUR: "€",
     USD: "$",
-    GBP: "¶œ",
+    GBP: "£",
     BIF: "FBu",
     XAF: "FCFA",
     XOF: "CFA",
@@ -67,7 +67,7 @@ export default function WalletCard({ wallet: walletProp = null, onRefresh }) {
   if (bonus > 60000) level = 3;
   else if (bonus > 20000) level = 2;
   if (bonus > 150000) level = 4;
-  const stars = "ƒ~.".repeat(level);
+  const stars = "★".repeat(level);
 
   return (
     <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-lg border w-full max-w-lg text-center mx-auto">
@@ -76,7 +76,7 @@ export default function WalletCard({ wallet: walletProp = null, onRefresh }) {
       </div>
 
       <h3 className="text-base sm:text-lg font-semibold text-[#0b3b64] mb-4">
-        Mon Portefeuille ÐY'¬
+        Mon Portefeuille
       </h3>
 
       <p className="text-3xl sm:text-4xl font-bold text-[#0066ff] mb-6">
@@ -98,10 +98,10 @@ export default function WalletCard({ wallet: walletProp = null, onRefresh }) {
           Niveau KYC : <strong>{user.kyc_tier}</strong>
         </p>
         <p>
-          Limite journaliÇùre : {user.daily_limit} {displayCurrency || currency}
+          Limite journalière : {user.daily_limit} {displayCurrency || currency}
         </p>
         <p>
-          UtilisÇ¸ aujourd&apos;hui : {user.used_daily} {displayCurrency || currency}
+          Utilisé aujourd&apos;hui : {user.used_daily} {displayCurrency || currency}
         </p>
 
         {user.kyc_tier < 2 && (
@@ -109,13 +109,13 @@ export default function WalletCard({ wallet: walletProp = null, onRefresh }) {
             className="mt-2 w-full sm:w-auto px-3 py-2 bg-purple-600 text-white rounded-lg"
             onClick={() => navigate("/kyc/upgrade")}
           >
-            ÐY"' Augmenter mon niveau KYC
+            Augmenter mon niveau KYC
           </button>
         )}
       </div>
 
       <p className="text-xs text-gray-400 mt-2">
-        * Le solde est mis Çÿ jour automatiquement aprÇùs chaque opÇ¸ration.
+        * Le solde est mis à jour automatiquement après chaque opération.
       </p>
       <div className="flex flex-col sm:flex-row gap-3 mt-3">
         <button
@@ -129,7 +129,7 @@ export default function WalletCard({ wallet: walletProp = null, onRefresh }) {
             onClick={onRefresh}
             className="w-full sm:w-auto text-xs text-blue-600 underline"
           >
-            RafraÇ©chir le solde
+            Rafraîchir le solde
           </button>
         )}
       </div>
