@@ -8,6 +8,9 @@ export default function TransactionAuditPage() {
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [txType, setTxType] = useState("");
+  const [txStatus, setTxStatus] = useState("");
+  const [rangeKey, setRangeKey] = useState("");
   const [limit, setLimit] = useState(200);
 
   const [ledgerRows, setLedgerRows] = useState([]);
@@ -21,6 +24,31 @@ export default function TransactionAuditPage() {
     () => walletId.trim() !== "" || agentId.trim() !== "",
     [walletId, agentId]
   );
+
+  const applyRange = (key) => {
+    const now = new Date();
+    let from = new Date(now);
+    switch (key) {
+      case "today":
+        from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case "7d":
+        from.setDate(now.getDate() - 7);
+        break;
+      case "30d":
+        from.setDate(now.getDate() - 30);
+        break;
+      case "90d":
+        from.setDate(now.getDate() - 90);
+        break;
+      default:
+        return;
+    }
+    const toIso = (d) => d.toISOString().split("T")[0];
+    setDateFrom(toIso(from));
+    setDateTo(toIso(now));
+    setRangeKey(key);
+  };
 
   const load = async () => {
     if (!hasFilters) {
@@ -36,6 +64,8 @@ export default function TransactionAuditPage() {
         search: search.trim() || undefined,
         date_from: dateFrom || undefined,
         date_to: dateTo || undefined,
+        type: txType || undefined,
+        status: txStatus || undefined,
         limit: limit || undefined,
       });
       setLedgerRows(Array.isArray(data.ledger) ? data.ledger : []);
@@ -67,6 +97,9 @@ export default function TransactionAuditPage() {
     setSearch("");
     setDateFrom("");
     setDateTo("");
+    setTxType("");
+    setTxStatus("");
+    setRangeKey("");
     setLimit(200);
     setLedgerRows([]);
     setAgentRows([]);
@@ -84,6 +117,19 @@ export default function TransactionAuditPage() {
     total: walletRows.length,
   };
   const alertsCount = alerts.length;
+  const typeOptions = [
+    { label: "Tous les types", value: "" },
+    { label: "Transfert externe", value: "external_transfer" },
+    { label: "Depot / cash-in", value: "deposit" },
+    { label: "Transfert interne", value: "internal_transfer" },
+  ];
+  const statusOptions = [
+    { label: "Tous les statuts", value: "" },
+    { label: "En attente", value: "pending" },
+    { label: "Succes", value: "succeeded" },
+    { label: "Echec", value: "failed" },
+    { label: "Annule", value: "cancelled" },
+  ];
 
   return (
     <div className="space-y-6">
@@ -146,13 +192,67 @@ export default function TransactionAuditPage() {
                 placeholder="ref, montant, type..."
               />
             </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div>
+                <label className="text-sm text-slate-600">Type</label>
+                <select
+                  value={txType}
+                  onChange={(e) => setTxType(e.target.value)}
+                  className="mt-1 w-full rounded-xl border px-3 py-2"
+                >
+                  {typeOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-slate-600">Statut</label>
+                <select
+                  value={txStatus}
+                  onChange={(e) => setTxStatus(e.target.value)}
+                  className="mt-1 w-full rounded-xl border px-3 py-2"
+                >
+                  {statusOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: "today", label: "Aujourd'hui" },
+                { key: "7d", label: "7 jours" },
+                { key: "30d", label: "30 jours" },
+                { key: "90d", label: "90 jours" },
+              ].map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => applyRange(opt.key)}
+                  className={`rounded-full border px-3 py-1 text-sm ${
+                    rangeKey === opt.key
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 text-slate-700 hover:border-slate-300"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm text-slate-600">Date de</label>
                 <input
                   type="date"
                   value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
+                  onChange={(e) => {
+                    setDateFrom(e.target.value);
+                    setRangeKey("");
+                  }}
                   className="mt-1 w-full rounded-xl border px-3 py-2"
                 />
               </div>
@@ -161,7 +261,10 @@ export default function TransactionAuditPage() {
                 <input
                   type="date"
                   value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
+                  onChange={(e) => {
+                    setDateTo(e.target.value);
+                    setRangeKey("");
+                  }}
                   className="mt-1 w-full rounded-xl border px-3 py-2"
                 />
               </div>
