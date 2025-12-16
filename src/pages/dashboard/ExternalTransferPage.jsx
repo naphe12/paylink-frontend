@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import api from "@/services/api";
 import { Send, Info } from "lucide-react";
 
+const PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
+
 export default function ExternalTransferPage() {
   const [form, setForm] = useState({
     recipient_name: "",
     recipient_phone: "",
     country_destination: "Burundi",
-    partner_name: "Lumicash",
+    partner_name: PARTNERS[0],
     amount: "",
   });
 
@@ -75,7 +77,7 @@ export default function ExternalTransferPage() {
         recipient_name: "",
         recipient_phone: "",
         country_destination: "Burundi",
-        partner_name: "Lumicash",
+        partner_name: PARTNERS[0],
         amount: "",
       });
     } catch (err) {
@@ -94,7 +96,7 @@ export default function ExternalTransferPage() {
 
       <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 mb-5 flex items-start gap-3 text-sm">
         <Info size={18} className="mt-0.5" />
-        <div>
+        <div className="space-y-1">
           <p>
             Vous pouvez envoyer jusqu'à <span className="font-semibold">{totalAvailable} €</span>
           </p>
@@ -158,13 +160,18 @@ export default function ExternalTransferPage() {
 
           <div>
             <label className="block text-sm font-semibold mb-1">Partenaire</label>
-            <input
-              type="text"
+            <select
               name="partner_name"
               value={form.partner_name}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            />
+            >
+              {PARTNERS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -183,6 +190,23 @@ export default function ExternalTransferPage() {
           <p className="text-xs text-slate-500 mt-1">
             Frais estimés : {(parseFloat(form.amount || 0) * (feesPercent / 100)).toFixed(2)} €
           </p>
+        </div>
+
+        <div className="rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700 space-y-1">
+          <div className="flex justify-between">
+            <span>Taux appliqué</span>
+            <span className="font-semibold">{rate || "-"}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Frais</span>
+            <span className="font-semibold">{feesPercent || 0}%</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Montant reçu estimé</span>
+            <span className="font-semibold">
+              {recipientAmount.toFixed(2)} {form.country_destination === "Burundi" ? "BIF" : form.country_destination}
+            </span>
+          </div>
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
