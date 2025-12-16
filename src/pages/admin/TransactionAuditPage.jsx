@@ -11,6 +11,9 @@ export default function TransactionAuditPage() {
   const [txType, setTxType] = useState("");
   const [txStatus, setTxStatus] = useState("");
   const [rangeKey, setRangeKey] = useState("");
+  const [walletOptions, setWalletOptions] = useState([]);
+  const [agentOptions, setAgentOptions] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState(false);
   const [limit, setLimit] = useState(200);
 
   const [ledgerRows, setLedgerRows] = useState([]);
@@ -91,6 +94,23 @@ export default function TransactionAuditPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const loadOptions = async () => {
+      setLoadingOptions(true);
+      try {
+        const [wallets, agents] = await Promise.all([
+          api.getAdminWallets().catch(() => []),
+          api.getAgents().catch(() => []),
+        ]);
+        setWalletOptions(Array.isArray(wallets) ? wallets : []);
+        setAgentOptions(Array.isArray(agents) ? agents : []);
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+    loadOptions();
+  }, []);
+
   const reset = () => {
     setWalletId("");
     setAgentId("");
@@ -100,6 +120,8 @@ export default function TransactionAuditPage() {
     setTxType("");
     setTxStatus("");
     setRangeKey("");
+    setWalletId("");
+    setAgentId("");
     setLimit(200);
     setLedgerRows([]);
     setAgentRows([]);
@@ -165,23 +187,49 @@ export default function TransactionAuditPage() {
         <div className="rounded-2xl border bg-white p-4 shadow-sm">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Filtres</p>
           <div className="mt-4 space-y-3">
-            <div>
-              <label className="text-sm text-slate-600">Wallet ID</label>
-              <input
-                value={walletId}
-                onChange={(e) => setWalletId(e.target.value)}
-                className="mt-1 w-full rounded-xl border px-3 py-2"
-                placeholder="wallet_123..."
-              />
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <label className="text-sm text-slate-600">Wallet ID</label>
+                <select
+                  value={walletId}
+                  onChange={(e) => setWalletId(e.target.value)}
+                  className="mt-1 w-full rounded-xl border px-3 py-2"
+                  disabled={loadingOptions}
+                >
+                  <option value="">Sélectionner un wallet</option>
+                  {walletOptions.map((w) => (
+                    <option key={w.wallet_id} value={w.wallet_id}>
+                      {`${w.user_name || "Utilisateur"} • ${shorten(w.wallet_id)}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setWalletId("");
+                  setAgentId("");
+                }}
+                className="h-11 rounded-xl border px-3 text-sm hover:bg-slate-50"
+              >
+                Effacer
+              </button>
             </div>
             <div>
               <label className="text-sm text-slate-600">Agent ID</label>
-              <input
+              <select
                 value={agentId}
                 onChange={(e) => setAgentId(e.target.value)}
                 className="mt-1 w-full rounded-xl border px-3 py-2"
-                placeholder="agent_abc..."
-              />
+                disabled={loadingOptions}
+              >
+                <option value="">Sélectionner un agent</option>
+                {agentOptions.map((a) => (
+                  <option key={a.agent_id} value={a.agent_id}>
+                    {`${a.display_name || "Agent"} • ${shorten(a.agent_id)}`}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="text-sm text-slate-600">Reference / recherche</label>
@@ -532,4 +580,10 @@ function _KpiCard({ label, value, icon, color }) {
       </div>
     </div>
   );
+}
+
+function shorten(value) {
+  if (!value) return "-";
+  const text = value.toString();
+  return text.length <= 10 ? text : `${text.slice(0, 10)}...`;
 }

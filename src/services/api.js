@@ -289,6 +289,17 @@ const api = {
     return this.get(`/admin/credit-history${query ? `?${query}` : ""}`);
   },
 
+  async getAdminWallets(params = {}) {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        search.append(key, value);
+      }
+    });
+    const query = search.toString();
+    return this.get(`/admin/wallets${query ? `?${query}` : ""}`);
+  },
+
   async getAdminTransactionsAudit(params = {}) {
     const search = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
