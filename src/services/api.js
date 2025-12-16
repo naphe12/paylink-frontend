@@ -55,7 +55,7 @@ const api = {
     if (origin) search.append("origin", origin);
     if (destination) search.append("destination", destination);
     const query = search.toString();
-    return this.get(`/api/exchange-rate${query ? `?${query}` : ""}`);
+    return this.get(`/api/exchange-rate/${query ? `?${query}` : ""}`);
   },
 
   async put(path, data) {
