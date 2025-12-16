@@ -50,6 +50,14 @@ const api = {
     return res.json();
   },
 
+  async getExchangeRate(origin = "EUR", destination) {
+    const search = new URLSearchParams();
+    if (origin) search.append("origin", origin);
+    if (destination) search.append("destination", destination);
+    const query = search.toString();
+    return this.get(`/api/exchange-rate${query ? `?${query}` : ""}`);
+  },
+
   async put(path, data) {
     const token = localStorage.getItem("token");
 
