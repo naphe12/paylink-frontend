@@ -15,6 +15,7 @@ import {
   ArrowLeftRight,
   ShieldCheck,
   TrendingUp,
+  Settings,
 } from "lucide-react";
 
 export default function AdminSidebar() {
@@ -87,6 +88,9 @@ export default function AdminSidebar() {
           </NavLink>
           <NavLink to="transfer-approvals" className={linkClass}>
             <GitPullRequest size={18} /> Validations transferts
+          </NavLink>
+          <NavLink to="settings" className={linkClass}>
+            <Settings size={18} /> Paramètres
           </NavLink>
           <NavLink to="transactions-audit" className={linkClass}>
             <ShieldCheck size={18} /> Audit transactions

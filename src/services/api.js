@@ -318,6 +318,32 @@ const api = {
     const query = search.toString();
     return this.get(`/admin/transfers/gains${query ? `?${query}` : ""}`);
   },
+
+  async getAdminSettings() {
+    return this.get("/admin/settings/general");
+  },
+
+  async updateAdminSettings(payload = {}) {
+    const search = new URLSearchParams();
+    Object.entries(payload).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") search.append(k, v);
+    });
+    const query = search.toString();
+    return this.put(`/admin/settings/general${query ? `?${query}` : ""}`);
+  },
+
+  async listFxCustomRates() {
+    return this.get("/admin/settings/fx-custom");
+  },
+
+  async updateFxCustomRate(currency, rate, opts = {}) {
+    const search = new URLSearchParams();
+    if (rate !== undefined && rate !== null) search.append("new_rate", rate);
+    if (opts.is_active !== undefined) search.append("is_active", opts.is_active);
+    if (opts.origin) search.append("origin", opts.origin);
+    const query = search.toString();
+    return this.put(`/admin/settings/fx-custom/${currency}${query ? `?${query}` : ""}`);
+  },
 };
 
 export default api;
