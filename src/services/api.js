@@ -311,6 +311,13 @@ const api = {
     const query = search.toString();
     return this.get(`/admin/transactions-audit${query ? `?${query}` : ""}`);
   },
+
+  async getAdminTransferGains(period = "day") {
+    const search = new URLSearchParams();
+    if (period) search.append("period", period);
+    const query = search.toString();
+    return this.get(`/admin/transfers/gains${query ? `?${query}` : ""}`);
+  },
 };
 
 export default api;
