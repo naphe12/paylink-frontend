@@ -50,6 +50,23 @@ const api = {
     return res.json();
   },
 
+  async put(path, data) {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: data !== undefined ? JSON.stringify(data) : undefined,
+    });
+
+    if (!res.ok) throw new Error(`PUT ${path} -> ${res.status}`);
+    return res.json();
+  },
+
   // ----------- TONTINES -----------
   async getTontines() {
     return this.get("/tontines/");
