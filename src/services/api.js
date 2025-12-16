@@ -297,7 +297,8 @@ const api = {
       }
     });
     const query = search.toString();
-    return this.get(`/admin/wallets${query ? `?${query}` : ""}`);
+    // trailing slash to avoid redirects on some gateways
+    return this.get(`/admin/wallets/${query ? `?${query}` : ""}`);
   },
 
   async getAdminTransactionsAudit(params = {}) {

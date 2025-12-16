@@ -102,8 +102,19 @@ export default function TransactionAuditPage() {
           api.getAdminWallets().catch(() => []),
           api.getAgents().catch(() => []),
         ]);
-        setWalletOptions(Array.isArray(wallets) ? wallets : []);
-        setAgentOptions(Array.isArray(agents) ? agents : []);
+        const normalize = (value) => {
+          if (Array.isArray(value)) return value;
+          if (value && Array.isArray(value.wallets)) return value.wallets;
+          if (value && Array.isArray(value.results)) return value.results;
+          if (value && Array.isArray(value.items)) return value.items;
+          return [];
+        };
+        setWalletOptions(
+          normalize(wallets).filter((w) => w && (w.wallet_id || w.id))
+        );
+        setAgentOptions(
+          normalize(agents).filter((a) => a && (a.agent_id || a.id))
+        );
       } finally {
         setLoadingOptions(false);
       }
@@ -196,10 +207,14 @@ export default function TransactionAuditPage() {
                   className="mt-1 w-full rounded-xl border px-3 py-2"
                   disabled={loadingOptions}
                 >
-                  <option value="">Sélectionner un wallet</option>
+                  <option value="">
+                    {loadingOptions ? "Chargement..." : "Sélectionner un wallet"}
+                  </option>
                   {walletOptions.map((w) => (
-                    <option key={w.wallet_id} value={w.wallet_id}>
-                      {`${w.user_name || "Utilisateur"} • ${shorten(w.wallet_id)}`}
+                    <option key={w.wallet_id || w.id} value={w.wallet_id || w.id}>
+                      {`${w.user_name || w.user_email || "Utilisateur"} • ${shorten(
+                        w.wallet_id || w.id
+                      )}`}
                     </option>
                   ))}
                 </select>
@@ -223,10 +238,14 @@ export default function TransactionAuditPage() {
                 className="mt-1 w-full rounded-xl border px-3 py-2"
                 disabled={loadingOptions}
               >
-                <option value="">Sélectionner un agent</option>
+                <option value="">
+                  {loadingOptions ? "Chargement..." : "Sélectionner un agent"}
+                </option>
                 {agentOptions.map((a) => (
-                  <option key={a.agent_id} value={a.agent_id}>
-                    {`${a.display_name || "Agent"} • ${shorten(a.agent_id)}`}
+                  <option key={a.agent_id || a.id} value={a.agent_id || a.id}>
+                    {`${a.display_name || a.email || "Agent"} • ${shorten(
+                      a.agent_id || a.id
+                    )}`}
                   </option>
                 ))}
               </select>
