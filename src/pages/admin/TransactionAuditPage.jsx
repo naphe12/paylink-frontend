@@ -449,7 +449,11 @@ export default function TransactionAuditPage() {
                   const direction = (row.direction || "").toLowerCase();
                   const amountNum = Number(row.amount || 0);
                   const amountAbs = Math.abs(amountNum);
-                  const isCredit = direction === "in" || direction === "credit";
+                  const isCredit =
+                    direction === "in" || direction === "credit" || (!direction && amountNum > 0);
+                  const isDebit =
+                    direction === "debit" || direction === "out" || (!direction && amountNum < 0);
+                  const creditFlag = isCredit && !isDebit;
                   return (
                     <tr key={`${row.tx_id}-${row.created_at}`} className="border-b last:border-0">
                       <td className="px-2 py-2 text-slate-600">
@@ -461,7 +465,7 @@ export default function TransactionAuditPage() {
                       <td className="px-2 py-2">
                         <span
                           className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                            isCredit
+                            creditFlag
                               ? "bg-emerald-100 text-emerald-700"
                               : "bg-rose-100 text-rose-700"
                           }`}
@@ -471,10 +475,10 @@ export default function TransactionAuditPage() {
                       </td>
                       <td
                         className={`px-2 py-2 font-semibold text-right ${
-                          isCredit ? "text-emerald-700" : "text-rose-700"
+                          creditFlag ? "text-emerald-700" : "text-rose-700"
                         }`}
                       >
-                        {isCredit ? "+" : "-"} {amountAbs.toFixed(2)}
+                        {creditFlag ? "+" : "-"} {amountAbs.toFixed(2)}
                       </td>
                       <td className="px-2 py-2 text-right text-slate-600">
                         {Number(row.balance_after || 0).toFixed(2)}
@@ -523,17 +527,18 @@ export default function TransactionAuditPage() {
                       direction === "credit" ||
                       direction === "in" ||
                       isDepositOp ||
-                      amountNum >= 0;
+                      (!direction && amountNum > 0);
+                    const creditFlag = isCredit && !(direction === "debit" || direction === "out");
 
                     return (
-                      <tr key={row.transaction_id} className="border-b last:border-0">
+                      <tr key={row.transaction_id} className="border-b last-border-0">
                         <td className="px-2 py-2 text-slate-600">
                           {row.created_at ? new Date(row.created_at).toLocaleString() : "-"}
                         </td>
                         <td className="px-2 py-2">
                           <span
                             className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                              isCredit
+                              creditFlag
                                 ? "bg-emerald-100 text-emerald-700"
                                 : "bg-rose-100 text-rose-700"
                             }`}
@@ -542,7 +547,7 @@ export default function TransactionAuditPage() {
                           </span>
                         </td>
                         <td className="px-2 py-2 font-semibold text-right">
-                          {isCredit ? "+" : "-"} {amountAbs.toFixed(2)}
+                          {creditFlag ? "+" : "-"} {amountAbs.toFixed(2)}
                         </td>
                         <td className="px-2 py-2 text-right text-slate-600">
                           {Number(row.balance_after || 0).toFixed(2)}
