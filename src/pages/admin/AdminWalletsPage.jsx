@@ -319,14 +319,15 @@ export default function AdminWalletsPage() {
                     history.map((entry) => {
                       const direction = (entry.direction || "").toLowerCase();
                       const operation = (entry.operation_type || "").toLowerCase();
+                      const amountNum = Number(entry.amount);
+                      const amountAbs = Math.abs(amountNum);
                       const isDepositOp =
                         operation.includes("deposit") ||
                         operation.includes("cash_request") ||
                         operation.includes("wallet_cash_request");
-                      const amountNum = Number(entry.amount);
-                      const amountAbs = Math.abs(amountNum);
                       const isCredit =
                         direction === "credit" ||
+                        direction === "in" ||
                         (direction === "" && amountNum >= 0) ||
                         isDepositOp;
 
@@ -337,9 +338,7 @@ export default function AdminWalletsPage() {
                           </td>
                           <td className="p-2">
                             <div className="font-medium">{entry.operation_type}</div>
-                            <div className="text-xs text-slate-500">
-                              {entry.description}
-                            </div>
+                            <div className="text-xs text-slate-500">{entry.description}</div>
                           </td>
                           <td className="p-2">
                             <span
@@ -361,12 +360,9 @@ export default function AdminWalletsPage() {
                             {amountAbs.toLocaleString()} {selectedWallet.currency}
                           </td>
                           <td className="p-2">
-                            {Number(entry.balance_after).toLocaleString()}{" "}
-                            {selectedWallet.currency}
+                            {Number(entry.balance_after).toLocaleString()} {selectedWallet.currency}
                           </td>
-                          <td className="p-2 text-slate-500">
-                            {entry.reference || "-"}
-                          </td>
+                          <td className="p-2 text-slate-500">{entry.reference || "-"}</td>
                         </tr>
                       );
                     })
