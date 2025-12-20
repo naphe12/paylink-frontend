@@ -451,8 +451,7 @@ export default function TransactionAuditPage() {
                   const amountAbs = Math.abs(amountNum);
                   const isCredit = direction === "credit" || direction === "in";
                   const isDebit = direction === "debit" || direction === "out";
-                  const creditFlag =
-                    isCredit || (!isDebit && !direction && amountNum > 0);
+                  const signSymbol = "-"; // on affiche le signe négatif pour ces lignes ledger
 
                   return (
                     <tr key={`${row.tx_id}-${row.created_at}`} className="border-b last:border-0">
@@ -475,10 +474,10 @@ export default function TransactionAuditPage() {
                       </td>
                       <td
                         className={`px-2 py-2 font-semibold text-right ${
-                          creditFlag ? "text-emerald-700" : "text-rose-700"
+                          isCredit ? "text-emerald-700" : "text-rose-700"
                         }`}
                       >
-                        {creditFlag ? "+" : "-"} {amountAbs.toFixed(2)}
+                        {signSymbol} {amountAbs.toFixed(2)}
                       </td>
                       <td className="px-2 py-2 text-right text-slate-600">
                         {Number(row.balance_after || 0).toFixed(2)}
