@@ -169,7 +169,9 @@ export default function AdminWalletsPage() {
 
       <div className="bg-white rounded-xl shadow border overflow-hidden">
         <div className="px-4 py-3 border-b">
-          <h2 className="text-lg font-semibold text-slate-900">Portefeuilles en crédit (solde négatif)</h2>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Portefeuilles en crédit (solde négatif)
+          </h2>
           <p className="text-sm text-slate-500">Supervision dédiée aux wallets avec solde &lt; 0.</p>
         </div>
         <table className="w-full text-sm">
@@ -180,6 +182,7 @@ export default function AdminWalletsPage() {
               <th className="p-3 text-left">Disponible</th>
               <th className="p-3 text-left">En attente</th>
               <th className="p-3 text-left">Alerte</th>
+              <th className="p-3 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -216,6 +219,14 @@ export default function AdminWalletsPage() {
                   </td>
                   <td className="p-3">
                     <span className={alertBadge(w.alert)}>{w.alert}</span>
+                  </td>
+                  <td className="p-3">
+                    <button
+                      className="text-sm text-blue-600 underline"
+                      onClick={() => handleSelectWallet(w)}
+                    >
+                      Voir historique
+                    </button>
                   </td>
                 </tr>
               ))
