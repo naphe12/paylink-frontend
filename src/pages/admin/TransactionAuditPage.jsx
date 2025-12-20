@@ -449,11 +449,11 @@ export default function TransactionAuditPage() {
                   const direction = (row.direction || "").toLowerCase();
                   const amountNum = Number(row.amount || 0);
                   const amountAbs = Math.abs(amountNum);
-                  const isCredit =
-                    direction === "in" || direction === "credit" || (!direction && amountNum > 0);
-                  const isDebit =
-                    direction === "debit" || direction === "out" || (!direction && amountNum < 0);
-                  const creditFlag = isCredit && !isDebit;
+                  const isCredit = direction === "credit" || direction === "in";
+                  const isDebit = direction === "debit" || direction === "out";
+                  const creditFlag =
+                    isCredit || (!isDebit && !direction && amountNum > 0);
+
                   return (
                     <tr key={`${row.tx_id}-${row.created_at}`} className="border-b last:border-0">
                       <td className="px-2 py-2 text-slate-600">
@@ -516,20 +516,8 @@ export default function TransactionAuditPage() {
                 <tbody>
                   {walletRows.map((row) => {
                     const direction = (row.direction || "").toLowerCase();
-                    const operation = (row.operation_type || "").toLowerCase();
-                    const amountNum = Number(row.amount || 0);
-                    const amountAbs = Math.abs(amountNum);
-                    const isDepositOp =
-                      operation.includes("deposit") ||
-                      operation.includes("cash_request") ||
-                      operation.includes("wallet_cash_request");
-                    const isCredit =
-                      direction === "credit" ||
-                      direction === "in" ||
-                      isDepositOp ||
-                      (!direction && amountNum > 0);
-                    const creditFlag = isCredit && !(direction === "debit" || direction === "out");
-
+                    const amountAbs = Math.abs(Number(row.amount || 0));
+                    const isCredit = direction === "credit" || direction === "in";
                     return (
                       <tr key={row.transaction_id} className="border-b last-border-0">
                         <td className="px-2 py-2 text-slate-600">
@@ -538,7 +526,7 @@ export default function TransactionAuditPage() {
                         <td className="px-2 py-2">
                           <span
                             className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                              creditFlag
+                              isCredit
                                 ? "bg-emerald-100 text-emerald-700"
                                 : "bg-rose-100 text-rose-700"
                             }`}
@@ -547,7 +535,7 @@ export default function TransactionAuditPage() {
                           </span>
                         </td>
                         <td className="px-2 py-2 font-semibold text-right">
-                          {creditFlag ? "+" : "-"} {amountAbs.toFixed(2)}
+                          {isCredit ? "+" : "-"} {amountAbs.toFixed(2)}
                         </td>
                         <td className="px-2 py-2 text-right text-slate-600">
                           {Number(row.balance_after || 0).toFixed(2)}
