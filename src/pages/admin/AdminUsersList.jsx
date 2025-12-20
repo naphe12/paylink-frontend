@@ -18,11 +18,11 @@ export default function AdminUsersList() {
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">📋 Utilisateurs</h1>
+      <h1 className="text-xl font-bold mb-4">Utilisateurs</h1>
 
       <input
         className="border p-2 rounded w-full mb-4"
-        placeholder="Recherche nom / email / téléphone..."
+        placeholder="Recherche nom / email / t�l�phone..."
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />
@@ -34,7 +34,7 @@ export default function AdminUsersList() {
             <th className="p-2 text-left">Email</th>
             <th className="p-2 text-left">KYC</th>
             <th className="p-2 text-left">Risque</th>
-            <th></th>
+            <th className="p-2 text-left">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -45,12 +45,29 @@ export default function AdminUsersList() {
               <td className="p-2">{u.kyc_status}</td>
               <td className="p-2">{u.risk_score}</td>
               <td className="p-2">
-                <Link
-                  to={`/admin/users/${u.user_id}`}
-                  className="text-blue-600"
-                >
-                  Voir →
-                </Link>
+                <div className="flex flex-col gap-1 text-blue-600">
+                  <Link to={`/admin/users/${u.user_id}`} className="hover:underline">
+                    Profil
+                  </Link>
+                  <Link
+                    to={`/dashboard/admin/users/${u.user_id}/balance-events`}
+                    className="hover:underline"
+                  >
+                    Historique solde
+                  </Link>
+                  <Link
+                    to={`/dashboard/admin/cash-requests?user_id=${u.user_id}`}
+                    className="hover:underline"
+                  >
+                    Cash in/out
+                  </Link>
+                  <Link
+                    to={`/dashboard/admin/transfers?user_id=${u.user_id}`}
+                    className="hover:underline"
+                  >
+                    Transferts
+                  </Link>
+                </div>
               </td>
             </tr>
           ))}
