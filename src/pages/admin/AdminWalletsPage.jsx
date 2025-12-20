@@ -318,8 +318,18 @@ export default function AdminWalletsPage() {
                   ) : (
                     history.map((entry) => {
                       const direction = (entry.direction || "").toLowerCase();
-                      const isCredit = direction === "credit";
-                      const amountAbs = Math.abs(Number(entry.amount));
+                      const operation = (entry.operation_type || "").toLowerCase();
+                      const isDepositOp =
+                        operation.includes("deposit") ||
+                        operation.includes("cash_request") ||
+                        operation.includes("wallet_cash_request");
+                      const amountNum = Number(entry.amount);
+                      const amountAbs = Math.abs(amountNum);
+                      const isCredit =
+                        direction === "credit" ||
+                        (direction === "" && amountNum >= 0) ||
+                        isDepositOp;
+
                       return (
                         <tr key={entry.transaction_id} className="border-t">
                           <td className="p-2 text-slate-600">
