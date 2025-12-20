@@ -61,7 +61,6 @@ export default function AdminBalanceEventsPage() {
                 <th className="px-4 py-3 text-right">Balance avant</th>
                 <th className="px-4 py-3 text-right">Δ</th>
                 <th className="px-4 py-3 text-right">Balance après</th>
-                <th className="px-4 py-3 text-left">Devise</th>
                 <th className="px-4 py-3 text-left">Date</th>
                 <th className="px-4 py-3 text-left">Action</th>
               </tr>
@@ -92,7 +91,6 @@ export default function AdminBalanceEventsPage() {
                       ? `${r.balance_after} ${r.currency || ""}`.trim()
                       : "–"}
                   </td>
-                  <td className="px-4 py-3 text-slate-700">{r.currency || "—"}</td>
                   <td className="px-4 py-3 text-slate-700">
                     {r.occurred_at ? new Date(r.occurred_at).toLocaleString() : "–"}
                   </td>

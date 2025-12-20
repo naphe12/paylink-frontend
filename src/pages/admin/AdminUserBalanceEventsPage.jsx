@@ -38,7 +38,6 @@ export default function AdminUserBalanceEventsPage() {
                 <th className="px-4 py-3 text-right">Balance avant</th>
                 <th className="px-4 py-3 text-right">Δ</th>
                 <th className="px-4 py-3 text-right">Balance après</th>
-                <th className="px-4 py-3 text-left">Devise</th>
                 <th className="px-4 py-3 text-left">Source</th>
               </tr>
             </thead>
@@ -46,12 +45,12 @@ export default function AdminUserBalanceEventsPage() {
               {rows.map((r) => (
                 <tr key={r.event_id} className="border-t border-slate-100 hover:bg-slate-50/70">
                   <td className="px-4 py-3 text-slate-800">
-                    {r.occurred_at ? new Date(r.occurred_at).toLocaleString() : "–"}
+                    {r.occurred_at ? new Date(r.occurred_at).toLocaleString() : "—"}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {r.balance_before !== null && r.balance_before !== undefined
                       ? `${r.balance_before} ${r.currency || ""}`.trim()
-                      : "–"}
+                      : "—"}
                   </td>
                   <td
                     className={`px-4 py-3 text-right tabular-nums ${
@@ -60,14 +59,13 @@ export default function AdminUserBalanceEventsPage() {
                   >
                     {r.amount_delta !== null && r.amount_delta !== undefined
                       ? `${r.amount_delta} ${r.currency || ""}`.trim()
-                      : "–"}
+                      : "—"}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {r.balance_after !== null && r.balance_after !== undefined
                       ? `${r.balance_after} ${r.currency || ""}`.trim()
-                      : "–"}
+                      : "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-700">{r.currency || "—"}</td>
                   <td className="px-4 py-3 text-slate-700">{r.source || "—"}</td>
                 </tr>
               ))}
