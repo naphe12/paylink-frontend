@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import api from "@/services/api";
 
 export default function BalanceHistoryPage() {
   const [rows, setRows] = useState([]);
@@ -6,24 +7,21 @@ export default function BalanceHistoryPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
     setLoading(true);
-    fetch("/wallet/balance-events?limit=100&offset=0")
-      .then((res) => {
-        if (!res.ok) throw new Error("Impossible de charger l'historique");
-        return res.json();
-      })
+    api
+      .get("/wallet/balance-events?limit=100&offset=0")
       .then((data) => {
-        if (isMounted) setRows(data);
+        if (mounted) setRows(data);
       })
       .catch((err) => {
-        if (isMounted) setError(err.message || "Erreur inconnue");
+        if (mounted) setError(err.message || "Erreur inconnue");
       })
       .finally(() => {
-        if (isMounted) setLoading(false);
+        if (mounted) setLoading(false);
       });
     return () => {
-      isMounted = false;
+      mounted = false;
     };
   }, []);
 

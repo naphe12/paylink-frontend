@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import api from "@/services/api";
 
 export default function AdminUserBalanceEventsPage() {
   const { user_id } = useParams();
@@ -11,11 +12,8 @@ export default function AdminUserBalanceEventsPage() {
     if (!user_id) return;
     setLoading(true);
     setError("");
-    fetch(`/admin/transfers/users/${user_id}/balance-events?limit=100&offset=0`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Impossible de charger l'historique de ce client");
-        return res.json();
-      })
+    api
+      .get(`/admin/transfers/users/${user_id}/balance-events?limit=100&offset=0`)
       .then(setRows)
       .catch((err) => setError(err.message || "Erreur inconnue"))
       .finally(() => setLoading(false));

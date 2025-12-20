@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import api from "@/services/api";
 
 export default function AdminBalanceEventsPage() {
   const [rows, setRows] = useState([]);
@@ -13,11 +14,8 @@ export default function AdminBalanceEventsPage() {
     const params = new URLSearchParams({ limit: "100", offset: "0" });
     if (q.trim()) params.set("q", q.trim());
 
-    fetch(`/admin/transfers/balance-events?${params.toString()}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Impossible de charger les balances clients");
-        return res.json();
-      })
+    api
+      .get(`/admin/transfers/balance-events?${params.toString()}`)
       .then(setRows)
       .catch((err) => setError(err.message || "Erreur inconnue"))
       .finally(() => setLoading(false));
