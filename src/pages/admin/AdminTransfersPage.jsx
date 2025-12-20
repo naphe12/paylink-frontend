@@ -10,6 +10,7 @@ const statusBadge = (status) => {
     case "failed":
     case "cancelled":
       return `${base} bg-red-100 text-red-700`;
+    case "completed":
     case "succeeded":
       return `${base} bg-emerald-100 text-emerald-700`;
     default:
@@ -17,7 +18,7 @@ const statusBadge = (status) => {
   }
 };
 
-const STATUS_FILTERS = ["", "pending", "succeeded", "failed"];
+const STATUS_FILTERS = ["", "pending", "cancelled", "completed"];
 
 export default function AdminTransfersPage() {
   const [transfers, setTransfers] = useState([]);
