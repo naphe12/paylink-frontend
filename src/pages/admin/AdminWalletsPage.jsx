@@ -328,8 +328,8 @@ export default function AdminWalletsPage() {
                       const isCredit =
                         direction === "credit" ||
                         direction === "in" ||
-                        (direction === "" && amountNum >= 0) ||
-                        isDepositOp;
+                        isDepositOp ||
+                        amountNum >= 0;
 
                       return (
                         <tr key={entry.transaction_id} className="border-t">

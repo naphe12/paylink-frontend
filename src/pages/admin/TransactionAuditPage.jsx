@@ -447,10 +447,18 @@ export default function TransactionAuditPage() {
               <tbody>
                 {ledgerRows.map((row) => {
                   const direction = (row.direction || "").toLowerCase();
+                  const operation = (row.operation_type || row.reference || "").toLowerCase();
                   const amountNum = Number(row.amount || 0);
                   const amountAbs = Math.abs(amountNum);
+                  const isDepositOp =
+                    operation.includes("deposit") ||
+                    operation.includes("cash_request") ||
+                    operation.includes("wallet_cash_request");
                   const isCredit =
-                    direction === "in" || direction === "credit" || amountNum >= 0;
+                    direction === "in" ||
+                    direction === "credit" ||
+                    isDepositOp ||
+                    amountNum >= 0;
                   return (
                     <tr key={`${row.tx_id}-${row.created_at}`} className="border-b last:border-0">
                       <td className="px-2 py-2 text-slate-600">
@@ -510,36 +518,51 @@ export default function TransactionAuditPage() {
                   <th className="px-2 py-1">Référence</th>
                 </tr>
               </thead>
-              <tbody>
-                {walletRows.map((row) => (
-                  <tr key={row.transaction_id} className="border-b last:border-0">
-                    <td className="px-2 py-2 text-slate-600">
-                      {row.created_at ? new Date(row.created_at).toLocaleString() : "-"}
-                    </td>
-                    <td className="px-2 py-2">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          (row.direction || "").toLowerCase() === "credit"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-rose-100 text-rose-700"
-                        }`}
-                      >
-                        {(row.operation_type || row.direction || "").toString().toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-2 py-2 font-semibold text-right">
-                      {(row.direction || "").toLowerCase() === "credit" ? "+" : "-"}{" "}
-                      {Number(row.amount || 0).toFixed(2)}
-                    </td>
-                    <td className="px-2 py-2 text-right text-slate-600">
-                      {Number(row.balance_after || 0).toFixed(2)}
-                    </td>
-                    <td className="px-2 py-2 text-slate-600">
-                      {row.reference || "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+                <tbody>
+                  {walletRows.map((row) => {
+                    const direction = (row.direction || "").toLowerCase();
+                    const operation = (row.operation_type || "").toLowerCase();
+                    const amountNum = Number(row.amount || 0);
+                    const amountAbs = Math.abs(amountNum);
+                    const isDepositOp =
+                      operation.includes("deposit") ||
+                      operation.includes("cash_request") ||
+                      operation.includes("wallet_cash_request");
+                    const isCredit =
+                      direction === "credit" ||
+                      direction === "in" ||
+                      isDepositOp ||
+                      amountNum >= 0;
+
+                    return (
+                      <tr key={row.transaction_id} className="border-b last:border-0">
+                        <td className="px-2 py-2 text-slate-600">
+                          {row.created_at ? new Date(row.created_at).toLocaleString() : "-"}
+                        </td>
+                        <td className="px-2 py-2">
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                              isCredit
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-rose-100 text-rose-700"
+                            }`}
+                          >
+                            {(row.operation_type || row.direction || "").toString().toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-2 py-2 font-semibold text-right">
+                          {isCredit ? "+" : "-"} {amountAbs.toFixed(2)}
+                        </td>
+                        <td className="px-2 py-2 text-right text-slate-600">
+                          {Number(row.balance_after || 0).toFixed(2)}
+                        </td>
+                        <td className="px-2 py-2 text-slate-600">
+                          {row.reference || "-"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
             </table>
           </div>
         )}
