@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   TrendingUp,
   Settings,
+  LineChart,
 } from "lucide-react";
 
 export default function AdminSidebar() {
@@ -85,6 +86,9 @@ export default function AdminSidebar() {
           </NavLink>
           <NavLink to="transfer-gains" className={linkClass}>
             <TrendingUp size={18} /> Gains transferts
+          </NavLink>
+          <NavLink to="balance-events" className={linkClass}>
+            <LineChart size={18} /> Balances clients
           </NavLink>
           <NavLink to="transfer-approvals" className={linkClass}>
             <GitPullRequest size={18} /> Validations transferts

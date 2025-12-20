@@ -50,6 +50,8 @@ import AdminCreditHistoryPage from "@/pages/admin/AdminCreditHistoryPage";
 import TransactionAuditPage from "@/pages/admin/TransactionAuditPage";
 import TransferGainsPage from "@/pages/admin/TransferGainsPage";
 import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
+import AdminBalanceEventsPage from "@/pages/admin/AdminBalanceEventsPage";
+import AdminUserBalanceEventsPage from "@/pages/admin/AdminUserBalanceEventsPage";
 
 import AgentOperationPage from "@/pages/agent/AgentOperationPage";
 import AgentDashboard from "@/pages/agent/AgentDashboard";
@@ -62,6 +64,7 @@ import MyQrPage from "@/pages/profile/MyQrPage";
 import AgentTransferClosurePage from "@/pages/agent/AgentTransferClosurePage";
 import RoleDashboardRedirect from "@/pages/dashboard/RoleDashboardRedirect";
 import LegacyRouteRedirect from "@/components/LegacyRouteRedirect";
+import BalanceHistoryPage from "@/pages/dashboard/BalanceHistoryPage";
 
 export default function AppRouter() {
   return (
@@ -101,6 +104,7 @@ export default function AppRouter() {
         <Route path="deposit" element={<DepositPage />} />
         <Route path="withdraw" element={<WithdrawPage />} />
         <Route path="credit-history" element={<CreditHistoryPage />} />
+        <Route path="balance-history" element={<BalanceHistoryPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="profile/change-password" element={<ChangePasswordPage />} />
         <Route path="agent-transfers" element={<AgentTransfersPage />} />
@@ -144,6 +148,8 @@ export default function AppRouter() {
         <Route path="cash-requests" element={<CashRequestsPage />} />
         <Route path="credit-history" element={<AdminCreditHistoryPage />} />
         <Route path="transactions-audit" element={<TransactionAuditPage />} />
+        <Route path="balance-events" element={<AdminBalanceEventsPage />} />
+        <Route path="users/:user_id/balance-events" element={<AdminUserBalanceEventsPage />} />
       </Route>
 
       {/* Agent dashboard */}
