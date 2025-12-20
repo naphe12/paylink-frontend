@@ -64,7 +64,7 @@ export default function AdminTransfersPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            🔄 Transferts externes
+            Transferts externes
           </h1>
           <p className="text-sm text-slate-500">
             Flux sortants (bank transfer, mobile money, etc.) avec suivi des statuts.
@@ -106,7 +106,7 @@ export default function AdminTransfersPage() {
         </div>
       </div>
 
-  {summary && (
+      {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <StatCard label="Total" value={summary.total} accent="bg-slate-900 text-white" />
           <StatCard label="En attente" value={summary.pending} accent="bg-yellow-100 text-yellow-700" />
@@ -122,6 +122,7 @@ export default function AdminTransfersPage() {
               <th className="p-3 text-left">Initiateur</th>
               <th className="p-3 text-left">Transaction</th>
               <th className="p-3 text-left">Montant</th>
+              <th className="p-3 text-left">Montant local</th>
               <th className="p-3 text-left">Canal</th>
               <th className="p-3 text-left">Statut</th>
               <th className="p-3 text-left">Créée</th>
@@ -130,13 +131,13 @@ export default function AdminTransfersPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="p-6 text-center text-slate-500">
+                <td colSpan={7} className="p-6 text-center text-slate-500">
                   Chargement...
                 </td>
               </tr>
             ) : transfers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-6 text-center text-slate-500">
+                <td colSpan={7} className="p-6 text-center text-slate-500">
                   Aucun transfert avec ces filtres.
                 </td>
               </tr>
@@ -151,7 +152,12 @@ export default function AdminTransfersPage() {
                   </td>
                   <td className="p-3 font-mono text-slate-700">{tx.tx_id.slice(0, 10)}…</td>
                   <td className="p-3 font-semibold text-slate-900">
-                    {tx.amount.toLocaleString()} {tx.currency}
+                    {Number(tx.amount || 0).toLocaleString()} {tx.currency}
+                  </td>
+                  <td className="p-3 text-slate-800">
+                    {tx.local_amount != null
+                      ? `${Number(tx.local_amount).toLocaleString()} ${tx.local_currency || ""}`.trim()
+                      : "-"}
                   </td>
                   <td className="p-3 text-slate-600">{tx.channel}</td>
                   <td className="p-3">
