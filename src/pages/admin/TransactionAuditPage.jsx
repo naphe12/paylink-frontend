@@ -447,18 +447,9 @@ export default function TransactionAuditPage() {
               <tbody>
                 {ledgerRows.map((row) => {
                   const direction = (row.direction || "").toLowerCase();
-                  const operation = (row.operation_type || row.reference || "").toLowerCase();
                   const amountNum = Number(row.amount || 0);
                   const amountAbs = Math.abs(amountNum);
-                  const isDepositOp =
-                    operation.includes("deposit") ||
-                    operation.includes("cash_request") ||
-                    operation.includes("wallet_cash_request");
-                  const isCredit =
-                    direction === "in" ||
-                    direction === "credit" ||
-                    isDepositOp ||
-                    amountNum >= 0;
+                  const isCredit = direction === "in" || direction === "credit";
                   return (
                     <tr key={`${row.tx_id}-${row.created_at}`} className="border-b last:border-0">
                       <td className="px-2 py-2 text-slate-600">
