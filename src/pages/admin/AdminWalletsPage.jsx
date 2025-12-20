@@ -17,9 +17,11 @@ const alertBadge = (level) => {
 
 export default function AdminWalletsPage() {
   const [wallets, setWallets] = useState([]);
+  const [negativeWallets, setNegativeWallets] = useState([]);
   const [summary, setSummary] = useState(null);
   const [threshold, setThreshold] = useState("");
   const [loading, setLoading] = useState(false);
+  const [negLoading, setNegLoading] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState(null);
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -49,8 +51,22 @@ export default function AdminWalletsPage() {
     }
   };
 
+  const loadNegative = async () => {
+    setNegLoading(true);
+    try {
+      const data = await api.get("/admin/wallets?min_available=0");
+      setNegativeWallets(data.filter((w) => Number(w.available) < 0));
+    } catch (err) {
+      console.error("Erreur chargement wallets négatifs:", err);
+      setNegativeWallets([]);
+    } finally {
+      setNegLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
+    loadNegative();
   }, [threshold]);
 
   useEffect(() => {
@@ -150,6 +166,63 @@ export default function AdminWalletsPage() {
           />
         </div>
       )}
+
+      <div className="bg-white rounded-xl shadow border overflow-hidden">
+        <div className="px-4 py-3 border-b">
+          <h2 className="text-lg font-semibold text-slate-900">Portefeuilles en crédit (solde négatif)</h2>
+          <p className="text-sm text-slate-500">Supervision dédiée aux wallets avec solde &lt; 0.</p>
+        </div>
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 text-slate-600">
+            <tr>
+              <th className="p-3 text-left">Utilisateur</th>
+              <th className="p-3 text-left">Wallet</th>
+              <th className="p-3 text-left">Disponible</th>
+              <th className="p-3 text-left">En attente</th>
+              <th className="p-3 text-left">Alerte</th>
+            </tr>
+          </thead>
+          <tbody>
+            {negLoading ? (
+              <tr>
+                <td colSpan={5} className="p-6 text-center text-slate-500">
+                  Chargement...
+                </td>
+              </tr>
+            ) : negativeWallets.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-6 text-center text-slate-500">
+                  Aucun wallet en solde négatif.
+                </td>
+              </tr>
+            ) : (
+              negativeWallets.map((w) => (
+                <tr key={w.wallet_id} className="border-t hover:bg-slate-50">
+                  <td className="p-3">
+                    <div className="font-medium text-slate-900">{w.user_name || "Sans utilisateur"}</div>
+                    <div className="text-xs text-slate-500">{w.user_email}</div>
+                  </td>
+                  <td className="p-3">
+                    <div className="font-mono text-slate-800">{w.wallet_id.slice(0, 8)}…</div>
+                    <div className="text-xs text-slate-500">
+                      {w.type?.toUpperCase()} · {w.currency}
+                    </div>
+                  </td>
+                  <td className="p-3 font-semibold text-rose-700">
+                    {Number(w.available).toLocaleString()} {w.currency}
+                  </td>
+                  <td className="p-3 text-slate-600">
+                    {Number(w.pending).toLocaleString()} {w.currency}
+                  </td>
+                  <td className="p-3">
+                    <span className={alertBadge(w.alert)}>{w.alert}</span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <div className="bg-white rounded-xl shadow border overflow-hidden">
         <table className="w-full text-sm">
