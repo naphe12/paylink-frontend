@@ -5,6 +5,7 @@ import api from "@/services/api";
 export default function AdminUserBalanceEventsPage() {
   const { user_id } = useParams();
   const [rows, setRows] = useState([]);
+  const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -14,7 +15,12 @@ export default function AdminUserBalanceEventsPage() {
     setError("");
     api
       .get(`/admin/transfers/users/${user_id}/balance-events?limit=100&offset=0`)
-      .then(setRows)
+      .then((data) => {
+        setRows(data);
+        if (data && data.length > 0) {
+          setDisplayName(data[0].full_name || data[0].email || "");
+        }
+      })
       .catch((err) => setError(err.message || "Erreur inconnue"))
       .finally(() => setLoading(false));
   }, [user_id]);
@@ -23,7 +29,9 @@ export default function AdminUserBalanceEventsPage() {
     <div className="space-y-4">
       <header>
         <p className="text-sm text-slate-500">Historique de balance pour le client</p>
-        <h1 className="text-xl font-semibold text-slate-900">Balance client #{user_id}</h1>
+        <h1 className="text-xl font-semibold text-slate-900">
+          Balance client {displayName ? `- ${displayName}` : `#${user_id}`}
+        </h1>
       </header>
 
       {loading && <div className="text-slate-600">Chargement…</div>}
