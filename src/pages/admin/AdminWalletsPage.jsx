@@ -18,7 +18,7 @@ const alertBadge = (level) => {
 export default function AdminWalletsPage() {
   const [wallets, setWallets] = useState([]);
   const [summary, setSummary] = useState(null);
-  const [threshold, setThreshold] = useState(0);
+  const [threshold, setThreshold] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState(null);
   const [history, setHistory] = useState([]);
@@ -36,7 +36,9 @@ export default function AdminWalletsPage() {
     try {
       const [summaryData, walletsData] = await Promise.all([
         api.get("/admin/wallets/summary"),
-        api.get(`/admin/wallets?min_available=${threshold}`),
+        api.get(
+          threshold === "" ? "/admin/wallets" : `/admin/wallets?min_available=${threshold}`
+        ),
       ]);
       setSummary(summaryData);
       setWallets(walletsData);
@@ -105,7 +107,7 @@ export default function AdminWalletsPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            👜 Portefeuilles sous surveillance
+            Portefeuilles sous surveillance
           </h1>
           <p className="text-sm text-slate-500">
             Suivi des soldes en-dessous des seuils définis et alertes critiques.
@@ -117,7 +119,8 @@ export default function AdminWalletsPage() {
             type="number"
             className="border rounded-lg px-3 py-2 w-32 text-sm"
             value={threshold}
-            onChange={(e) => setThreshold(Number(e.target.value || 0))}
+            onChange={(e) => setThreshold(e.target.value)}
+            placeholder="Vide = top 50"
           />
           <button
             onClick={loadData}
@@ -163,13 +166,13 @@ export default function AdminWalletsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="p-6 text-center text-slate-500">
+                <td colSpan={6} className="p-6 text-center text-slate-500">
                   Chargement...
                 </td>
               </tr>
             ) : wallets.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-6 text-center text-slate-500">
+                <td colSpan={6} className="p-6 text-center text-slate-500">
                   Aucun portefeuille sous ce seuil.
                 </td>
               </tr>
@@ -189,38 +192,38 @@ export default function AdminWalletsPage() {
                         {w.user_name || "Sans utilisateur"}
                       </div>
                       <div className="text-xs text-slate-500">{w.user_email}</div>
-                  </td>
-                  <td className="p-3">
-                    <div className="font-mono text-slate-800">{w.wallet_id.slice(0, 8)}…</div>
-                    <div className="text-xs text-slate-500">
-                      {w.type?.toUpperCase()} • {w.currency}
-                    </div>
-                  </td>
-                  <td className="p-3 font-semibold text-slate-900">
-                    {w.available.toLocaleString()} {w.currency}
-                  </td>
-                  <td className="p-3 text-slate-600">
-                    {w.pending.toLocaleString()} {w.currency}
-                  </td>
-                  <td className="p-3">
-                    <span className={alertBadge(w.alert)}>
-                      {w.alert === "critical"
-                        ? "Critique"
-                        : w.alert === "warning"
-                        ? "Surveillance"
-                        : "OK"}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <button
-                      className="text-sm text-blue-600 underline"
-                      onClick={() => handleSelectWallet(w)}
-                    >
-                      {isSelected ? "Historique affiché" : "Voir historique"}
-                    </button>
-                  </td>
-                </tr>
-              );
+                    </td>
+                    <td className="p-3">
+                      <div className="font-mono text-slate-800">{w.wallet_id.slice(0, 8)}…</div>
+                      <div className="text-xs text-slate-500">
+                        {w.type?.toUpperCase()} · {w.currency}
+                      </div>
+                    </td>
+                    <td className="p-3 font-semibold text-slate-900">
+                      {Number(w.available).toLocaleString()} {w.currency}
+                    </td>
+                    <td className="p-3 text-slate-600">
+                      {Number(w.pending).toLocaleString()} {w.currency}
+                    </td>
+                    <td className="p-3">
+                      <span className={alertBadge(w.alert)}>
+                        {w.alert === "critical"
+                          ? "Critique"
+                          : w.alert === "warning"
+                          ? "Surveillance"
+                          : "OK"}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <button
+                        className="text-sm text-blue-600 underline"
+                        onClick={() => handleSelectWallet(w)}
+                      >
+                        {isSelected ? "Historique affiché" : "Voir historique"}
+                      </button>
+                    </td>
+                  </tr>
+                );
               })
             )}
           </tbody>
@@ -236,7 +239,7 @@ export default function AdminWalletsPage() {
                   Historique du wallet {selectedWallet.wallet_id.slice(0, 8)}…
                 </h3>
                 <p className="text-sm text-slate-500">
-                  {selectedWallet.user_name || "Sans utilisateur"} —{" "}
+                  {selectedWallet.user_name || "Sans utilisateur"} ·{" "}
                   {selectedWallet.user_email || "N/A"}
                 </p>
               </div>
@@ -313,48 +316,50 @@ export default function AdminWalletsPage() {
                       </td>
                     </tr>
                   ) : (
-                    history.map((entry) => (
-                      <tr key={entry.transaction_id} className="border-t">
-                        <td className="p-2 text-slate-600">
-                          {new Date(entry.created_at).toLocaleString()}
-                        </td>
-                        <td className="p-2">
-                          <div className="font-medium">{entry.operation_type}</div>
-                          <div className="text-xs text-slate-500">
-                            {entry.description}
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              entry.direction === "credit"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-red-100 text-red-700"
+                    history.map((entry) => {
+                      const direction = (entry.direction || "").toLowerCase();
+                      const isCredit = direction === "credit";
+                      const amountAbs = Math.abs(Number(entry.amount));
+                      return (
+                        <tr key={entry.transaction_id} className="border-t">
+                          <td className="p-2 text-slate-600">
+                            {new Date(entry.created_at).toLocaleString()}
+                          </td>
+                          <td className="p-2">
+                            <div className="font-medium">{entry.operation_type}</div>
+                            <div className="text-xs text-slate-500">
+                              {entry.description}
+                            </div>
+                          </td>
+                          <td className="p-2">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                isCredit
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {isCredit ? "Crédit" : "Débit"}
+                            </span>
+                          </td>
+                          <td
+                            className={`p-2 font-semibold ${
+                              isCredit ? "text-emerald-600" : "text-red-600"
                             }`}
                           >
-                            {entry.direction === "credit" ? "Crédit" : "Débit"}
-                          </span>
-                        </td>
-                        <td
-                          className={`p-2 font-semibold ${
-                            entry.direction === "credit"
-                              ? "text-emerald-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {entry.direction === "credit" ? "+" : "-"}
-                          {Number(entry.amount).toLocaleString()}{" "}
-                          {selectedWallet.currency}
-                        </td>
-                        <td className="p-2">
-                          {Number(entry.balance_after).toLocaleString()}{" "}
-                          {selectedWallet.currency}
-                        </td>
-                        <td className="p-2 text-slate-500">
-                          {entry.reference || "-"}
-                        </td>
-                      </tr>
-                    ))
+                            {isCredit ? "+" : "-"}
+                            {amountAbs.toLocaleString()} {selectedWallet.currency}
+                          </td>
+                          <td className="p-2">
+                            {Number(entry.balance_after).toLocaleString()}{" "}
+                            {selectedWallet.currency}
+                          </td>
+                          <td className="p-2 text-slate-500">
+                            {entry.reference || "-"}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

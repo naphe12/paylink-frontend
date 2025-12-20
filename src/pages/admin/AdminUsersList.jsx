@@ -22,7 +22,7 @@ export default function AdminUsersList() {
 
       <input
         className="border p-2 rounded w-full mb-4"
-        placeholder="Recherche nom / email / téléphone..."
+        placeholder="Recherche nom / email / tÃ©lÃ©phone..."
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />
