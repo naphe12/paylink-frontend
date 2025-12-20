@@ -314,6 +314,42 @@ const api = {
     return this.get(`/admin/credit-history${query ? `?${query}` : ""}`);
   },
 
+  // ----------- BALANCE EVENTS -----------
+  async getBalanceEvents(params = {}) {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        search.append(key, value);
+      }
+    });
+    const query = search.toString();
+    return this.get(`/wallet/balance-events${query ? `?${query}` : ""}`);
+  },
+
+  async getAdminBalanceEvents(params = {}) {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        search.append(key, value);
+      }
+    });
+    const query = search.toString();
+    return this.get(`/admin/transfers/balance-events${query ? `?${query}` : ""}`);
+  },
+
+  async getAdminUserBalanceEvents(userId, params = {}) {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        search.append(key, value);
+      }
+    });
+    const query = search.toString();
+    return this.get(
+      `/admin/transfers/users/${userId}/balance-events${query ? `?${query}` : ""}`
+    );
+  },
+
   async getAdminWallets(params = {}) {
     const search = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
