@@ -462,13 +462,19 @@ export default function TransactionAuditPage() {
                       <td className="px-2 py-2">
                         <span
                           className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                            isCredit ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                            isCredit
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-rose-100 text-rose-700"
                           }`}
                         >
                           {(row.direction || row.operation_type || "").toString().toUpperCase()}
                         </span>
                       </td>
-                      <td className={`px-2 py-2 font-semibold text-right ${isCredit ? "text-emerald-700" : "text-rose-700"}`}>
+                      <td
+                        className={`px-2 py-2 font-semibold text-right ${
+                          isCredit ? "text-emerald-700" : "text-rose-700"
+                        }`}
+                      >
                         {isCredit ? "+" : "-"} {amountAbs.toFixed(2)}
                       </td>
                       <td className="px-2 py-2 text-right text-slate-600">
