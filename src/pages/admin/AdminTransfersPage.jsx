@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import api from "@/services/api";
 
 const statusBadge = (status) => {
@@ -26,13 +27,20 @@ export default function AdminTransfersPage() {
   const [status, setStatus] = useState("");
   const [channel, setChannel] = useState("");
   const [loading, setLoading] = useState(false);
+  const location = useLocation();
+
+  const userId = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("user_id") || "";
+  }, [location.search]);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
     if (status) params.set("status", status);
     if (channel) params.set("channel", channel);
+    if (userId) params.set("user_id", userId);
     return params.toString();
-  }, [status, channel]);
+  }, [status, channel, userId]);
 
   const loadData = async () => {
     setLoading(true);
