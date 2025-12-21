@@ -105,6 +105,9 @@ export default function AdminSidebar() {
           <NavLink to="credit-history" className={linkClass}>
             <BookOpen size={18} /> Historique crédits
           </NavLink>
+          <NavLink to="credit-lines" className={linkClass}>
+            <BookOpen size={18} /> Lignes de crédit
+          </NavLink>
           <NavLink to="kyc/reviews" className={linkClass}>
             <UserCheck size={18} /> Vérif KYC
           </NavLink>

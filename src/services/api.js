@@ -187,6 +187,12 @@ const api = {
   async getCreditHistory() {
     return this.get("/wallet/credit/history");
   },
+  async getCreditLineEvents(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/wallet/credit/line/events${query ? `?${query}` : ""}`);
+  },
   async getBalanceEvents(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
@@ -382,6 +388,15 @@ const api = {
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
     ).toString();
     return this.get(`/admin/tontines${query ? `?${query}` : ""}`);
+  },
+  async listAdminCreditLines(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/credit-lines${query ? `?${query}` : ""}`);
+  },
+  async getAdminCreditLineDetail(creditLineId) {
+    return this.get(`/admin/credit-lines/${creditLineId}`);
   },
 };
 

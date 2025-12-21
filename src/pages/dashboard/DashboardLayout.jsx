@@ -30,6 +30,7 @@ const baseMenu = [
   { name: "Dépôt cash", path: "/dashboard/client/deposit", icon: <ArrowDown size={18} /> },
   { name: "Retrait cash", path: "/dashboard/client/withdraw", icon: <ArrowUp size={18} /> },
   { name: "Historique crédit", path: "/dashboard/client/credit-history", icon: <CreditCard size={18} /> },
+  { name: "Ligne de crédit", path: "/dashboard/client/credit-line", icon: <CreditCard size={18} /> },
   { name: "Historique balance", path: "/dashboard/client/balance-history", icon: <LineChart size={18} /> },
   { name: "Tontines", path: "/dashboard/client/tontines", icon: <RefreshCcw size={18} /> },
   { name: "Bonus", path: "/dashboard/client/bonus", icon: <Gift size={18} /> },

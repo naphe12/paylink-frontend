@@ -7,6 +7,8 @@ const DEFAULT_FILTERS = { limit: 20, search: "" };
 export default function WalletHistoryTable({ walletId, currency }) {
   const effectiveCurrency = currency || "";
   const [entries, setEntries] = useState([]);
+  const [creditSummary, setCreditSummary] = useState(null);
+  const [creditEvents, setCreditEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(() => ({
     ...DEFAULT_FILTERS,
@@ -39,7 +41,23 @@ export default function WalletHistoryTable({ walletId, currency }) {
       }
     };
 
+    const loadCredit = async () => {
+      try {
+        const data = await api.getCreditLineEvents({ limit: 50 });
+        if (!active) return;
+        setCreditSummary(data.summary);
+        setCreditEvents(Array.isArray(data.events) ? data.events : []);
+      } catch (err) {
+        console.error("Erreur chargement credit line:", err);
+        if (active) {
+          setCreditSummary(null);
+          setCreditEvents([]);
+        }
+      }
+    };
+
     loadHistory();
+    loadCredit();
     return () => {
       active = false;
     };
@@ -57,6 +75,11 @@ export default function WalletHistoryTable({ walletId, currency }) {
     entries.length > 0
       ? `${entries.length} operations`
       : "Aucun mouvement sur la periode";
+
+  const formatAmount = (value) => {
+    const num = Number(value || 0);
+    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
 
   return (
     <div className="bg-white rounded-xl shadow border p-5">
@@ -107,6 +130,78 @@ export default function WalletHistoryTable({ walletId, currency }) {
           </button>
         </div>
       </div>
+
+      {creditSummary && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <SummaryCard
+            label="Montant initial"
+            value={formatAmount(creditSummary.initial_amount)}
+            currency={creditSummary.currency_code}
+          />
+          <SummaryCard
+            label="Utilisé"
+            value={formatAmount(creditSummary.used_amount)}
+            currency={creditSummary.currency_code}
+          />
+          <SummaryCard
+            label="Restant"
+            value={formatAmount(creditSummary.outstanding_amount)}
+            currency={creditSummary.currency_code}
+          />
+        </div>
+      )}
+
+      {creditEvents.length > 0 && (
+        <div className="mb-6">
+          <h4 className="text-sm font-semibold text-slate-800 mb-2">Historique ligne de crédit</h4>
+          <div className="border rounded-lg overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr>
+                  <th className="p-2 text-left">Date</th>
+                  <th className="p-2 text-left">Δ Montant</th>
+                  <th className="p-2 text-left">Ancien plafond</th>
+                  <th className="p-2 text-left">Nouveau plafond</th>
+                  <th className="p-2 text-left">Statut</th>
+                  <th className="p-2 text-left">Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {creditEvents.map((ev) => {
+                  const delta = Number(ev.amount_delta || 0);
+                  const isCredit = delta > 0;
+                  return (
+                    <tr key={ev.event_id} className="border-t">
+                      <td className="p-2 text-slate-600">
+                        {ev.occurred_at
+                          ? new Date(ev.occurred_at).toLocaleString()
+                          : ev.created_at
+                          ? new Date(ev.created_at).toLocaleString()
+                          : "-"}
+                      </td>
+                      <td
+                        className={`p-2 font-semibold ${
+                          isCredit ? "text-emerald-600" : "text-red-600"
+                        }`}
+                      >
+                        {isCredit ? "+" : "-"} {formatAmount(Math.abs(delta))} {ev.currency_code}
+                      </td>
+                      <td className="p-2 text-slate-700">
+                        {ev.old_limit != null ? formatAmount(ev.old_limit) : "-"}
+                      </td>
+                      <td className="p-2 text-slate-700">
+                        {ev.new_limit != null ? formatAmount(ev.new_limit) : "-"}
+                      </td>
+                      <td className="p-2 text-slate-600">{ev.status || "-"}</td>
+                      <td className="p-2 text-slate-600">{ev.source || "-"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">

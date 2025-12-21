@@ -9,6 +9,7 @@ import ProfilePage from "@/pages/dashboard/ProfilePage";
 import DepositPage from "@/pages/dashboard/DepositPage";
 import WithdrawPage from "@/pages/dashboard/WithdrawPage";
 import CreditHistoryPage from "@/pages/dashboard/CreditHistoryPage";
+import CreditLinePage from "@/pages/dashboard/CreditLinePage";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 import HomePage from "@/pages/HomePage";
@@ -47,6 +48,7 @@ import TontineArrearsPage from "@/pages/admin/TontineArrearsPage";
 import AdminLoansPage from "@/pages/admin/AdminLoansPage";
 import CashRequestsPage from "@/pages/admin/CashRequestsPage";
 import AdminCreditHistoryPage from "@/pages/admin/AdminCreditHistoryPage";
+import AdminCreditLinesPage from "@/pages/admin/AdminCreditLinesPage";
 import TransactionAuditPage from "@/pages/admin/TransactionAuditPage";
 import TransferGainsPage from "@/pages/admin/TransferGainsPage";
 import AdminTontineCreatePage from "@/pages/admin/AdminTontineCreatePage";
@@ -106,6 +108,7 @@ export default function AppRouter() {
         <Route path="deposit" element={<DepositPage />} />
         <Route path="withdraw" element={<WithdrawPage />} />
         <Route path="credit-history" element={<CreditHistoryPage />} />
+        <Route path="credit-line" element={<CreditLinePage />} />
         <Route path="balance-history" element={<BalanceHistoryPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="profile/change-password" element={<ChangePasswordPage />} />
@@ -151,6 +154,7 @@ export default function AppRouter() {
         <Route path="loans" element={<AdminLoansPage />} />
         <Route path="cash-requests" element={<CashRequestsPage />} />
         <Route path="credit-history" element={<AdminCreditHistoryPage />} />
+        <Route path="credit-lines" element={<AdminCreditLinesPage />} />
         <Route path="transactions-audit" element={<TransactionAuditPage />} />
         <Route path="balance-events" element={<AdminBalanceEventsPage />} />
         <Route path="users/:user_id/balance-events" element={<AdminUserBalanceEventsPage />} />
