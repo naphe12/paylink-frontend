@@ -49,6 +49,7 @@ import AdminLoansPage from "@/pages/admin/AdminLoansPage";
 import CashRequestsPage from "@/pages/admin/CashRequestsPage";
 import AdminCreditHistoryPage from "@/pages/admin/AdminCreditHistoryPage";
 import AdminCreditLinesPage from "@/pages/admin/AdminCreditLinesPage";
+import AdminCreditRepayPage from "@/pages/admin/AdminCreditRepayPage";
 import TransactionAuditPage from "@/pages/admin/TransactionAuditPage";
 import TransferGainsPage from "@/pages/admin/TransferGainsPage";
 import AdminTontineCreatePage from "@/pages/admin/AdminTontineCreatePage";
@@ -155,6 +156,7 @@ export default function AppRouter() {
         <Route path="cash-requests" element={<CashRequestsPage />} />
         <Route path="credit-history" element={<AdminCreditHistoryPage />} />
         <Route path="credit-lines" element={<AdminCreditLinesPage />} />
+        <Route path="credit-lines/repay" element={<AdminCreditRepayPage />} />
         <Route path="transactions-audit" element={<TransactionAuditPage />} />
         <Route path="balance-events" element={<AdminBalanceEventsPage />} />
         <Route path="users/:user_id/balance-events" element={<AdminUserBalanceEventsPage />} />
