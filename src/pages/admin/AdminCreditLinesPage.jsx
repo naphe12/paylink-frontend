@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "@/services/api";
 
 export default function AdminCreditLinesPage() {
@@ -10,6 +11,7 @@ export default function AdminCreditLinesPage() {
   const [error, setError] = useState("");
   const [increaseAmount, setIncreaseAmount] = useState("");
   const [actionMsg, setActionMsg] = useState("");
+  const navigate = useNavigate();
 
   const loadLines = async () => {
     setLoading(true);
@@ -98,6 +100,12 @@ export default function AdminCreditLinesPage() {
             disabled={loading}
           >
             {loading ? "..." : "Chercher"}
+          </button>
+          <button
+            onClick={() => navigate("/dashboard/admin/credit-lines/repay")}
+            className="rounded-lg border px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          >
+            Aller aux remboursements
           </button>
         </div>
       </div>
