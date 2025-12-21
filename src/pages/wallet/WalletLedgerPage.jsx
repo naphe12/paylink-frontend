@@ -92,34 +92,37 @@ export default function WalletLedgerPage() {
 
       {/* Liste transactions */}
       <div className="space-y-3">
-        {entries.map((e) => (
-          <div
-            key={e.tx_id}
-            className="p-3 bg-white border rounded shadow-sm flex justify-between items-center"
-          >
-            <div>
-              <p className="text-sm text-gray-600">
-                {new Date(e.created_at).toLocaleString()}
-              </p>
-              <p className="font-medium">{e.reference || "Transaction"}</p>
-            </div>
+        {entries.map((e) => {
+          const amt = Number(e.amount || 0);
+          const isCredit = amt > 0;
+          const display = Math.abs(amt).toFixed(2);
+          return (
+            <div
+              key={e.transaction_id || e.tx_id}
+              className="p-3 bg-white border rounded shadow-sm flex justify-between items-center"
+            >
+              <div>
+                <p className="text-sm text-gray-600">
+                  {new Date(e.created_at).toLocaleString()}
+                </p>
+                <p className="font-medium">{e.reference || "Transaction"}</p>
+              </div>
 
-            <div className="text-right">
-              <p
-                className={
-                  e.direction === "in"
-                    ? "text-green-600 font-semibold"
-                    : "text-red-600 font-semibold"
-                }
-              >
-                {e.direction === "in" ? "+" : "-"} {Number(e.amount).toFixed(2)}
-              </p>
-              <p className="text-xs text-gray-500">
-                Solde: {Number(e.balance_after).toFixed(2)}
-              </p>
+              <div className="text-right">
+                <p
+                  className={
+                    isCredit ? "text-green-600 font-semibold" : "text-red-600 font-semibold"
+                  }
+                >
+                  {isCredit ? "+" : "-"} {display}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Solde: {Number(e.balance_after).toFixed(2)}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {entries.length === 0 && (
