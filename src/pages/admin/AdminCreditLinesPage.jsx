@@ -8,10 +8,13 @@ export default function AdminCreditLinesPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [increaseAmount, setIncreaseAmount] = useState("");
+  const [actionMsg, setActionMsg] = useState("");
 
   const loadLines = async () => {
     setLoading(true);
     setError("");
+    setActionMsg("");
     try {
       const data = await api.listAdminCreditLines(search ? { q: search } : {});
       setLines(Array.isArray(data) ? data : []);
@@ -30,6 +33,7 @@ export default function AdminCreditLinesPage() {
     }
     setLoading(true);
     setError("");
+    setActionMsg("");
     try {
       const data = await api.getAdminCreditLineDetail(id);
       setDetail(data);
@@ -50,6 +54,26 @@ export default function AdminCreditLinesPage() {
     () => lines.find((l) => l.credit_line_id === selectedId),
     [lines, selectedId]
   );
+
+  const increaseLimit = async (e) => {
+    e.preventDefault();
+    if (!selectedId || !increaseAmount) return;
+    setError("");
+    setActionMsg("");
+    setLoading(true);
+    try {
+      await api.increaseAdminCreditLine(selectedId, Number(increaseAmount));
+      setActionMsg("Plafond augmenté");
+      setIncreaseAmount("");
+      await loadDetail(selectedId);
+      await loadLines();
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Échec de l'augmentation");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -126,6 +150,31 @@ export default function AdminCreditLinesPage() {
         <div className="lg:col-span-2">
           {detail ? (
             <div className="space-y-4">
+              <div className="bg-white border rounded-2xl shadow-sm p-4">
+                <p className="text-sm font-semibold text-slate-800 mb-2">
+                  Augmenter la ligne de crédit
+                </p>
+                <form onSubmit={increaseLimit} className="flex items-center gap-3 flex-wrap">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={increaseAmount}
+                    onChange={(e) => setIncreaseAmount(e.target.value)}
+                    className="rounded-lg border px-3 py-2 text-sm"
+                    placeholder="Montant"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm disabled:opacity-50"
+                  >
+                    {loading ? "..." : "Augmenter"}
+                  </button>
+                  {actionMsg && <span className="text-sm text-green-600">{actionMsg}</span>}
+                </form>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <StatCard
                   label="Montant initial"

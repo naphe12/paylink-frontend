@@ -398,6 +398,9 @@ const api = {
   async getAdminCreditLineDetail(creditLineId) {
     return this.get(`/admin/credit-lines/${creditLineId}`);
   },
+  async increaseAdminCreditLine(creditLineId, amount) {
+    return this.post(`/admin/credit-lines/${creditLineId}/increase`, { amount });
+  },
 };
 
 export default api;
