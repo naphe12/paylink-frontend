@@ -163,7 +163,7 @@ export default function WalletHistoryTable({ walletId, currency }) {
                         : "text-red-600"
                     }`}
                   >
-                    {entry.direction === "credit" ? "+" : "-"}
+                    {entry.direction === "credit" ? "+" : " "}
                     {Number(entry.amount).toLocaleString()} {effectiveCurrency}
                   </td>
                   <td className="p-2 text-slate-700">
