@@ -69,6 +69,18 @@ const api = {
     if (!res.ok) throw new Error(`PUT ${path} -> ${res.status}`);
     return parseJsonOrThrow(res, path, "PUT");
   },
+  async del(path) {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+    if (!res.ok) throw new Error(`DELETE ${path} -> ${res.status}`);
+    return parseJsonOrThrow(res, path, "DELETE");
+  },
 
   // ----------- TONTINES -----------
   async getTontines() {
@@ -355,6 +367,15 @@ const api = {
   },
   async getUser(userId) {
     return this.get(`/admin/users/${userId}`);
+  },
+  async getAdminTontineMembers(tontineId) {
+    return this.get(`/admin/tontines/${tontineId}/members`);
+  },
+  async addAdminTontineMembers(tontineId, memberIds = []) {
+    return this.post(`/admin/tontines/${tontineId}/members`, { member_ids: memberIds });
+  },
+  async removeAdminTontineMember(tontineId, userId) {
+    return this.del(`/admin/tontines/${tontineId}/members/${userId}`);
   },
 };
 
