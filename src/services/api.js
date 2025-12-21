@@ -377,6 +377,12 @@ const api = {
   async removeAdminTontineMember(tontineId, userId) {
     return this.del(`/admin/tontines/${tontineId}/members/${userId}`);
   },
+  async listAdminTontines(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/tontines${query ? `?${query}` : ""}`);
+  },
 };
 
 export default api;

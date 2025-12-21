@@ -6,6 +6,8 @@ export default function AdminTontineMembersPage() {
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
+  const [tontines, setTontines] = useState([]);
+  const [tontineSearch, setTontineSearch] = useState("");
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [search, setSearch] = useState("");
@@ -29,6 +31,7 @@ export default function AdminTontineMembersPage() {
 
   useEffect(() => {
     loadUsers();
+    loadTontines();
   }, []);
 
   const loadMembers = async () => {
@@ -44,6 +47,16 @@ export default function AdminTontineMembersPage() {
       setError(err.message || "Erreur lors du chargement des membres");
     } finally {
       setLoadingMembers(false);
+    }
+  };
+
+  const loadTontines = async (q = "") => {
+    try {
+      const data = await api.listAdminTontines(q ? { q } : {});
+      setTontines(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setError("Impossible de charger les tontines");
     }
   };
 
@@ -103,15 +116,40 @@ export default function AdminTontineMembersPage() {
 
       <div className="bg-white p-5 rounded-2xl shadow border space-y-4">
         <div className="flex gap-3 items-end">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-700">Tontine ID</label>
-            <input
-              type="text"
-              value={tontineId}
-              onChange={(e) => setTontineId(e.target.value)}
-              className="mt-1 w-full rounded-lg border px-3 py-2 font-mono text-sm"
-              placeholder="UUID de la tontine"
-            />
+          <div className="flex-1 space-y-2">
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-slate-700">Tontine</label>
+                <select
+                  value={tontineId}
+                  onChange={(e) => setTontineId(e.target.value)}
+                  className="mt-1 w-full rounded-lg border px-3 py-2"
+                >
+                  <option value="">Choisir une tontine</option>
+                  {tontines.map((t) => (
+                    <option key={t.tontine_id} value={t.tontine_id}>
+                      {t.name} ({t.tontine_id.slice(0, 6)}…)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <form onSubmit={(e) => { e.preventDefault(); loadTontines(tontineSearch); }} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={tontineSearch}
+                  onChange={(e) => setTontineSearch(e.target.value)}
+                  className="rounded-lg border px-3 py-2 text-sm"
+                  placeholder="Filtrer les tontines"
+                />
+                <button
+                  type="submit"
+                  className="rounded-lg bg-slate-900 text-white px-3 py-2 text-sm"
+                >
+                  Filtrer
+                </button>
+              </form>
+            </div>
+            <p className="text-xs text-slate-500">ID sélectionné : {tontineId || "-"}</p>
           </div>
           <button
             onClick={loadMembers}
