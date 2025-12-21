@@ -117,6 +117,9 @@ export default function AdminSidebar() {
           <NavLink to="tontines-arrears" className={linkClass}>
             <BarChart3 size={18} /> Impayés tontines
           </NavLink>
+          <NavLink to="tontines/create" className={linkClass}>
+            <BarChart3 size={18} /> Créer une tontine
+          </NavLink>
           <div className="mt-8 pt-6 border-t border-white/10">
             <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mb-3">
               Mode Agent

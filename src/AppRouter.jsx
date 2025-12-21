@@ -49,6 +49,7 @@ import CashRequestsPage from "@/pages/admin/CashRequestsPage";
 import AdminCreditHistoryPage from "@/pages/admin/AdminCreditHistoryPage";
 import TransactionAuditPage from "@/pages/admin/TransactionAuditPage";
 import TransferGainsPage from "@/pages/admin/TransferGainsPage";
+import AdminTontineCreatePage from "@/pages/admin/AdminTontineCreatePage";
 import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
 import AdminBalanceEventsPage from "@/pages/admin/AdminBalanceEventsPage";
 import AdminUserBalanceEventsPage from "@/pages/admin/AdminUserBalanceEventsPage";
@@ -141,6 +142,7 @@ export default function AppRouter() {
         <Route path="tontines-arrears" element={<TontineArrearsPage />} />
         <Route path="transfer-approvals" element={<ExternalTransferApprovalsPage />} />
         <Route path="transfer-gains" element={<TransferGainsPage />} />
+        <Route path="tontines/create" element={<AdminTontineCreatePage />} />
         <Route path="settings" element={<AdminSettingsPage />} />
         <Route path="kyc/reviews" element={<KYCReviewPage />} />
         <Route path="analytics" element={<RiskMonitorPage />} />

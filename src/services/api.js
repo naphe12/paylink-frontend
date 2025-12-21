@@ -345,6 +345,9 @@ const api = {
     const query = search.toString();
     return this.put(`/admin/settings/fx-custom/${currency}${query ? `?${query}` : ""}`);
   },
+  async createAdminTontine(payload = {}) {
+    return this.post("/admin/tontines", payload);
+  },
 
   // ----------- USERS -----------
   async getUsers(query = "") {
