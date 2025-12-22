@@ -6,9 +6,12 @@ import api from "@/services/api";
 export default function AdminUsersList() {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [statusFilter, setStatusFilter] = useState("active");
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
-    const data = await api.get("/admin/users");
+    const query = statusFilter ? `?status=${statusFilter}` : "";
+    const data = await api.get(`/admin/users${query}`);
     setUsers(data);
     setSelectedUserId((prev) => {
       if (!data.length) return "";
@@ -19,12 +22,26 @@ export default function AdminUsersList() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [statusFilter]);
 
   const filteredUsers = useMemo(() => {
     if (!selectedUserId) return users;
     return users.filter((u) => String(u.user_id) === selectedUserId);
   }, [users, selectedUserId]);
+
+  const handleDelete = async (userId) => {
+    if (!window.confirm("Supprimer cet utilisateur suspendu ?")) return;
+    setDeleting(true);
+    try {
+      await api.deleteAdminUser(userId);
+      setUsers((prev) => prev.filter((u) => u.user_id !== userId));
+      if (selectedUserId === String(userId)) setSelectedUserId("");
+    } catch (err) {
+      alert(err?.message || "Suppression impossible");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="p-6">
@@ -46,6 +63,15 @@ export default function AdminUsersList() {
             </option>
           ))}
         </select>
+        <select
+          className="border p-2 rounded"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="active">Actifs</option>
+          <option value="suspended">Suspendus</option>
+          <option value="">Tous</option>
+        </select>
       </div>
 
       <table className="w-full border text-sm">
@@ -53,6 +79,7 @@ export default function AdminUsersList() {
           <tr>
             <th className="p-2 text-left">Nom</th>
             <th className="p-2 text-left">Email</th>
+            <th className="p-2 text-left">Statut</th>
             <th className="p-2 text-left">KYC</th>
             <th className="p-2 text-left">Risque</th>
             <th className="p-2 text-left">Actions</th>
@@ -63,6 +90,7 @@ export default function AdminUsersList() {
             <tr key={u.user_id} className="border-b">
               <td className="p-2">{u.full_name}</td>
               <td className="p-2">{u.email || "-"}</td>
+              <td className="p-2 capitalize">{u.status || "-"}</td>
               <td className="p-2">{u.kyc_status}</td>
               <td className="p-2">{u.risk_score}</td>
               <td className="p-2">
@@ -94,6 +122,15 @@ export default function AdminUsersList() {
                   >
                     Situation financière
                   </Link>
+                  {u.status === "suspended" && (
+                    <button
+                      onClick={() => handleDelete(u.user_id)}
+                      disabled={deleting}
+                      className="text-red-600 hover:underline text-left"
+                    >
+                      {deleting ? "Suppression..." : "Supprimer"}
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

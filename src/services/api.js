@@ -199,6 +199,9 @@ const api = {
   async getAdminFinancialSummary(userId) {
     return this.get(`/wallet/admin/financial-summary/${userId}`);
   },
+  async deleteAdminUser(userId) {
+    return this.del(`/admin/users/${userId}`);
+  },
   async getBalanceEvents(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
