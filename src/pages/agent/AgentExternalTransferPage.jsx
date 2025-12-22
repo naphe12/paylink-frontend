@@ -235,7 +235,7 @@ export default function AgentExternalTransferPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md-grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <label className="block text-sm font-semibold mb-1">Nom du beneficiaire</label>
             <input
@@ -258,7 +258,7 @@ export default function AgentExternalTransferPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md-grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <label className="block text-sm font-semibold mb-1">Partenaire</label>
             <input
