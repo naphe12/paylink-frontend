@@ -127,10 +127,7 @@ export default function DashboardLayout() {
       </div>
 
       {drawerOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={() => setDrawerOpen(false)}
-        >
+        <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setDrawerOpen(false)}>
           <aside
             className="absolute top-0 left-0 h-full w-72 bg-gradient-to-b from-indigo-950 via-indigo-900 to-slate-900 text-white"
             onClick={(e) => e.stopPropagation()}

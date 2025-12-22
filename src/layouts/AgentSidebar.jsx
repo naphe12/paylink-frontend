@@ -40,7 +40,7 @@ export default function AgentSidebar() {
           </span>
           PayLink OPS
         </h1>
-        <p className="text-white/70 text-xs mt-2">Cash-in/out & opÇ¸rations assistÇ¸es.</p>
+        <p className="text-white/70 text-xs mt-2">Cash-in/out & opérations assistées.</p>
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-2">
@@ -48,7 +48,7 @@ export default function AgentSidebar() {
           <Users size={18} /> Tableau agent
         </NavLink>
         <NavLink to="operation" className={linkClass} onClick={onNavigate}>
-          <ArrowLeftRight size={18} /> OpÇ¸ration client
+          <ArrowLeftRight size={18} /> Opération client
         </NavLink>
         <NavLink to="cash-in" className={linkClass} onClick={onNavigate}>
           <Smartphone size={18} /> Cash-In direct
@@ -63,7 +63,7 @@ export default function AgentSidebar() {
           <History size={18} /> Historique
         </NavLink>
         <NavLink to="transfers/close" className={linkClass} onClick={onNavigate}>
-          <CheckCircle size={18} /> Transferts Çÿ clÇïturer
+          <CheckCircle size={18} /> Transferts à clôturer
         </NavLink>
 
         {isAdmin && (
@@ -78,12 +78,12 @@ export default function AgentSidebar() {
         )}
       </nav>
 
-      <div className="px-4 py-6 border-t border-white/10">
+      <div className="px-4 py-6 border-white/10 border-t">
         <button
           onClick={logout}
           className="w-full flex items-center justify-center gap-3 px-4 py-2 rounded-xl bg-white/15 text-white hover:bg-white/25 transition"
         >
-          <LogOut size={18} /> DÇ¸connexion
+          <LogOut size={18} /> Déconnexion
         </button>
       </div>
     </div>
@@ -124,7 +124,9 @@ export default function AgentSidebar() {
       )}
 
       <aside
-        className={`${sidebarVisible ? "hidden lg:flex" : "hidden"} w-64 bg-gradient-to-b from-teal-900 via-teal-800 to-slate-900 text-white flex-col`}
+        className={`${
+          sidebarVisible ? "hidden lg:flex" : "hidden"
+        } w-64 bg-gradient-to-b from-teal-900 via-teal-800 to-slate-900 text-white flex-col`}
       >
         <SidebarContent />
       </aside>

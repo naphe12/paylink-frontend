@@ -50,7 +50,7 @@ export default function AdminSidebar() {
           </span>
           PayLink Admin
         </h1>
-        <p className="text-slate-400 text-xs mt-2">Supervision temps-rゼel & conformitゼ</p>
+        <p className="text-slate-400 text-xs mt-2">Supervision temps-réel & conformité</p>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
@@ -65,15 +65,15 @@ export default function AdminSidebar() {
           <FileSearch size={18} /> Alertes AML
         </NavLink>
         <NavLink to="security" className={linkClass} onClick={onNavigate}>
-          <ShieldAlert size={18} /> Sゼcuritゼ live
+          <ShieldAlert size={18} /> Sécurité live
         </NavLink>
 
-        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-6">Opゼrations</p>
+        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-6">Opérations</p>
         <NavLink to="wallets" className={linkClass} onClick={onNavigate}>
           <Wallet size={18} /> Portefeuilles
         </NavLink>
         <NavLink to="loans" className={linkClass} onClick={onNavigate}>
-          <CreditCard size={18} /> Crゼdits
+          <CreditCard size={18} /> Crédits
         </NavLink>
         <NavLink to="mobilemoney" className={linkClass} onClick={onNavigate}>
           <Wallet size={18} /> Mobile Money
@@ -91,7 +91,7 @@ export default function AdminSidebar() {
           <GitPullRequest size={18} /> Validations transferts
         </NavLink>
         <NavLink to="settings" className={linkClass} onClick={onNavigate}>
-          <Settings size={18} /> ParamЁtres
+          <Settings size={18} /> Paramètres
         </NavLink>
         <NavLink to="transactions-audit" className={linkClass} onClick={onNavigate}>
           <ShieldCheck size={18} /> Audit transactions
@@ -100,16 +100,16 @@ export default function AdminSidebar() {
           <Coins size={18} /> Cash in/out
         </NavLink>
         <NavLink to="credit-history" className={linkClass} onClick={onNavigate}>
-          <BookOpen size={18} /> Historique crゼdits
+          <BookOpen size={18} /> Historique crédits
         </NavLink>
         <NavLink to="credit-lines" className={linkClass} onClick={onNavigate}>
-          <BookOpen size={18} /> Lignes de crゼdit
+          <BookOpen size={18} /> Lignes de crédit
         </NavLink>
         <NavLink to="credit-lines/repay" className={linkClass} onClick={onNavigate}>
-          <BookOpen size={18} /> Remboursement crゼdit
+          <BookOpen size={18} /> Remboursement crédit
         </NavLink>
         <NavLink to="kyc/reviews" className={linkClass} onClick={onNavigate}>
-          <UserCheck size={18} /> Vゼrif KYC
+          <UserCheck size={18} /> Vérif KYC
         </NavLink>
         <NavLink to="analytics" className={linkClass} onClick={onNavigate}>
           <BarChart3 size={18} /> Statistiques
@@ -118,10 +118,10 @@ export default function AdminSidebar() {
           <BarChart3 size={18} /> Dashboard tontines
         </NavLink>
         <NavLink to="tontines-arrears" className={linkClass} onClick={onNavigate}>
-          <BarChart3 size={18} /> Impayゼs tontines
+          <BarChart3 size={18} /> Impayés tontines
         </NavLink>
         <NavLink to="tontines/create" className={linkClass} onClick={onNavigate}>
-          <BarChart3 size={18} /> Crゼer une tontine
+          <BarChart3 size={18} /> Créer une tontine
         </NavLink>
         <NavLink to="tontines/members" className={linkClass} onClick={onNavigate}>
           <BarChart3 size={18} /> Membres tontines
@@ -139,7 +139,7 @@ export default function AdminSidebar() {
           onClick={logout}
           className="w-full flex items-center justify-center gap-3 px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition"
         >
-          <LogOut size={18} /> Dゼconnexion
+          <LogOut size={18} /> Déconnexion
         </button>
       </div>
     </div>
@@ -180,7 +180,9 @@ export default function AdminSidebar() {
       )}
 
       <aside
-        className={`${sidebarVisible ? "hidden lg:flex" : "hidden"} w-72 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white flex-col border-r border-white/5`}
+        className={`${
+          sidebarVisible ? "hidden lg:flex" : "hidden"
+        } w-72 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white flex-col border-r border-white/5`}
       >
         <SidebarContent />
       </aside>
