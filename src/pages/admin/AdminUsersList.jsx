@@ -5,11 +5,10 @@ import api from "@/services/api";
 
 export default function AdminUsersList() {
   const [users, setUsers] = useState([]);
-  const [q, setQ] = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
 
   const load = async () => {
-    const data = await api.get(`/admin/users?q=${q}`);
+    const data = await api.get("/admin/users");
     setUsers(data);
     setSelectedUserId((prev) => {
       if (!data.length) return "";
@@ -20,7 +19,7 @@ export default function AdminUsersList() {
 
   useEffect(() => {
     load();
-  }, [q]);
+  }, []);
 
   const filteredUsers = useMemo(() => {
     if (!selectedUserId) return users;
@@ -30,13 +29,6 @@ export default function AdminUsersList() {
   return (
     <div className="p-6">
       <h1 className="text-xl font-bold mb-4">Utilisateurs</h1>
-
-      <input
-        className="border p-2 rounded w-full mb-4"
-        placeholder="Recherche nom / email / telephone..."
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-      />
 
       <div className="flex items-center gap-3 mb-4">
         <label htmlFor="user-select" className="text-sm font-medium text-gray-700">
