@@ -196,6 +196,9 @@ const api = {
   async getFinancialSummary() {
     return this.get("/wallet/financial-summary");
   },
+  async getAdminFinancialSummary(userId) {
+    return this.get(`/wallet/admin/financial-summary/${userId}`);
+  },
   async getBalanceEvents(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")

@@ -43,6 +43,7 @@ import AdminWalletsPage from "@/pages/admin/AdminWalletsPage";
 import AdminTransfersPage from "@/pages/admin/AdminTransfersPage";
 import ExternalTransferApprovalsPage from "@/pages/admin/ExternalTransferApprovalsPage";
 import AdminAgentsPage from "@/pages/admin/AdminAgentsPage";
+import AdminFinancialSummaryPage from "@/pages/admin/AdminFinancialSummaryPage";
 import MobileMoneyJournalPage from "@/pages/admin/MobileMoneyJournalPage";
 import AdminTontineDashboardPage from "@/pages/admin/AdminTontineDashboardPage";
 import TontineArrearsPage from "@/pages/admin/TontineArrearsPage";
@@ -146,6 +147,7 @@ export default function AppRouter() {
         <Route path="wallets" element={<AdminWalletsPage />} />
         <Route path="mobilemoney" element={<MobileMoneyJournalPage />} />
         <Route path="transfers" element={<AdminTransfersPage />} />
+        <Route path="financial-summary" element={<AdminFinancialSummaryPage />} />
         <Route path="tontines-dashboard" element={<AdminTontineDashboardPage />} />
         <Route path="tontines-arrears" element={<TontineArrearsPage />} />
         <Route path="transfer-approvals" element={<ExternalTransferApprovalsPage />} />
