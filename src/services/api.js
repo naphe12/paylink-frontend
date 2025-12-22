@@ -268,6 +268,12 @@ const api = {
   async getReadyExternalTransfers() {
     return this.get("/agent/external/ready");
   },
+  async getExternalUsers() {
+    return this.get("/agent/external/users");
+  },
+  async getExternalBeneficiariesByUser(userId) {
+    return this.get(`/agent/external/beneficiaries?user_id=${userId}`);
+  },
   async completeExternalTransfer(transferId) {
     return this.post(`/agent/external/${transferId}/close`, {});
   },

@@ -5,6 +5,7 @@ import {
   ArrowLeftRight,
   Smartphone,
   Users,
+  Send,
   LogOut,
   History,
   ShieldCheck,
@@ -58,6 +59,9 @@ export default function AgentSidebar() {
         </NavLink>
         <NavLink to="scan" className={linkClass} onClick={onNavigate}>
           <QrCode size={18} /> Scan QR client
+        </NavLink>
+        <NavLink to="external-transfer" className={linkClass} onClick={onNavigate}>
+          <Send size={18} /> Transfert externe
         </NavLink>
         <NavLink to="history" className={linkClass} onClick={onNavigate}>
           <History size={18} /> Historique

@@ -67,6 +67,7 @@ import AgentHistoryPage from "@/pages/agent/AgentHistoryPage";
 import AgentSidebar from "@/layouts/AgentSidebar";
 import MyQrPage from "@/pages/profile/MyQrPage";
 import AgentTransferClosurePage from "@/pages/agent/AgentTransferClosurePage";
+import AgentExternalTransferPage from "@/pages/agent/AgentExternalTransferPage";
 import RoleDashboardRedirect from "@/pages/dashboard/RoleDashboardRedirect";
 import LegacyRouteRedirect from "@/components/LegacyRouteRedirect";
 import BalanceHistoryPage from "@/pages/dashboard/BalanceHistoryPage";
@@ -178,6 +179,7 @@ export default function AppRouter() {
         <Route path="cash-in" element={<CashInPage />} />
         <Route path="cash-out" element={<CashOutPage />} />
         <Route path="history" element={<AgentHistoryPage />} />
+        <Route path="external-transfer" element={<AgentExternalTransferPage />} />
         <Route path="transfers/close" element={<AgentTransferClosurePage />} />
       </Route>
 
