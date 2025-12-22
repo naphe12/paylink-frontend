@@ -88,6 +88,12 @@ export default function AdminUsersList() {
                   >
                     Transferts
                   </Link>
+                  <Link
+                    to={`/dashboard/admin/financial-summary?user_id=${u.user_id}`}
+                    className="hover:underline"
+                  >
+                    Situation financière
+                  </Link>
                 </div>
               </td>
             </tr>
