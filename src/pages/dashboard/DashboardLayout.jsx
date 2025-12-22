@@ -74,6 +74,12 @@ export default function DashboardLayout() {
         <span className="inline-flex mt-4 px-3 py-1 rounded-full bg-white/15 text-[11px] uppercase tracking-[0.3em]">
           {storedRole}
         </span>
+        <button
+          onClick={handleLogout}
+          className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white border border-white/15 hover:bg-white/20 transition"
+        >
+          <LogOut size={18} /> Déconnexion
+        </button>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
