@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "@/services/api";
-import { Wallet, CreditCard, Users } from "lucide-react";
+import { Wallet, CreditCard, Users, ArrowLeft } from "lucide-react";
 
 export default function FinancialSituationPage() {
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const load = async () => {
@@ -25,7 +27,7 @@ export default function FinancialSituationPage() {
 
   const cards = [
     {
-      title: "Solde portefeuille",
+      title: "Solde Portefeuille",
       icon: <Wallet size={18} />,
       value:
         summary
@@ -36,7 +38,7 @@ export default function FinancialSituationPage() {
         : null,
     },
     {
-      title: "Ligne de crédit",
+      title: "Ligne de Crédit",
       icon: <CreditCard size={18} />,
       value: summary ? `${Number(summary.credit_limit).toLocaleString()} €` : "-",
       sub: summary
@@ -54,9 +56,18 @@ export default function FinancialSituationPage() {
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-slate-500">Vue synthétique de vos finances</p>
-          <h1 className="text-2xl font-bold text-slate-900">Situation financière</h1>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition"
+          >
+            <ArrowLeft size={18} /> Retour
+          </button>
+          <div>
+            <p className="text-sm text-slate-500">Vue synthétique de vos finances</p>
+            <h1 className="text-2xl font-bold text-slate-900">Situation financière</h1>
+          </div>
         </div>
       </header>
 

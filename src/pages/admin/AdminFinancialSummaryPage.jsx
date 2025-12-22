@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import api from "@/services/api";
-import { Wallet, CreditCard, Users } from "lucide-react";
+import { Wallet, CreditCard, Users, ArrowLeft } from "lucide-react";
 
 export default function AdminFinancialSummaryPage() {
   const [searchParams] = useSearchParams();
   const userId = searchParams.get("user_id") || "";
+  const navigate = useNavigate();
 
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState("");
@@ -14,7 +15,7 @@ export default function AdminFinancialSummaryPage() {
   useEffect(() => {
     const load = async () => {
       if (!userId) {
-        setError("Paramètre user_id manquant.");
+        setError("Paramètre user_id manquant....");
         return;
       }
       setLoading(true);
@@ -23,7 +24,7 @@ export default function AdminFinancialSummaryPage() {
         const data = await api.getAdminFinancialSummary(userId);
         setSummary(data);
       } catch (err) {
-        setError("Impossible de charger la situation financière.");
+        setError("Impossible de charger la situation financière....");
       } finally {
         setLoading(false);
       }
@@ -34,7 +35,7 @@ export default function AdminFinancialSummaryPage() {
   const cards = summary
     ? [
         {
-          title: "Solde portefeuille",
+          title: "Solde Portefeuille",
           icon: <Wallet size={18} />,
           value: `${Number(summary.wallet_available).toLocaleString()} ${summary.wallet_currency || ""}`.trim(),
           sub: summary.bonus_balance
@@ -42,7 +43,7 @@ export default function AdminFinancialSummaryPage() {
             : null,
         },
         {
-          title: "Ligne de crédit",
+          title: "Ligne de Crédit",
           icon: <CreditCard size={18} />,
           value: `${Number(summary.credit_limit).toLocaleString()} €`,
           sub: `Disponible: ${Number(summary.credit_available).toLocaleString()} € | Utilisé: ${Number(summary.credit_used).toLocaleString()} €`,
@@ -59,9 +60,18 @@ export default function AdminFinancialSummaryPage() {
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-slate-500">Vue admin</p>
-          <h1 className="text-2xl font-bold text-slate-900">Situation financière utilisateur</h1>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition"
+          >
+            <ArrowLeft size={18} /> Retour
+          </button>
+          <div>
+            <p className="text-sm text-slate-500">Vue admin</p>
+            <h1 className="text-2xl font-bold text-slate-900">Situation financière utilisateur</h1>
+          </div>
         </div>
       </header>
 
