@@ -30,7 +30,7 @@ export default function AdminUsersList() {
   }, [users, selectedUserId]);
 
   const handleDelete = async (userId) => {
-    if (!window.confirm("Supprimer cet utilisateur suspendu ?")) return;
+    if (!window.confirm("Supprimer définitivement cet utilisateur ?")) return;
     setDeleting(true);
     try {
       await api.deleteAdminUser(userId);
@@ -40,6 +40,17 @@ export default function AdminUsersList() {
       alert(err?.message || "Suppression impossible");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleReactivate = async (userId) => {
+    try {
+      await api.post(`/admin/users/${userId}/unfreeze`, {});
+      setUsers((prev) =>
+        prev.map((u) => (u.user_id === userId ? { ...u, status: "active" } : u))
+      );
+    } catch (err) {
+      alert(err?.message || "Réactivation impossible");
     }
   };
 
@@ -70,6 +81,7 @@ export default function AdminUsersList() {
         >
           <option value="active">Actifs</option>
           <option value="suspended">Suspendus</option>
+          <option value="deleted">Supprimés</option>
           <option value="">Tous</option>
         </select>
       </div>
@@ -122,13 +134,21 @@ export default function AdminUsersList() {
                   >
                     Situation financière
                   </Link>
-                  {u.status === "suspended" && (
+                  {u.status === "active" && (
                     <button
                       onClick={() => handleDelete(u.user_id)}
                       disabled={deleting}
                       className="text-red-600 hover:underline text-left"
                     >
                       {deleting ? "Suppression..." : "Supprimer"}
+                    </button>
+                  )}
+                  {u.status === "suspended" && (
+                    <button
+                      onClick={() => handleReactivate(u.user_id)}
+                      className="text-green-600 hover:underline text-left"
+                    >
+                      Réactiver
                     </button>
                   )}
                 </div>
