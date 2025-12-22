@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   Wallet,
@@ -19,6 +19,7 @@ import {
 import NotificationsBell from "@/components/NotificationsBell";
 import useNotifications from "@/hooks/useNotifications";
 import ToastStream from "@/components/Toast";
+import api from "@/services/api";
 
 const baseMenu = [
   { name: "Portefeuille", path: "/dashboard/client/wallet", icon: <Wallet size={18} /> },
@@ -43,7 +44,20 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [profile, setProfile] = useState(null);
   const storedRole = (localStorage.getItem("role") || "client").toLowerCase();
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const data = await api.get("/auth/me");
+        setProfile(data);
+      } catch (err) {
+        console.error("Impossible de charger le profil", err);
+      }
+    };
+    loadProfile();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -74,6 +88,9 @@ export default function DashboardLayout() {
         <span className="inline-flex mt-4 px-3 py-1 rounded-full bg-white/15 text-[11px] uppercase tracking-[0.3em]">
           {storedRole}
         </span>
+        {profile?.full_name && (
+          <p className="text-sm text-white mt-3 font-semibold">Bienvenue, {profile.full_name}</p>
+        )}
         <button
           onClick={handleLogout}
           className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white border border-white/15 hover:bg-white/20 transition"
