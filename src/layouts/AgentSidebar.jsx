@@ -17,6 +17,7 @@ export default function AgentSidebar() {
   const navigate = useNavigate();
   const isAdmin = (localStorage.getItem("role") || "client").toLowerCase() === "admin";
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
 
   const logout = () => {
     localStorage.clear();
@@ -122,11 +123,22 @@ export default function AgentSidebar() {
         </div>
       )}
 
-      <aside className="hidden lg:flex w-64 bg-gradient-to-b from-teal-900 via-teal-800 to-slate-900 text-white flex-col">
+      <aside
+        className={`${sidebarVisible ? "hidden lg:flex" : "hidden"} w-64 bg-gradient-to-b from-teal-900 via-teal-800 to-slate-900 text-white flex-col`}
+      >
         <SidebarContent />
       </aside>
 
       <main className="flex-1 flex flex-col pt-16 lg:pt-0">
+        <div className="hidden lg:flex justify-end px-4 pt-4">
+          <button
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition"
+            onClick={() => setSidebarVisible((v) => !v)}
+          >
+            <Menu size={18} />
+            {sidebarVisible ? "Masquer le menu" : "Afficher le menu"}
+          </button>
+        </div>
         <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <Outlet />
         </div>

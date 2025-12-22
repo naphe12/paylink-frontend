@@ -42,6 +42,7 @@ export default function DashboardLayout() {
   useNotifications();
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
   const storedRole = (localStorage.getItem("role") || "client").toLowerCase();
 
   const handleLogout = () => {
@@ -106,7 +107,9 @@ export default function DashboardLayout() {
   return (
     <div className="min-h-screen flex bg-slate-100">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-72 bg-gradient-to-b from-indigo-950 via-indigo-900 to-slate-900 text-white">
+      <aside
+        className={`${sidebarVisible ? "hidden lg:flex" : "hidden"} w-72 bg-gradient-to-b from-indigo-950 via-indigo-900 to-slate-900 text-white`}
+      >
         <SidebarInner />
       </aside>
 
@@ -146,7 +149,16 @@ export default function DashboardLayout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col pt-16 lg:pt-0">
         <header className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 bg-white border-b shadow-sm">
-          <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Tableau de bord</h2>
+          <div className="flex items-center gap-3">
+            <button
+              className="hidden lg:inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition"
+              onClick={() => setSidebarVisible((v) => !v)}
+            >
+              <Menu size={18} />
+              {sidebarVisible ? "Masquer le menu" : "Afficher le menu"}
+            </button>
+            <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Tableau de bord</h2>
+          </div>
           <NotificationsBell />
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-slate-50">
