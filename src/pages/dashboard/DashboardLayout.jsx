@@ -36,6 +36,7 @@ const baseMenu = [
   { name: "Tontines", path: "/dashboard/client/tontines", icon: <RefreshCcw size={18} /> },
   { name: "Bonus", path: "/dashboard/client/bonus", icon: <Gift size={18} /> },
   { name: "Crédits", path: "/dashboard/client/loans", icon: <CreditCard size={18} /> },
+  { name: "Situation financière", path: "/dashboard/client/financial", icon: <LineChart size={18} /> },
   { name: "Profil", path: "/dashboard/client/profile", icon: <User size={18} /> },
 ];
 

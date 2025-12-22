@@ -11,6 +11,7 @@ import WithdrawPage from "@/pages/dashboard/WithdrawPage";
 import CreditHistoryPage from "@/pages/dashboard/CreditHistoryPage";
 import CreditLinePage from "@/pages/dashboard/CreditLinePage";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import FinancialSituationPage from "@/pages/dashboard/FinancialSituationPage";
 
 import HomePage from "@/pages/HomePage";
 import AuthPage from "@/pages/auth/AuthPage";
@@ -111,6 +112,7 @@ export default function AppRouter() {
         <Route path="withdraw" element={<WithdrawPage />} />
         <Route path="credit-history" element={<CreditHistoryPage />} />
         <Route path="credit-line" element={<CreditLinePage />} />
+        <Route path="financial" element={<FinancialSituationPage />} />
         <Route path="balance-history" element={<BalanceHistoryPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="profile/change-password" element={<ChangePasswordPage />} />
