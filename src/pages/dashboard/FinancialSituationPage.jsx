@@ -3,9 +3,7 @@ import api from "@/services/api";
 import { Wallet, CreditCard, Users } from "lucide-react";
 
 export default function FinancialSituationPage() {
-  const [wallet, setWallet] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [tontines, setTontines] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -14,14 +12,8 @@ export default function FinancialSituationPage() {
       setLoading(true);
       setError("");
       try {
-        const [walletData, profileData, tontinesData] = await Promise.all([
-          api.get("/wallet"),
-          api.get("/auth/me"),
-          api.getTontines().catch(() => []),
-        ]);
-        setWallet(walletData);
-        setProfile(profileData);
-        setTontines(Array.isArray(tontinesData) ? tontinesData : []);
+        const data = await api.getFinancialSummary();
+        setSummary(data);
       } catch (err) {
         setError("Impossible de charger la situation financière.");
       } finally {
@@ -31,36 +23,31 @@ export default function FinancialSituationPage() {
     load();
   }, []);
 
-  const creditLimit = profile?.credit_limit ?? 0;
-  const creditUsed = profile?.credit_used ?? 0;
-  const creditAvailable = Math.max(0, creditLimit - creditUsed);
-
   const cards = [
     {
       title: "Solde portefeuille",
       icon: <Wallet size={18} />,
       value:
-        wallet?.available !== undefined
-          ? `${Number(wallet.available).toLocaleString()} ${wallet.currency_code || ""}`.trim()
+        summary
+          ? `${Number(summary.wallet_available).toLocaleString()} ${summary.wallet_currency || ""}`.trim()
           : "-",
-      sub: wallet?.bonus_balance
-        ? `Bonus: ${Number(wallet.bonus_balance).toLocaleString()} ${wallet.currency_code || ""}`.trim()
+      sub: summary?.bonus_balance
+        ? `Bonus: ${Number(summary.bonus_balance).toLocaleString()} ${summary.wallet_currency || ""}`.trim()
         : null,
     },
     {
       title: "Ligne de crédit",
       icon: <CreditCard size={18} />,
-      value: `${Number(creditLimit).toLocaleString()} €`,
-      sub: `Disponible: ${creditAvailable.toLocaleString()} € | Utilisé: ${creditUsed.toLocaleString()} €`,
+      value: summary ? `${Number(summary.credit_limit).toLocaleString()} €` : "-",
+      sub: summary
+        ? `Disponible: ${Number(summary.credit_available).toLocaleString()} € | Utilisé: ${Number(summary.credit_used).toLocaleString()} €`
+        : null,
     },
     {
       title: "Tontines",
       icon: <Users size={18} />,
-      value: `${tontines.length} participation${tontines.length > 1 ? "s" : ""}`,
-      sub:
-        tontines.length > 0
-          ? `Dernière: ${tontines[0]?.name || tontines[0]?.title || "N/A"}`
-          : "Aucune pour le moment",
+      value: summary ? `${summary.tontines_count} participation${summary.tontines_count > 1 ? "s" : ""}` : "-",
+      sub: null,
     },
   ];
 
@@ -76,7 +63,7 @@ export default function FinancialSituationPage() {
       {error && <div className="text-sm text-red-600">{error}</div>}
       {loading && <div className="text-slate-600">Chargement...</div>}
 
-      {!loading && !error && (
+      {!loading && !error && summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {cards.map((card) => (
             <div

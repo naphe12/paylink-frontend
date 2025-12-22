@@ -193,6 +193,9 @@ const api = {
     ).toString();
     return this.get(`/wallet/credit/line/events${query ? `?${query}` : ""}`);
   },
+  async getFinancialSummary() {
+    return this.get("/wallet/financial-summary");
+  },
   async getBalanceEvents(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
