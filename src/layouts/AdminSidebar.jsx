@@ -51,6 +51,12 @@ export default function AdminSidebar() {
           PayLink Admin
         </h1>
         <p className="text-slate-400 text-xs mt-2">Supervision temps-réel & conformité</p>
+        <button
+          onClick={logout}
+          className="mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition"
+        >
+          <LogOut size={18} /> Déconnexion
+        </button>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
