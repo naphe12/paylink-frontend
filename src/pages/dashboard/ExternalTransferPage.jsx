@@ -23,6 +23,8 @@ export default function ExternalTransferPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState("");
+  const [selectedBeneficiary, setSelectedBeneficiary] = useState("");
+  const [beneficiaries, setBeneficiaries] = useState([]);
 
   useEffect(() => {
     if (!form.amount || isNaN(form.amount) || rate === 0) {
@@ -49,7 +51,37 @@ export default function ExternalTransferPage() {
     loadRate();
   }, [form.country_destination]);
 
+  useEffect(() => {
+    const loadBeneficiaries = async () => {
+      try {
+        const data = await api.get("/wallet/transfer/external/beneficiaries");
+        setBeneficiaries(data || []);
+      } catch (err) {
+        console.error("Impossible de charger les bénéficiaires", err);
+      }
+    };
+    loadBeneficiaries();
+  }, []);
+
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleBeneficiaryChange = (e) => {
+    const id = e.target.value;
+    setSelectedBeneficiary(id);
+    const chosen = beneficiaries.find(
+      (b) =>
+        String(b.recipient_phone) === String(id) ||
+        String(b.id || b.recipient_phone) === String(id)
+    );
+    if (chosen) {
+      setForm((prev) => ({
+        ...prev,
+        recipient_name: chosen.recipient_name,
+        recipient_phone: chosen.recipient_phone,
+        partner_name: chosen.partner_name,
+        country_destination: chosen.country_destination || prev.country_destination,
+      }));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,6 +147,25 @@ export default function ExternalTransferPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5 text-gray-800">
+        <div>
+          <label className="block text-sm font-semibold mb-1">Bénéficiaire enregistré</label>
+          <select
+            value={selectedBeneficiary}
+            onChange={handleBeneficiaryChange}
+            className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
+          >
+            <option value="">-- Sélectionner --</option>
+            {beneficiaries.map((b) => {
+              const value = b.recipient_phone;
+              return (
+                <option key={value} value={value}>
+                  {b.recipient_name} • {b.partner_name} • {b.recipient_phone}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <label className="block text-sm font-semibold mb-1">Nom du bénéficiaire</label>
