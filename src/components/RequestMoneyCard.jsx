@@ -1,25 +1,25 @@
 // src/components/RequestMoneyCard.jsx
 import { useState } from "react";
-import { api } from "@/services/api";
+import api from "@/services/api";
 import { HandCoins } from "lucide-react";
 
 export default function RequestMoneyCard() {
-  const [toEmail, setToEmail] = useState("");
+  const [toIdentifier, setToIdentifier] = useState("");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleRequest = async () => {
-    if (!toEmail || !amount) return alert("Veuillez remplir tous les champs !");
+    if (!toIdentifier || !amount) return alert("Veuillez remplir tous les champs !");
     setLoading(true);
     setMessage("");
     try {
-      const res = await api.post("/wallet/request", { to_email: toEmail, amount: Number(amount) });
-      setMessage(res.message || "Demande envoyée !");
-      setToEmail("");
+      const res = await api.post("/wallet/request", { to: toIdentifier, amount: Number(amount) });
+      setMessage(res.message || "Demande envoyee !");
+      setToIdentifier("");
       setAmount("");
     } catch (err) {
-      setMessage("❌ " + err.message);
+      setMessage("Erreur : " + err.message);
     } finally {
       setLoading(false);
     }
@@ -32,16 +32,16 @@ export default function RequestMoneyCard() {
       </h3>
 
       <input
-        type="email"
-        placeholder="Email du payeur"
-        value={toEmail}
-        onChange={(e) => setToEmail(e.target.value)}
+        type="text"
+        placeholder="Email, username ou paytag"
+        value={toIdentifier}
+        onChange={(e) => setToIdentifier(e.target.value)}
         className="border w-full mb-3 rounded-lg px-3 py-2"
       />
 
       <input
         type="number"
-        placeholder="Montant (€)"
+        placeholder="Montant (F)"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
         className="border w-full mb-4 rounded-lg px-3 py-2"
@@ -50,13 +50,13 @@ export default function RequestMoneyCard() {
       <button
         onClick={handleRequest}
         disabled={loading}
-        className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+        className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-70"
       >
-        {loading ? "Envoi..." : "Envoyer la demande 💰"}
+        {loading ? "Envoi..." : "Envoyer la demande"}
       </button>
 
       {message && (
-        <p className={`mt-4 text-sm ${message.startsWith("✅") ? "text-green-600" : "text-red-600"}`}>
+        <p className={`mt-4 text-sm ${message.toLowerCase().includes("erreur") ? "text-red-600" : "text-green-600"}`}>
           {message}
         </p>
       )}
