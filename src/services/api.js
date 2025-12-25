@@ -263,6 +263,12 @@ const api = {
     ).toString();
     return this.get(`/admin/payment-requests${query ? `?${query}` : ""}`);
   },
+  async getAdminDebtors(limit = 200) {
+    const search = new URLSearchParams();
+    if (limit) search.append("limit", limit);
+    const q = search.toString();
+    return this.get(`/admin/payment-requests/debtors${q ? `?${q}` : ""}`);
+  },
   async createAdminPaymentRequest(payload = {}) {
     return this.post("/admin/payment-requests", payload);
   },
