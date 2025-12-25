@@ -263,6 +263,9 @@ const api = {
     ).toString();
     return this.get(`/admin/payment-requests${query ? `?${query}` : ""}`);
   },
+  async createAdminPaymentRequest(payload = {}) {
+    return this.post("/admin/payment-requests", payload);
+  },
 
   // ----------- TRANSFERS / TX -----------
   async getAdminTransferGains(period = "day") {
