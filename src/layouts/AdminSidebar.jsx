@@ -20,6 +20,7 @@ import {
   LineChart,
   Menu,
   X,
+  HandCoins,
 } from "lucide-react";
 
 export default function AdminSidebar() {
@@ -104,6 +105,9 @@ export default function AdminSidebar() {
         </NavLink>
         <NavLink to="cash-requests" className={linkClass} onClick={onNavigate}>
           <Coins size={18} /> Cash in/out
+        </NavLink>
+        <NavLink to="payment-requests" className={linkClass} onClick={onNavigate}>
+          <HandCoins size={18} /> Demandes de paiement
         </NavLink>
         <NavLink to="credit-history" className={linkClass} onClick={onNavigate}>
           <BookOpen size={18} /> Historique crédits

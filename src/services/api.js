@@ -257,6 +257,12 @@ const api = {
     ).toString();
     return this.get(`/admin/wallets/${walletId}/history${query ? `?${query}` : ""}`);
   },
+  async getAdminPaymentRequests(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/payment-requests${query ? `?${query}` : ""}`);
+  },
 
   // ----------- TRANSFERS / TX -----------
   async getAdminTransferGains(period = "day") {
