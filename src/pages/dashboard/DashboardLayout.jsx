@@ -14,6 +14,7 @@ import {
   ArrowDown,
   ArrowUp,
   CreditCard,
+  Shield,
   LineChart,
 } from "lucide-react";
 import NotificationsBell from "@/components/NotificationsBell";
@@ -32,6 +33,7 @@ const baseMenu = [
   { name: "Retrait cash", path: "/dashboard/client/withdraw", icon: <ArrowUp size={18} /> },
   { name: "Historique crédit", path: "/dashboard/client/credit-history", icon: <CreditCard size={18} /> },
   { name: "Ligne de crédit", path: "/dashboard/client/credit-line", icon: <CreditCard size={18} /> },
+  { name: "Microfinance", path: "/dashboard/client/microfinance", icon: <Shield size={18} /> },
   { name: "Historique balance", path: "/dashboard/client/balance-history", icon: <LineChart size={18} /> },
   { name: "Tontines", path: "/dashboard/client/tontines", icon: <RefreshCcw size={18} /> },
   { name: "Bonus", path: "/dashboard/client/bonus", icon: <Gift size={18} /> },
