@@ -317,11 +317,11 @@ const api = {
   },
   async getAdminLoans(params = {}) {
     const search = new URLSearchParams();
-    if (params.status) search.append("status", params.status);
-    if (typeof params.overdue_only === "boolean") {
-      search.append("overdue_only", params.overdue_only ? "1" : "0");
-    }
-    if (params.limit) search.append("limit", params.limit);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        search.append(key, value);
+      }
+    });
     const query = search.toString();
     const path = `/admin/loans/${query ? `?${query}` : ""}`;
     try {
@@ -341,6 +341,39 @@ const api = {
   },
   async remindLoan(loanId, message) {
     return this.post(`/loans/${loanId}/remind`, { message });
+  },
+  async recomputeLoanPenalty(loanId) {
+    return this.post(`/admin/loans/${loanId}/penalties/recompute`, {});
+  },
+  async getLoanCollaterals(loanId) {
+    return this.get(`/admin/loans/${loanId}/collaterals`);
+  },
+  async addLoanCollateral(loanId, payload) {
+    return this.post(`/admin/loans/${loanId}/collaterals`, payload);
+  },
+  async deleteLoanCollateral(loanId, collateralId) {
+    return this.del(`/admin/loans/${loanId}/collaterals/${collateralId}`);
+  },
+  async getLoanDocuments(loanId) {
+    return this.get(`/admin/loans/${loanId}/documents`);
+  },
+  async validateLoanDocuments(loanId, payload) {
+    return this.post(`/admin/loans/${loanId}/documents/validate`, payload);
+  },
+  async getAdminLoanProducts(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/loan-products${query ? `?${query}` : ""}`);
+  },
+  async createAdminLoanProduct(payload) {
+    return this.post("/admin/loan-products", payload);
+  },
+  async updateAdminLoanProduct(productId, payload) {
+    return this.patch(`/admin/loan-products/${productId}`, payload);
+  },
+  async deleteAdminLoanProduct(productId) {
+    return this.del(`/admin/loan-products/${productId}`);
   },
   async getLoanStats() {
     return this.get("/admin/loans/stats");

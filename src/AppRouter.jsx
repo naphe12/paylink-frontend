@@ -56,6 +56,7 @@ import TransactionAuditPage from "@/pages/admin/TransactionAuditPage";
 import TransferGainsPage from "@/pages/admin/TransferGainsPage";
 import AdminPaymentRequestsPage from "@/pages/admin/AdminPaymentRequestsPage";
 import AdminMicroFinancePage from "@/pages/admin/AdminMicroFinancePage";
+import AdminLoanProductsPage from "@/pages/admin/AdminLoanProductsPage";
 import AdminTontineCreatePage from "@/pages/admin/AdminTontineCreatePage";
 import AdminTontineMembersPage from "@/pages/admin/AdminTontineMembersPage";
 import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
@@ -169,6 +170,7 @@ export default function AppRouter() {
         <Route path="transactions-audit" element={<TransactionAuditPage />} />
         <Route path="payment-requests" element={<AdminPaymentRequestsPage />} />
         <Route path="microfinance" element={<AdminMicroFinancePage />} />
+        <Route path="loan-products" element={<AdminLoanProductsPage />} />
         <Route path="balance-events" element={<AdminBalanceEventsPage />} />
         <Route path="users/:user_id/balance-events" element={<AdminUserBalanceEventsPage />} />
       </Route>

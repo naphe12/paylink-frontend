@@ -120,6 +120,9 @@ export default function AdminSidebar() {
         <NavLink to="microfinance" className={linkClass} onClick={onNavigate}>
           <Shield size={18} /> Microfinance
         </NavLink>
+        <NavLink to="loan-products" className={linkClass} onClick={onNavigate}>
+          <BookOpen size={18} /> Produits pret
+        </NavLink>
         <NavLink to="kyc/reviews" className={linkClass} onClick={onNavigate}>
           <UserCheck size={18} /> Verif KYC
         </NavLink>
