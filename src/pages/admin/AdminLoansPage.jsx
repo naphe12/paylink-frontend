@@ -34,6 +34,7 @@ export default function AdminLoansPage() {
   const [docsByLoan, setDocsByLoan] = useState({});
   const [colsByLoan, setColsByLoan] = useState({});
   const [expandedLoan, setExpandedLoan] = useState(null);
+  const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(20);
   const [offset, setOffset] = useState(0);
 
@@ -55,7 +56,9 @@ export default function AdminLoansPage() {
         limit,
         offset,
       });
-      setLoans(data);
+      const items = data?.items || [];
+      setLoans(items);
+      setTotal(typeof data?.total === "number" ? data.total : items.length);
     } catch (err) {
       console.error(err);
       setActionMessage(err.message || "Erreur chargement credits");
@@ -247,6 +250,11 @@ export default function AdminLoansPage() {
     return <FileText size={16} />;
   };
 
+  const currentPage = Math.floor(offset / Math.max(limit, 1)) + 1;
+  const maxPage = total ? Math.max(1, Math.ceil(total / Math.max(limit, 1))) : null;
+  const canPrev = offset > 0;
+  const canNext = total ? offset + loans.length < total : loans.length === limit;
+
   return (
     <div className="space-y-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -305,26 +313,49 @@ export default function AdminLoansPage() {
               Afficher seulement les impayes
             </label>
           </div>
-          <div className="flex items-center gap-2">
-            <p className="text-sm text-slate-500">{loans.length} dossier(s) affiches</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm text-slate-500">
+              {loans.length} dossier(s) affiches{total ? ` / ${total}` : ""}
+            </p>
             <div className="flex items-center gap-1 text-sm">
               <label>Limit</label>
               <input
                 type="number"
                 className="w-16 border rounded px-2 py-1 text-sm"
                 value={limit}
-                onChange={(e) => setLimit(Number(e.target.value) || 10)}
+                min={1}
+                onChange={(e) => {
+                  const val = Math.max(1, Number(e.target.value) || 1);
+                  setLimit(val);
+                  setOffset(0);
+                }}
               />
+            </div>
+            <div className="flex items-center gap-1 text-sm">
+              <label>Page</label>
+              <input
+                type="number"
+                className="w-16 border rounded px-2 py-1 text-sm"
+                value={currentPage}
+                min={1}
+                onChange={(e) => {
+                  const page = Math.max(1, Number(e.target.value) || 1);
+                  setOffset((page - 1) * limit);
+                }}
+              />
+              {maxPage && <span className="text-xs text-slate-500">/ {maxPage}</span>}
             </div>
             <button
               onClick={() => setOffset(Math.max(0, offset - limit))}
-              className="px-2 py-1 rounded border text-sm"
+              className="px-2 py-1 rounded border text-sm disabled:opacity-50"
+              disabled={!canPrev}
             >
               Prev
             </button>
             <button
               onClick={() => setOffset(offset + limit)}
-              className="px-2 py-1 rounded border text-sm"
+              className="px-2 py-1 rounded border text-sm disabled:opacity-50"
+              disabled={!canNext}
             >
               Next
             </button>

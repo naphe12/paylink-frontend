@@ -20,7 +20,7 @@ export default function AdminMicroFinancePage() {
         api.getAdminDebtors(200),
       ]);
       setStats(statsRes);
-      setOverdue(overdueRes);
+      setOverdue(overdueRes.items || overdueRes || []);
       setDebtors(debtRes);
     } catch (err) {
       setMessage(err.message || "Erreur de chargement.");

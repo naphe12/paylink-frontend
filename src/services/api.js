@@ -325,9 +325,17 @@ const api = {
     const query = search.toString();
     const path = `/admin/loans/${query ? `?${query}` : ""}`;
     try {
-      return await this.get(path);
+      const res = await this.get(path);
+      if (res && typeof res === "object" && "items" in res && "total" in res) {
+        return res;
+      }
+      return { items: Array.isArray(res) ? res : [], total: Array.isArray(res) ? res.length : 0 };
     } catch (e) {
-      return this.get(`/admin/loans/list${query ? `?${query}` : ""}`);
+      const legacy = await this.get(`/admin/loans/list${query ? `?${query}` : ""}`);
+      if (legacy && typeof legacy === "object" && "items" in legacy && "total" in legacy) {
+        return legacy;
+      }
+      return { items: Array.isArray(legacy) ? legacy : [], total: Array.isArray(legacy) ? legacy.length : 0 };
     }
   },
   async analyzeLoan(loanId) {
