@@ -55,6 +55,7 @@ import AdminCreditRepayPage from "@/pages/admin/AdminCreditRepayPage";
 import TransactionAuditPage from "@/pages/admin/TransactionAuditPage";
 import TransferGainsPage from "@/pages/admin/TransferGainsPage";
 import AdminPaymentRequestsPage from "@/pages/admin/AdminPaymentRequestsPage";
+import AdminMicroFinancePage from "@/pages/admin/AdminMicroFinancePage";
 import AdminTontineCreatePage from "@/pages/admin/AdminTontineCreatePage";
 import AdminTontineMembersPage from "@/pages/admin/AdminTontineMembersPage";
 import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
@@ -74,6 +75,7 @@ import AgentExternalTransferPage from "@/pages/agent/AgentExternalTransferPage";
 import RoleDashboardRedirect from "@/pages/dashboard/RoleDashboardRedirect";
 import LegacyRouteRedirect from "@/components/LegacyRouteRedirect";
 import BalanceHistoryPage from "@/pages/dashboard/BalanceHistoryPage";
+import MicroFinancePage from "@/pages/dashboard/MicroFinancePage";
 
 export default function AppRouter() {
   return (
@@ -114,6 +116,7 @@ export default function AppRouter() {
         <Route path="withdraw" element={<WithdrawPage />} />
         <Route path="credit-history" element={<CreditHistoryPage />} />
         <Route path="credit-line" element={<CreditLinePage />} />
+        <Route path="microfinance" element={<MicroFinancePage />} />
         <Route path="financial" element={<FinancialSituationPage />} />
         <Route path="balance-history" element={<BalanceHistoryPage />} />
         <Route path="profile" element={<ProfilePage />} />
@@ -165,6 +168,7 @@ export default function AppRouter() {
         <Route path="credit-lines/repay" element={<AdminCreditRepayPage />} />
         <Route path="transactions-audit" element={<TransactionAuditPage />} />
         <Route path="payment-requests" element={<AdminPaymentRequestsPage />} />
+        <Route path="microfinance" element={<AdminMicroFinancePage />} />
         <Route path="balance-events" element={<AdminBalanceEventsPage />} />
         <Route path="users/:user_id/balance-events" element={<AdminUserBalanceEventsPage />} />
       </Route>

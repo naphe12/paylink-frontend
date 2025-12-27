@@ -1,5 +1,5 @@
 // src/components/DashboardSidebar.jsx
-import { Wallet, Send, RefreshCw, User, LogOut, HandCoins } from "lucide-react";
+import { Wallet, Send, RefreshCw, User, LogOut, HandCoins, Shield } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 export default function DashboardSidebar() {
@@ -9,6 +9,7 @@ export default function DashboardSidebar() {
     { name: "Portefeuille", icon: <Wallet size={20} />, path: "/dashboard/client" },
     { name: "Transferts", icon: <Send size={20} />, path: "/dashboard/client/transfers" },
     { name: "Demandes", icon: <HandCoins size={20} />, path: "/dashboard/client/payments" },
+    { name: "Microfinance", icon: <Shield size={20} />, path: "/dashboard/client/microfinance" },
     { name: "Taux FX", icon: <RefreshCw size={20} />, path: "/dashboard/client/fx" },
     { name: "Profil", icon: <User size={20} />, path: "/dashboard/client/profile" },
   ];

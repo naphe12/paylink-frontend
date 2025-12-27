@@ -21,6 +21,7 @@ import {
   Menu,
   X,
   HandCoins,
+  Shield,
 } from "lucide-react";
 
 export default function AdminSidebar() {
@@ -36,9 +37,7 @@ export default function AdminSidebar() {
 
   const linkClass = ({ isActive }) =>
     `flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-medium transition ${
-      isActive
-        ? "bg-white/15 text-white shadow-lg shadow-black/10"
-        : "text-slate-200 hover:bg-white/10"
+      isActive ? "bg-white/15 text-white shadow-lg shadow-black/10" : "text-slate-200 hover:bg-white/10"
     }`;
 
   const SidebarContent = ({ onNavigate }) => (
@@ -51,12 +50,12 @@ export default function AdminSidebar() {
           </span>
           PayLink Admin
         </h1>
-        <p className="text-slate-400 text-xs mt-2">Supervision temps-réel & conformité</p>
+        <p className="text-slate-400 text-xs mt-2">Supervision temps-reel & conformite</p>
         <button
           onClick={logout}
           className="mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition"
         >
-          <LogOut size={18} /> Déconnexion
+          <LogOut size={18} /> Deconnexion
         </button>
       </div>
 
@@ -72,15 +71,15 @@ export default function AdminSidebar() {
           <FileSearch size={18} /> Alertes AML
         </NavLink>
         <NavLink to="security" className={linkClass} onClick={onNavigate}>
-          <ShieldAlert size={18} /> Sécurité live
+          <ShieldAlert size={18} /> Securite live
         </NavLink>
 
-        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-6">Opérations</p>
+        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-6">Operations</p>
         <NavLink to="wallets" className={linkClass} onClick={onNavigate}>
           <Wallet size={18} /> Portefeuilles
         </NavLink>
         <NavLink to="loans" className={linkClass} onClick={onNavigate}>
-          <CreditCard size={18} /> Crédits
+          <CreditCard size={18} /> Credits
         </NavLink>
         <NavLink to="mobilemoney" className={linkClass} onClick={onNavigate}>
           <Wallet size={18} /> Mobile Money
@@ -98,7 +97,7 @@ export default function AdminSidebar() {
           <GitPullRequest size={18} /> Validations transferts
         </NavLink>
         <NavLink to="settings" className={linkClass} onClick={onNavigate}>
-          <Settings size={18} /> Paramètres
+          <Settings size={18} /> Parametres
         </NavLink>
         <NavLink to="transactions-audit" className={linkClass} onClick={onNavigate}>
           <ShieldCheck size={18} /> Audit transactions
@@ -110,16 +109,19 @@ export default function AdminSidebar() {
           <HandCoins size={18} /> Demandes de paiement
         </NavLink>
         <NavLink to="credit-history" className={linkClass} onClick={onNavigate}>
-          <BookOpen size={18} /> Historique crédits
+          <BookOpen size={18} /> Historique credits
         </NavLink>
         <NavLink to="credit-lines" className={linkClass} onClick={onNavigate}>
-          <BookOpen size={18} /> Lignes de crédit
+          <BookOpen size={18} /> Lignes de credit
         </NavLink>
         <NavLink to="credit-lines/repay" className={linkClass} onClick={onNavigate}>
-          <BookOpen size={18} /> Remboursement crédit
+          <BookOpen size={18} /> Remboursement credit
+        </NavLink>
+        <NavLink to="microfinance" className={linkClass} onClick={onNavigate}>
+          <Shield size={18} /> Microfinance
         </NavLink>
         <NavLink to="kyc/reviews" className={linkClass} onClick={onNavigate}>
-          <UserCheck size={18} /> Vérif KYC
+          <UserCheck size={18} /> Verif KYC
         </NavLink>
         <NavLink to="analytics" className={linkClass} onClick={onNavigate}>
           <BarChart3 size={18} /> Statistiques
@@ -128,10 +130,10 @@ export default function AdminSidebar() {
           <BarChart3 size={18} /> Dashboard tontines
         </NavLink>
         <NavLink to="tontines-arrears" className={linkClass} onClick={onNavigate}>
-          <BarChart3 size={18} /> Impayés tontines
+          <BarChart3 size={18} /> Impayes tontines
         </NavLink>
         <NavLink to="tontines/create" className={linkClass} onClick={onNavigate}>
-          <BarChart3 size={18} /> Créer une tontine
+          <BarChart3 size={18} /> Creer une tontine
         </NavLink>
         <NavLink to="tontines/members" className={linkClass} onClick={onNavigate}>
           <BarChart3 size={18} /> Membres tontines
@@ -149,7 +151,7 @@ export default function AdminSidebar() {
           onClick={logout}
           className="w-full flex items-center justify-center gap-3 px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition"
         >
-          <LogOut size={18} /> Déconnexion
+          <LogOut size={18} /> Deconnexion
         </button>
       </div>
     </div>
@@ -190,9 +192,7 @@ export default function AdminSidebar() {
       )}
 
       <aside
-        className={`${
-          sidebarVisible ? "hidden lg:flex" : "hidden"
-        } lg:fixed lg:inset-y-0 lg:left-0 w-72 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white flex-col border-r border-white/5`}
+        className={`${sidebarVisible ? "hidden lg:flex" : "hidden"} lg:fixed lg:inset-y-0 lg:left-0 w-72 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white flex-col border-r border-white/5`}
       >
         <SidebarContent />
       </aside>
