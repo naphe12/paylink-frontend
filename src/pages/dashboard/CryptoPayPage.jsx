@@ -34,7 +34,8 @@ export default function CryptoPayPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Impossible de creer la transaction");
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Impossible de creer la transaction");
       }
 
       const data = await res.json();
