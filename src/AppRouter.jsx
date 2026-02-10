@@ -76,7 +76,13 @@ import AgentExternalTransferPage from "@/pages/agent/AgentExternalTransferPage";
 import RoleDashboardRedirect from "@/pages/dashboard/RoleDashboardRedirect";
 import LegacyRouteRedirect from "@/components/LegacyRouteRedirect";
 import BalanceHistoryPage from "@/pages/dashboard/BalanceHistoryPage";
-import MicroFinancePage from "@/pages/dashboard/MicroFinancePage";
+import EscrowQueue from "@/pages/EscrowQueue";
+import LedgerBalances from "@/pages/LedgerBalances";
+import TAccounts from "@/pages/TAccounts";
+import EscrowAuditPage from "@/pages/EscrowAuditPage";
+import CryptoPayPage from "@/pages/dashboard/CryptoPayPage";
+import CryptoPayStatusPage from "@/pages/dashboard/CryptoPayStatusPage";
+import WebhookLogs from "@/pages/WebhookLogs";
 
 export default function AppRouter() {
   return (
@@ -117,7 +123,7 @@ export default function AppRouter() {
         <Route path="withdraw" element={<WithdrawPage />} />
         <Route path="credit-history" element={<CreditHistoryPage />} />
         <Route path="credit-line" element={<CreditLinePage />} />
-        <Route path="microfinance" element={<MicroFinancePage />} />
+        <Route path="microfinance" element={<LoansPage />} />
         <Route path="financial" element={<FinancialSituationPage />} />
         <Route path="balance-history" element={<BalanceHistoryPage />} />
         <Route path="profile" element={<ProfilePage />} />
@@ -132,6 +138,8 @@ export default function AppRouter() {
         <Route path="tontines/:id" element={<TontineDetailPage />} />
         <Route path="account/kyc" element={<KYCPage />} />
         <Route path="wallet/:id/ledger" element={<WalletLedgerPage />} />
+        <Route path="crypto-pay" element={<CryptoPayPage />} />
+        <Route path="crypto-pay/:id" element={<CryptoPayStatusPage />} />
       </Route>
 
       {/* Admin dashboard */}
@@ -173,6 +181,11 @@ export default function AppRouter() {
         <Route path="loan-products" element={<AdminLoanProductsPage />} />
         <Route path="balance-events" element={<AdminBalanceEventsPage />} />
         <Route path="users/:user_id/balance-events" element={<AdminUserBalanceEventsPage />} />
+        <Route path="escrow" element={<EscrowQueue />} />
+        <Route path="escrow/audit" element={<EscrowAuditPage />} />
+        <Route path="ledger/balances" element={<LedgerBalances />} />
+        <Route path="ledger/t-accounts" element={<TAccounts />} />
+        <Route path="webhooks" element={<WebhookLogs />} />
       </Route>
 
       {/* Agent dashboard */}
@@ -206,6 +219,72 @@ export default function AppRouter() {
       <Route
         path="/admin/*"
         element={<LegacyRouteRedirect from="/admin" to="/dashboard/admin" />}
+      />
+
+      {/* Friendly aliases */}
+      <Route
+        path="/app/crypto-pay"
+        element={
+          <ProtectedRoute allowedRoles={["client"]}>
+            <CryptoPayPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/history"
+        element={
+          <ProtectedRoute allowedRoles={["client"]}>
+            <Navigate to="/dashboard/client/transactions" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/crypto-pay/:id"
+        element={
+          <ProtectedRoute allowedRoles={["client"]}>
+            <CryptoPayStatusPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/backoffice/escrow"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Navigate to="/dashboard/admin/escrow" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/backoffice/escrow/audit"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Navigate to="/dashboard/admin/escrow/audit" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/backoffice/ledger/balances"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Navigate to="/dashboard/admin/ledger/balances" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/backoffice/ledger/t-accounts"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Navigate to="/dashboard/admin/ledger/t-accounts" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/backoffice/webhooks"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Navigate to="/dashboard/admin/webhooks" replace />
+          </ProtectedRoute>
+        }
       />
 
       <Route path="*" element={<p>Page non trouvée</p>} />

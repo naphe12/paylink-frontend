@@ -26,6 +26,7 @@ const baseMenu = [
   { name: "Portefeuille", path: "/dashboard/client/wallet", icon: <Wallet size={18} /> },
   { name: "Demandes paiement", path: "/dashboard/client/payments", icon: <Send size={18} /> },
   { name: "Transfert interne", path: "/dashboard/client/transfer", icon: <RefreshCcw size={18} /> },
+  { name: "Payer en crypto", path: "/dashboard/client/crypto-pay", icon: <Send size={18} /> },
   { name: "Transfert externe", path: "/dashboard/client/external-transfer", icon: <Globe size={18} /> },
   { name: "Transactions", path: "/dashboard/client/transactions", icon: <RefreshCcw size={18} /> },
   { name: "Mobile Money", path: "/dashboard/client/mobiletopup", icon: <Smartphone size={18} /> },

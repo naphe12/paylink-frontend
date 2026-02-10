@@ -73,8 +73,26 @@ export default function AdminSidebar() {
         <NavLink to="security" className={linkClass} onClick={onNavigate}>
           <ShieldAlert size={18} /> Securite live
         </NavLink>
+        <NavLink to="webhooks" className={linkClass} onClick={onNavigate}>
+          <ShieldCheck size={18} /> Logs webhooks
+        </NavLink>
 
         <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-6">Operations</p>
+        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-4">Escrow</p>
+        <NavLink to="escrow" className={linkClass} onClick={onNavigate}>
+          <Coins size={18} /> File Escrow
+        </NavLink>
+        <NavLink to="escrow/audit" className={linkClass} onClick={onNavigate}>
+          <ShieldCheck size={18} /> Audit Escrow
+        </NavLink>
+        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-4">Ledger</p>
+        <NavLink to="ledger/balances" className={linkClass} onClick={onNavigate}>
+          <Wallet size={18} /> Balances
+        </NavLink>
+        <NavLink to="ledger/t-accounts" className={linkClass} onClick={onNavigate}>
+          <BookOpen size={18} /> T-Accounts
+        </NavLink>
+
         <NavLink to="wallets" className={linkClass} onClick={onNavigate}>
           <Wallet size={18} /> Portefeuilles
         </NavLink>
