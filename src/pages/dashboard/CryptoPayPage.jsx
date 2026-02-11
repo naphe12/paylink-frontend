@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = import.meta.env.VITE_API_URL || "";
+
 export default function CryptoPayPage() {
   const navigate = useNavigate();
   const [amountUsdc, setAmountUsdc] = useState("");
@@ -16,7 +18,7 @@ export default function CryptoPayPage() {
     setError(null);
 
     try {
-      const res = await fetch("/escrow/orders", {
+      const res = await fetch(`${API_URL}/escrow/orders`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -35,7 +37,13 @@ export default function CryptoPayPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail || "Impossible de creer la transaction");
+        const detail =
+          typeof data?.detail === "string"
+            ? data.detail
+            : Array.isArray(data?.detail)
+              ? JSON.stringify(data.detail)
+              : null;
+        throw new Error(detail || `Impossible de creer la transaction (${res.status})`);
       }
 
       const data = await res.json();

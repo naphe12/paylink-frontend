@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 
 const ORDER_STEPS = ["CREATED", "FUNDED", "SWAPPED", "PAYOUT_PENDING", "PAID_OUT"];
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 export default function CryptoPayStatusPage() {
   const { id } = useParams();
@@ -15,7 +16,7 @@ export default function CryptoPayStatusPage() {
 
     async function fetchOrder() {
       try {
-        const res = await fetch(`/escrow/orders/${id}`, { credentials: "include" });
+        const res = await fetch(`${API_URL}/escrow/orders/${id}`, { credentials: "include" });
         if (!res.ok) {
           throw new Error("Impossible de charger la transaction");
         }
@@ -61,7 +62,7 @@ export default function CryptoPayStatusPage() {
   async function retryPayment() {
     try {
       setRetrying(true);
-      const res = await fetch(`/escrow/orders/${id}/retry`, {
+      const res = await fetch(`${API_URL}/escrow/orders/${id}/retry`, {
         method: "POST",
         credentials: "include",
       });
@@ -69,7 +70,7 @@ export default function CryptoPayStatusPage() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.detail || "Relance impossible");
       }
-      const fresh = await fetch(`/escrow/orders/${id}`, { credentials: "include" });
+      const fresh = await fetch(`${API_URL}/escrow/orders/${id}`, { credentials: "include" });
       if (fresh.ok) {
         setOrder(await fresh.json());
       }
