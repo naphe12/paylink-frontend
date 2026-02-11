@@ -83,6 +83,9 @@ import EscrowAuditPage from "@/pages/EscrowAuditPage";
 import CryptoPayPage from "@/pages/dashboard/CryptoPayPage";
 import CryptoPayStatusPage from "@/pages/dashboard/CryptoPayStatusPage";
 import WebhookLogs from "@/pages/WebhookLogs";
+import AuditLog from "@/pages/AuditLog";
+import Monitoring from "@/pages/Monitoring";
+import RiskMonitoring from "@/pages/RiskMonitoring";
 
 export default function AppRouter() {
   return (
@@ -186,6 +189,7 @@ export default function AppRouter() {
         <Route path="ledger/balances" element={<LedgerBalances />} />
         <Route path="ledger/t-accounts" element={<TAccounts />} />
         <Route path="webhooks" element={<WebhookLogs />} />
+        <Route path="risk" element={<RiskMonitoring />} />
       </Route>
 
       {/* Agent dashboard */}
@@ -283,6 +287,30 @@ export default function AppRouter() {
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <Navigate to="/dashboard/admin/webhooks" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/backoffice/audit"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AuditLog />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/backoffice/monitoring"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Monitoring />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/backoffice/risk"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <RiskMonitoring />
           </ProtectedRoute>
         }
       />

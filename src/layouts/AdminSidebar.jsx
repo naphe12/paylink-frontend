@@ -76,6 +76,15 @@ export default function AdminSidebar() {
         <NavLink to="webhooks" className={linkClass} onClick={onNavigate}>
           <ShieldCheck size={18} /> Logs webhooks
         </NavLink>
+        <NavLink to="/backoffice/audit" className={linkClass} onClick={onNavigate}>
+          <FileSearch size={18} /> 🧾 Audit Log
+        </NavLink>
+        <NavLink to="/backoffice/monitoring" className={linkClass} onClick={onNavigate}>
+          <BarChart3 size={18} /> 📊 Monitoring
+        </NavLink>
+        <NavLink to="risk" className={linkClass} onClick={onNavigate}>
+          <ShieldAlert size={18} /> Risk monitoring
+        </NavLink>
 
         <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-6">Operations</p>
         <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-4">Escrow</p>

@@ -10,6 +10,7 @@ export default function CryptoPayStatusPage() {
   const [order, setOrder] = useState(null);
   const [error, setError] = useState(null);
   const [retrying, setRetrying] = useState(false);
+  const [sandboxActionLoading, setSandboxActionLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -82,21 +83,57 @@ export default function CryptoPayStatusPage() {
     }
   }
 
+  async function runSandboxAction(action) {
+    try {
+      setSandboxActionLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/escrow/orders/${id}/sandbox/${action}`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Simulation impossible");
+      }
+      const fresh = await fetch(`${API_URL}/escrow/orders/${id}`, { credentials: "include" });
+      if (fresh.ok) {
+        setOrder(await fresh.json());
+      }
+    } catch (err) {
+      alert(err.message || "Erreur");
+    } finally {
+      setSandboxActionLoading(false);
+    }
+  }
+
   const canRetry =
     order &&
     ["CREATED", "FUNDED"].includes(String(order.status)) &&
     String(order.status) !== "SWAPPED";
+  const status = String(order?.status || "");
+  const canSandboxFund = order?.is_sandbox && status === "CREATED";
+  const canSandboxSwap = order?.is_sandbox && status === "FUNDED";
+  const canSandboxPayoutPending = order?.is_sandbox && status === "SWAPPED";
+  const canSandboxPayout = order?.is_sandbox && status === "PAYOUT_PENDING";
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
-      <header className="space-y-2">
+      <header className="space-y-2 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold text-slate-900">Suivi du paiement</h1>
+        {order.is_sandbox && (
+          <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+            Simulation
+          </span>
+        )}
       </header>
 
       <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
         {order.is_sandbox && (
           <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">
-            MODE SANDBOX - AUCUN VRAI FOND
+            MODE SANDBOX - Aucune transaction reelle
           </p>
         )}
         {order.sandbox_scenario && (
@@ -153,7 +190,7 @@ export default function CryptoPayStatusPage() {
             max={order.required_confirmations || 1}
             className="w-full"
           />
-          {order.tx_hash && (
+          {!order.is_sandbox && order.tx_hash && (
             <a
               href={buildExplorerTxUrl(order.network, order.tx_hash)}
               target="_blank"
@@ -183,6 +220,52 @@ export default function CryptoPayStatusPage() {
             >
               {retrying ? "Relance..." : "Relancer le paiement"}
             </button>
+          </div>
+        )}
+
+        {order.is_sandbox && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+            <p className="text-sm text-amber-800">
+              Mode simulation: meme parcours utilisateur, transitions pilotees manuellement.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {canSandboxFund && (
+                <button
+                  onClick={() => runSandboxAction("fund")}
+                  disabled={sandboxActionLoading}
+                  className="inline-flex items-center rounded-lg bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700 disabled:opacity-60"
+                >
+                  Simuler financement
+                </button>
+              )}
+              {canSandboxSwap && (
+                <button
+                  onClick={() => runSandboxAction("swap")}
+                  disabled={sandboxActionLoading}
+                  className="inline-flex items-center rounded-lg bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700 disabled:opacity-60"
+                >
+                  Simuler conversion
+                </button>
+              )}
+              {canSandboxPayoutPending && (
+                <button
+                  onClick={() => runSandboxAction("payout_pending")}
+                  disabled={sandboxActionLoading}
+                  className="inline-flex items-center rounded-lg bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700 disabled:opacity-60"
+                >
+                  Simuler paiement en cours
+                </button>
+              )}
+              {canSandboxPayout && (
+                <button
+                  onClick={() => runSandboxAction("payout")}
+                  disabled={sandboxActionLoading}
+                  className="inline-flex items-center rounded-lg bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700 disabled:opacity-60"
+                >
+                  Simuler paiement finalise
+                </button>
+              )}
+            </div>
           </div>
         )}
 
