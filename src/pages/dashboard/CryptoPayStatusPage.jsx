@@ -17,7 +17,13 @@ export default function CryptoPayStatusPage() {
 
     async function fetchOrder() {
       try {
-        const res = await fetch(`${API_URL}/escrow/orders/${id}`, { credentials: "include" });
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/escrow/orders/${id}`, {
+          credentials: "include",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
         if (!res.ok) {
           throw new Error("Impossible de charger la transaction");
         }
@@ -63,15 +69,24 @@ export default function CryptoPayStatusPage() {
   async function retryPayment() {
     try {
       setRetrying(true);
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/escrow/orders/${id}/retry`, {
         method: "POST",
         credentials: "include",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.detail || "Relance impossible");
       }
-      const fresh = await fetch(`${API_URL}/escrow/orders/${id}`, { credentials: "include" });
+      const fresh = await fetch(`${API_URL}/escrow/orders/${id}`, {
+        credentials: "include",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
       if (fresh.ok) {
         setOrder(await fresh.json());
       }
@@ -98,7 +113,12 @@ export default function CryptoPayStatusPage() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.detail || "Simulation impossible");
       }
-      const fresh = await fetch(`${API_URL}/escrow/orders/${id}`, { credentials: "include" });
+      const fresh = await fetch(`${API_URL}/escrow/orders/${id}`, {
+        credentials: "include",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
       if (fresh.ok) {
         setOrder(await fresh.json());
       }

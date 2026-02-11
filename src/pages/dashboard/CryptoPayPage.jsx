@@ -18,11 +18,13 @@ export default function CryptoPayPage() {
     setError(null);
 
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/escrow/orders`, {
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
           "X-SANDBOX": sandbox ? "true" : "false",
           ...(sandbox && sandboxScenario !== "NONE"
             ? { "X-SANDBOX-SCENARIO": sandboxScenario }
