@@ -17,7 +17,11 @@ export default function CryptoPayStatusPage() {
 
     async function fetchOrder() {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+        if (!token) {
+          setError("Session expiree. Reconnectez-vous.");
+          return;
+        }
         const res = await fetch(`${API_URL}/escrow/orders/${id}`, {
           credentials: "include",
           headers: {
@@ -69,7 +73,10 @@ export default function CryptoPayStatusPage() {
   async function retryPayment() {
     try {
       setRetrying(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+      if (!token) {
+        throw new Error("Session expiree. Reconnectez-vous.");
+      }
       const res = await fetch(`${API_URL}/escrow/orders/${id}/retry`, {
         method: "POST",
         credentials: "include",
@@ -101,7 +108,10 @@ export default function CryptoPayStatusPage() {
   async function runSandboxAction(action) {
     try {
       setSandboxActionLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+      if (!token) {
+        throw new Error("Session expiree. Reconnectez-vous.");
+      }
       const res = await fetch(`${API_URL}/escrow/orders/${id}/sandbox/${action}`, {
         method: "POST",
         credentials: "include",
