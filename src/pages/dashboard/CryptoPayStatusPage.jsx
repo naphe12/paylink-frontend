@@ -25,7 +25,12 @@ export default function CryptoPayStatusPage() {
         const res = await fetch(`${API_URL}/escrow/orders/${id}`, {
           credentials: "include",
           headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                  "X-Access-Token": token,
+                }
+              : {}),
           },
         });
         if (!res.ok) {
@@ -81,7 +86,12 @@ export default function CryptoPayStatusPage() {
         method: "POST",
         credentials: "include",
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token
+            ? {
+                Authorization: `Bearer ${token}`,
+                "X-Access-Token": token,
+              }
+            : {}),
         },
       });
       if (!res.ok) {
@@ -91,7 +101,12 @@ export default function CryptoPayStatusPage() {
       const fresh = await fetch(`${API_URL}/escrow/orders/${id}`, {
         credentials: "include",
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token
+            ? {
+                Authorization: `Bearer ${token}`,
+                "X-Access-Token": token,
+              }
+            : {}),
         },
       });
       if (fresh.ok) {
@@ -116,7 +131,12 @@ export default function CryptoPayStatusPage() {
         method: "POST",
         credentials: "include",
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token
+            ? {
+                Authorization: `Bearer ${token}`,
+                "X-Access-Token": token,
+              }
+            : {}),
         },
       });
       if (!res.ok) {
@@ -126,7 +146,12 @@ export default function CryptoPayStatusPage() {
       const fresh = await fetch(`${API_URL}/escrow/orders/${id}`, {
         credentials: "include",
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token
+            ? {
+                Authorization: `Bearer ${token}`,
+                "X-Access-Token": token,
+              }
+            : {}),
         },
       });
       if (fresh.ok) {

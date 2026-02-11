@@ -28,7 +28,12 @@ export default function CryptoPayPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token
+            ? {
+                Authorization: `Bearer ${token}`,
+                "X-Access-Token": token,
+              }
+            : {}),
           "X-SANDBOX": sandbox ? "true" : "false",
           ...(sandbox && sandboxScenario !== "NONE"
             ? { "X-SANDBOX-SCENARIO": sandboxScenario }
