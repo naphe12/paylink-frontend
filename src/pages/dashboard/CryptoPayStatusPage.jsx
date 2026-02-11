@@ -17,7 +17,9 @@ export default function CryptoPayStatusPage() {
 
     async function fetchOrder() {
       try {
-        const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+        const rawToken = localStorage.getItem("token") || localStorage.getItem("access_token");
+        const token =
+          rawToken && rawToken !== "null" && rawToken !== "undefined" ? rawToken : null;
         if (!token) {
           setError("Session expiree. Reconnectez-vous.");
           return;
@@ -78,7 +80,9 @@ export default function CryptoPayStatusPage() {
   async function retryPayment() {
     try {
       setRetrying(true);
-      const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+      const rawToken = localStorage.getItem("token") || localStorage.getItem("access_token");
+      const token =
+        rawToken && rawToken !== "null" && rawToken !== "undefined" ? rawToken : null;
       if (!token) {
         throw new Error("Session expiree. Reconnectez-vous.");
       }
@@ -123,7 +127,9 @@ export default function CryptoPayStatusPage() {
   async function runSandboxAction(action) {
     try {
       setSandboxActionLoading(true);
-      const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+      const rawToken = localStorage.getItem("token") || localStorage.getItem("access_token");
+      const token =
+        rawToken && rawToken !== "null" && rawToken !== "undefined" ? rawToken : null;
       if (!token) {
         throw new Error("Session expiree. Reconnectez-vous.");
       }

@@ -18,7 +18,9 @@ export default function CryptoPayPage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+      const rawToken = localStorage.getItem("token") || localStorage.getItem("access_token");
+      const token =
+        rawToken && rawToken !== "null" && rawToken !== "undefined" ? rawToken : null;
       if (!token) {
         navigate("/auth");
         return;
