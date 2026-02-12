@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import api from "@/services/api";
 
 export default function WebhookLogs() {
   const [rows, setRows] = useState([]);
@@ -8,10 +9,11 @@ export default function WebhookLogs() {
     let mounted = true;
     async function load() {
       try {
-        const res = await fetch("/backoffice/webhooks?limit=200", { credentials: "include" });
-        if (!res.ok) throw new Error("Chargement impossible");
-        const data = await res.json();
-        if (mounted) setRows(data);
+        const data = await api.get("/backoffice/webhooks?limit=200");
+        if (mounted) {
+          setRows(Array.isArray(data) ? data : []);
+          setError(null);
+        }
       } catch (err) {
         if (mounted) setError(err.message);
       }

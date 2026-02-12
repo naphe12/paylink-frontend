@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 const STATUSES = ["ALL", "FUNDED", "SWAPPED", "PAYOUT_PENDING", "PAID_OUT", "FAILED"];
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 export default function EscrowAuditPage() {
   const [status, setStatus] = useState("ALL");
@@ -10,8 +11,8 @@ export default function EscrowAuditPage() {
     [status],
   );
 
-  const csvHref = `/backoffice/escrow/audit/export.csv${query}`;
-  const pdfHref = `/backoffice/escrow/audit/export.pdf${query}`;
+  const csvHref = `${API_URL}/backoffice/escrow/audit/export.csv${query}`;
+  const pdfHref = `${API_URL}/backoffice/escrow/audit/export.pdf${query}`;
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">

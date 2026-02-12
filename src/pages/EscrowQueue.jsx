@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import api from "@/services/api";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 export default function EscrowQueue() {
   const [status, setStatus] = useState("FUNDED");
@@ -15,19 +17,7 @@ export default function EscrowQueue() {
     setError(null);
 
     try {
-      const res = await fetch(`/backoffice/escrow/orders?status=${status}`, {
-        method: "GET",
-        credentials: "include", // cookie / session / jwt
-        headers: {
-          Accept: "application/json",
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error("Erreur chargement des ordres");
-      }
-
-      const data = await res.json();
+      const data = await api.get(`/backoffice/escrow/orders?status=${encodeURIComponent(status)}`);
       setOrders(data);
     } catch (err) {
       setError(err.message);
@@ -84,7 +74,9 @@ export default function EscrowQueue() {
                 <td>{o.usdc_expected}</td>
                 <td>{o.bif_target}</td>
                 <td>
-                  <a href={`/backoffice/escrow/orders/${o.id}`}>Voir</a>
+                  <a href={`${API_URL}/backoffice/escrow/orders/${o.id}`} target="_blank" rel="noreferrer">
+                    Voir
+                  </a>
                 </td>
               </tr>
             ))}
