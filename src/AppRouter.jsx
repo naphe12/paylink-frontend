@@ -227,26 +227,21 @@ export default function AppRouter() {
 
       {/* Friendly aliases */}
       <Route
-        path="/app/crypto-pay"
+        path="/app"
         element={
           <ProtectedRoute allowedRoles={["client"]}>
-            <Navigate to="/dashboard/client/crypto-pay" replace />
+            <DashboardLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="crypto-pay" element={<CryptoPayPage />} />
+        <Route path="crypto-pay/:id" element={<CryptoPayStatusPage />} />
+      </Route>
       <Route
         path="/app/history"
         element={
           <ProtectedRoute allowedRoles={["client"]}>
             <Navigate to="/dashboard/client/transactions" replace />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/crypto-pay/:id"
-        element={
-          <ProtectedRoute allowedRoles={["client"]}>
-            <LegacyRouteRedirect from="/app/crypto-pay" to="/dashboard/client/crypto-pay" />
           </ProtectedRoute>
         }
       />
@@ -291,21 +286,16 @@ export default function AppRouter() {
         }
       />
       <Route
-        path="/backoffice/audit"
+        path="/backoffice"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
-            <AuditLog />
+            <AdminSidebar />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/backoffice/monitoring"
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <Monitoring />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route path="audit" element={<AuditLog />} />
+        <Route path="monitoring" element={<Monitoring />} />
+      </Route>
       <Route
         path="/backoffice/risk"
         element={
