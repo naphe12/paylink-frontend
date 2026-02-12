@@ -98,7 +98,10 @@ export default function AppRouter() {
       <Route path="/auth/reset-password" element={<ResetPassword />} />
 
       {/* Role-based dashboard entry */}
-      <Route
+      <Route path="*" element={<p>Page non trouvÃ©e</p>} />
+    </Routes>
+  );
+}
         path="/dashboard"
         element={
           <ProtectedRoute allowedRoles={["client", "agent", "admin"]}>
@@ -108,7 +111,10 @@ export default function AppRouter() {
       />
 
       {/* Client dashboard */}
-      <Route
+      <Route path="*" element={<p>Page non trouvÃ©e</p>} />
+    </Routes>
+  );
+}
         path="/dashboard/client"
         element={
           <ProtectedRoute allowedRoles={["client"]}>
@@ -295,16 +301,8 @@ export default function AppRouter() {
       >
         <Route path="audit" element={<AuditLog />} />
         <Route path="monitoring" element={<Monitoring />} />
+        <Route path="risk" element={<RiskMonitoring />} />
       </Route>
-      <Route
-        path="/backoffice/risk"
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <RiskMonitoring />
-          </ProtectedRoute>
-        }
-      />
-
       <Route path="*" element={<p>Page non trouvée</p>} />
     </Routes>
   );
