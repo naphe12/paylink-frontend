@@ -288,6 +288,7 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       >
+        <Route path="aml" element={<AmlEventsPage />} />
         <Route path="audit" element={<AuditLog />} />
         <Route path="monitoring" element={<Monitoring />} />
         <Route path="risk" element={<RiskMonitoring />} />
