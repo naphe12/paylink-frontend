@@ -92,16 +92,11 @@ export default function AppRouter() {
     <Routes>
       <Route path="/" element={<HomePage />} />
 
-      {/* Auth */}
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/auth/forgot-password" element={<ForgotPassword />} />
       <Route path="/auth/reset-password" element={<ResetPassword />} />
 
-      {/* Role-based dashboard entry */}
-      <Route path="*" element={<p>Page non trouvÃ©e</p>} />
-    </Routes>
-  );
-}
+      <Route
         path="/dashboard"
         element={
           <ProtectedRoute allowedRoles={["client", "agent", "admin"]}>
@@ -110,11 +105,7 @@ export default function AppRouter() {
         }
       />
 
-      {/* Client dashboard */}
-      <Route path="*" element={<p>Page non trouvÃ©e</p>} />
-    </Routes>
-  );
-}
+      <Route
         path="/dashboard/client"
         element={
           <ProtectedRoute allowedRoles={["client"]}>
@@ -151,7 +142,6 @@ export default function AppRouter() {
         <Route path="crypto-pay/:id" element={<CryptoPayStatusPage />} />
       </Route>
 
-      {/* Admin dashboard */}
       <Route
         path="/dashboard/admin"
         element={
@@ -198,7 +188,6 @@ export default function AppRouter() {
         <Route path="risk" element={<RiskMonitoring />} />
       </Route>
 
-      {/* Agent dashboard */}
       <Route
         path="/dashboard/agent"
         element={
@@ -218,20 +207,11 @@ export default function AppRouter() {
         <Route path="transfers/close" element={<AgentTransferClosurePage />} />
       </Route>
 
-      {/* Profile QR */}
       <Route path="/me/qr" element={<MyQrPage />} />
 
-      {/* Legacy support for old deep-links */}
-      <Route
-        path="/agent/*"
-        element={<LegacyRouteRedirect from="/agent" to="/dashboard/agent" />}
-      />
-      <Route
-        path="/admin/*"
-        element={<LegacyRouteRedirect from="/admin" to="/dashboard/admin" />}
-      />
+      <Route path="/agent/*" element={<LegacyRouteRedirect from="/agent" to="/dashboard/agent" />} />
+      <Route path="/admin/*" element={<LegacyRouteRedirect from="/admin" to="/dashboard/admin" />} />
 
-      {/* Friendly aliases */}
       <Route
         path="/app"
         element={
@@ -251,6 +231,7 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/backoffice/escrow"
         element={
@@ -303,7 +284,8 @@ export default function AppRouter() {
         <Route path="monitoring" element={<Monitoring />} />
         <Route path="risk" element={<RiskMonitoring />} />
       </Route>
-      <Route path="*" element={<p>Page non trouvée</p>} />
+
+      <Route path="*" element={<p>Page non trouvee</p>} />
     </Routes>
   );
 }
