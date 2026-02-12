@@ -230,7 +230,7 @@ export default function AppRouter() {
         path="/app/crypto-pay"
         element={
           <ProtectedRoute allowedRoles={["client"]}>
-            <CryptoPayPage />
+            <Navigate to="/dashboard/client/crypto-pay" replace />
           </ProtectedRoute>
         }
       />
@@ -246,7 +246,7 @@ export default function AppRouter() {
         path="/app/crypto-pay/:id"
         element={
           <ProtectedRoute allowedRoles={["client"]}>
-            <CryptoPayStatusPage />
+            <LegacyRouteRedirect from="/app/crypto-pay" to="/dashboard/client/crypto-pay" />
           </ProtectedRoute>
         }
       />
