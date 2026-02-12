@@ -273,6 +273,14 @@ export default function AppRouter() {
         }
       />
       <Route
+        path="/backoffice/aml"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Navigate to="/dashboard/admin/aml" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/backoffice"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
