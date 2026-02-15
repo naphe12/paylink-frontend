@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 
-async function api(url) {
+async function api(url, timeoutMs = 10000) {
   const token = localStorage.getItem("access_token");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
+    signal: controller.signal,
   });
+  clearTimeout(timer);
   if (!res.ok) {
     throw new Error(await res.text());
   }
@@ -18,7 +22,13 @@ export default function AdminLiquidityPage() {
   useEffect(() => {
     api("/api/admin/dashboard/summary")
       .then(setSummary)
-      .catch((e) => setError(String(e.message || e)));
+      .catch((e) => {
+        if (e?.name === "AbortError") {
+          setError("Timeout API /api/admin/dashboard/summary");
+          return;
+        }
+        setError(String(e.message || e));
+      });
   }, []);
 
   if (error) {
