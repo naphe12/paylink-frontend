@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
 
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
 async function api(url, timeoutMs = 10000) {
   const token = localStorage.getItem("access_token");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
-  const res = await fetch(url, {
+  const res = await fetch(`${API_BASE}${url}`, {
     headers: { Authorization: `Bearer ${token}` },
     signal: controller.signal,
   });
   clearTimeout(timer);
   if (!res.ok) {
     throw new Error(await res.text());
+  }
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    const txt = await res.text();
+    throw new Error(`API did not return JSON (${res.status}). Body starts with: ${txt.slice(0, 80)}`);
   }
   return res.json();
 }
