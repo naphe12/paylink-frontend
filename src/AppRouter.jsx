@@ -92,6 +92,8 @@ import RiskMonitoring from "@/pages/RiskMonitoring";
 import P2PMarket from "@/pages/p2p/P2PMarket";
 import CreateOffer from "@/pages/p2p/CreateOffer";
 import TradeRoom from "@/pages/p2p/TradeRoom";
+import P2PMyTrades from "@/pages/p2p/P2PMyTrades";
+import P2PMyOffers from "@/pages/p2p/P2PMyOffers";
 
 export default function AppRouter() {
   return (
@@ -192,6 +194,9 @@ export default function AppRouter() {
         <Route path="ledger/t-accounts" element={<TAccounts />} />
         <Route path="webhooks" element={<WebhookLogs />} />
         <Route path="risk" element={<RiskMonitoring />} />
+        <Route path="p2p/trades" element={<P2PAdminTrades />} />
+        <Route path="p2p/disputes" element={<P2PAdminDisputes />} />
+        <Route path="p2p/risk" element={<P2PAdminRisk />} />
       </Route>
 
       <Route
@@ -254,6 +259,8 @@ export default function AppRouter() {
         <Route path="crypto-pay" element={<CryptoPayPage />} />
         <Route path="crypto-pay/:id" element={<CryptoPayStatusPage />} />
         <Route path="p2p" element={<P2PMarket />} />
+        <Route path="p2p/my-trades" element={<P2PMyTrades />} />
+        <Route path="p2p/my-offers" element={<P2PMyOffers />} />
         <Route path="p2p/offers/new" element={<CreateOffer />} />
         <Route path="p2p/trades/:id" element={<TradeRoom />} />
       </Route>
