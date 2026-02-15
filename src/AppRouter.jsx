@@ -62,6 +62,9 @@ import AdminTontineMembersPage from "@/pages/admin/AdminTontineMembersPage";
 import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
 import AdminBalanceEventsPage from "@/pages/admin/AdminBalanceEventsPage";
 import AdminUserBalanceEventsPage from "@/pages/admin/AdminUserBalanceEventsPage";
+import P2PAdminTrades from "@/pages/admin/P2PAdminTrades";
+import P2PAdminDisputes from "@/pages/admin/P2PAdminDisputes";
+import P2PAdminRisk from "@/pages/admin/P2PAdminRisk";
 
 import AgentOperationPage from "@/pages/agent/AgentOperationPage";
 import AgentDashboard from "@/pages/agent/AgentDashboard";
@@ -86,6 +89,9 @@ import WebhookLogs from "@/pages/WebhookLogs";
 import AuditLog from "@/pages/AuditLog";
 import Monitoring from "@/pages/Monitoring";
 import RiskMonitoring from "@/pages/RiskMonitoring";
+import P2PMarket from "@/pages/p2p/P2PMarket";
+import CreateOffer from "@/pages/p2p/CreateOffer";
+import TradeRoom from "@/pages/p2p/TradeRoom";
 
 export default function AppRouter() {
   return (
@@ -209,6 +215,31 @@ export default function AppRouter() {
 
       <Route path="/me/qr" element={<MyQrPage />} />
 
+      <Route
+        path="/admin/p2p/trades"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <P2PAdminTrades />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/p2p/disputes"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <P2PAdminDisputes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/p2p/risk"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <P2PAdminRisk />
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="/agent/*" element={<LegacyRouteRedirect from="/agent" to="/dashboard/agent" />} />
       <Route path="/admin/*" element={<LegacyRouteRedirect from="/admin" to="/dashboard/admin" />} />
 
@@ -222,6 +253,9 @@ export default function AppRouter() {
       >
         <Route path="crypto-pay" element={<CryptoPayPage />} />
         <Route path="crypto-pay/:id" element={<CryptoPayStatusPage />} />
+        <Route path="p2p" element={<P2PMarket />} />
+        <Route path="p2p/offers/new" element={<CreateOffer />} />
+        <Route path="p2p/trades/:id" element={<TradeRoom />} />
       </Route>
       <Route
         path="/app/history"

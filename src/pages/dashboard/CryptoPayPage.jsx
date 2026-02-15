@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ethers } from "ethers";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
+const USDC_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+const ESCROW_ADDRESS = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
 
 export default function CryptoPayPage() {
   const navigate = useNavigate();
@@ -10,11 +13,61 @@ export default function CryptoPayPage() {
   const [recipientPhone, setRecipientPhone] = useState("");
   const [sandbox, setSandbox] = useState(false);
   const [sandboxScenario, setSandboxScenario] = useState("NONE");
-  const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [account, setAccount] = useState(null);
+  const [txHash, setTxHash] = useState(null);
+  const [confirmations, setConfirmations] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      alert("MetaMask non detecte");
+      return;
+    }
+
+    try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+      setAccount(accounts[0] || null);
+    } catch (err) {
+      const message = err?.message || "Echec de connexion du wallet";
+      alert(message);
+    }
+  };
+
+  const payUSDC = async () => {
+    if (!window.ethereum) return;
+
+    setLoading(true);
+
+    try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
+      const abi = ["function transfer(address to, uint256 amount) returns (bool)"];
+
+      const contract = new ethers.Contract(USDC_ADDRESS, abi, signer);
+
+      const amount = ethers.utils.parseUnits("1000", 18);
+
+      const tx = await contract.transfer(ESCROW_ADDRESS, amount);
+
+      setTxHash(tx.hash);
+
+      const receipt = await tx.wait();
+
+      setConfirmations(receipt.confirmations);
+    } catch (err) {
+      const message = err?.message || "Echec du paiement USDC";
+      alert(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   async function submit() {
-    setLoading(true);
+    setSubmitLoading(true);
     setError(null);
 
     try {
@@ -64,7 +117,7 @@ export default function CryptoPayPage() {
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      setSubmitLoading(false);
     }
   }
 
@@ -78,6 +131,41 @@ export default function CryptoPayPage() {
       </header>
 
       <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+        {!account ? (
+          <button
+            onClick={connectWallet}
+            className="inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-white hover:bg-blue-600 transition"
+          >
+            Connect Wallet
+          </button>
+        ) : (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+            Wallet connecte : {account}
+          </div>
+        )}
+        {account && (
+          <div>
+            <button
+              onClick={payUSDC}
+              disabled={loading}
+              className="inline-flex items-center rounded-lg bg-emerald-700 px-4 py-2 text-white disabled:opacity-60 hover:bg-emerald-600 transition"
+            >
+              {loading ? "Transaction en cours..." : "Payer 1000 USDC"}
+            </button>
+
+            {txHash && (
+              <div className="mt-2 text-sm text-slate-700">
+                Tx Hash : {txHash}
+              </div>
+            )}
+            {confirmations > 0 && (
+              <div className="mt-1 text-sm text-slate-700">
+                Confirmations : {confirmations}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-1">
           <label htmlFor="amount_usdc" className="text-sm text-slate-700">
             Montant (USDC)
@@ -158,10 +246,10 @@ export default function CryptoPayPage() {
 
         <button
           onClick={submit}
-          disabled={loading}
+          disabled={submitLoading}
           className="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-white disabled:opacity-60 hover:bg-slate-700 transition"
         >
-          {loading ? "Creation..." : "Continuer"}
+          {submitLoading ? "Creation..." : "Continuer"}
         </button>
       </section>
     </div>
