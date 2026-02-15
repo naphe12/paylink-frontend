@@ -98,11 +98,11 @@ export default function AdminGlobalDashboard() {
       </div>
 
       <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <a href="/admin/aml">AML</a>
-        <a href="/admin/liquidity">Liquidity</a>
-        <a href="/admin/arbitrage">Arbitrage</a>
-        <a href="/admin/risk-heatmap">Heatmap</a>
-        <a href="/admin/kill-switch">Kill Switch</a>
+        <a href="/dashboard/admin/aml-cases">AML</a>
+        <a href="/dashboard/admin/liquidity">Liquidity</a>
+        <a href="/dashboard/admin/arbitrage">Arbitrage</a>
+        <a href="/dashboard/admin/risk-heatmap">Heatmap</a>
+        <a href="/dashboard/admin/kill-switch">Kill Switch</a>
         <a href="/api/admin/reports/aml-cases.pdf" target="_blank" rel="noreferrer">
           Export AML PDF
         </a>

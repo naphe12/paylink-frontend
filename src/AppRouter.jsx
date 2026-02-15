@@ -165,6 +165,12 @@ export default function AppRouter() {
         }
       >
         <Route index element={<Navigate to="users" replace />} />
+        <Route path="overview" element={<AdminGlobalDashboard />} />
+        <Route path="aml-cases" element={<AdminAMLPage />} />
+        <Route path="liquidity" element={<AdminLiquidityPage />} />
+        <Route path="arbitrage" element={<AdminArbitragePage />} />
+        <Route path="risk-heatmap" element={<AdminRiskHeatmap />} />
+        <Route path="kill-switch" element={<AdminKillSwitch />} />
         <Route path="users" element={<AdminUsersList />} />
         <Route path="users/:user_id" element={<AdminUserProfilePanel />} />
         <Route path="agents" element={<AdminAgentsPage />} />
@@ -226,54 +232,12 @@ export default function AppRouter() {
 
       <Route path="/me/qr" element={<MyQrPage />} />
 
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <AdminGlobalDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/aml"
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <AdminAMLPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/liquidity"
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <AdminLiquidityPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/arbitrage"
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <AdminArbitragePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/risk-heatmap"
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <AdminRiskHeatmap />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/kill-switch"
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <AdminKillSwitch />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/admin" element={<Navigate to="/dashboard/admin/overview" replace />} />
+      <Route path="/admin/aml" element={<Navigate to="/dashboard/admin/aml-cases" replace />} />
+      <Route path="/admin/liquidity" element={<Navigate to="/dashboard/admin/liquidity" replace />} />
+      <Route path="/admin/arbitrage" element={<Navigate to="/dashboard/admin/arbitrage" replace />} />
+      <Route path="/admin/risk-heatmap" element={<Navigate to="/dashboard/admin/risk-heatmap" replace />} />
+      <Route path="/admin/kill-switch" element={<Navigate to="/dashboard/admin/kill-switch" replace />} />
 
       <Route
         path="/admin/p2p/trades"

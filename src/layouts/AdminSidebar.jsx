@@ -121,10 +121,10 @@ export default function AdminSidebar() {
         <NavLink to="agents" className={linkClass} onClick={onNavigate}>
           <Briefcase size={18} /> Agents
         </NavLink>
-        <NavLink to="/admin" className={linkClass} onClick={onNavigate}>
+        <NavLink to="/dashboard/admin/overview" className={linkClass} onClick={onNavigate}>
           <LayoutDashboard size={18} /> Dashboard
         </NavLink>
-        <NavLink to="/admin/aml" className={linkClass} onClick={onNavigate}>
+        <NavLink to="/dashboard/admin/aml-cases" className={linkClass} onClick={onNavigate}>
           <div className="flex items-center gap-3">
             <ShieldAlert size={18} />
             <span>AML Cases</span>
@@ -135,17 +135,17 @@ export default function AdminSidebar() {
             </span>
           )}
         </NavLink>
-        <NavLink to="/admin/risk-heatmap" className={linkClass} onClick={onNavigate}>
+        <NavLink to="/dashboard/admin/risk-heatmap" className={linkClass} onClick={onNavigate}>
           <Activity size={18} /> Risk Heatmap
         </NavLink>
-        <NavLink to="/admin/liquidity" className={linkClass} onClick={onNavigate}>
+        <NavLink to="/dashboard/admin/liquidity" className={linkClass} onClick={onNavigate}>
           <Droplets size={18} /> Liquidity
         </NavLink>
-        <NavLink to="/admin/arbitrage" className={linkClass} onClick={onNavigate}>
+        <NavLink to="/dashboard/admin/arbitrage" className={linkClass} onClick={onNavigate}>
           <TrendingUp size={18} /> Arbitrage
         </NavLink>
         <NavLink
-          to="/admin/kill-switch"
+          to="/dashboard/admin/kill-switch"
           className={({ isActive }) =>
             `flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-medium transition ${
               isActive ? "bg-white/15 text-red-300 shadow-lg shadow-black/10" : "text-red-400 hover:bg-white/10"
