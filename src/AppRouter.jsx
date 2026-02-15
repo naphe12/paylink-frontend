@@ -65,6 +65,12 @@ import AdminUserBalanceEventsPage from "@/pages/admin/AdminUserBalanceEventsPage
 import P2PAdminTrades from "@/pages/admin/P2PAdminTrades";
 import P2PAdminDisputes from "@/pages/admin/P2PAdminDisputes";
 import P2PAdminRisk from "@/pages/admin/P2PAdminRisk";
+import AdminGlobalDashboard from "@/pages/admin/AdminGlobalDashboard";
+import AdminAMLPage from "@/pages/admin/AdminAMLPage";
+import AdminLiquidityPage from "@/pages/admin/AdminLiquidityPage";
+import AdminArbitragePage from "@/pages/admin/AdminArbitragePage";
+import AdminRiskHeatmap from "@/pages/admin/AdminRiskHeatmap";
+import AdminKillSwitch from "@/pages/admin/AdminKillSwitch";
 
 import AgentOperationPage from "@/pages/agent/AgentOperationPage";
 import AgentDashboard from "@/pages/agent/AgentDashboard";
@@ -219,6 +225,55 @@ export default function AppRouter() {
       </Route>
 
       <Route path="/me/qr" element={<MyQrPage />} />
+
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminGlobalDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/aml"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminAMLPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/liquidity"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminLiquidityPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/arbitrage"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminArbitragePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/risk-heatmap"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminRiskHeatmap />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/kill-switch"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminKillSwitch />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/admin/p2p/trades"

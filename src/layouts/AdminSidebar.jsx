@@ -94,6 +94,21 @@ export default function AdminSidebar() {
         <NavLink to="p2p/risk" className={linkClass} onClick={onNavigate}>
           <ShieldAlert size={18} /> Risk / Flags
         </NavLink>
+        <NavLink to="/admin" className={linkClass} onClick={onNavigate}>
+          <BarChart3 size={18} /> Dashboard
+        </NavLink>
+        <NavLink to="/admin/liquidity" className={linkClass} onClick={onNavigate}>
+          <Wallet size={18} /> Liquidity
+        </NavLink>
+        <NavLink to="/admin/arbitrage" className={linkClass} onClick={onNavigate}>
+          <TrendingUp size={18} /> Arbitrage
+        </NavLink>
+        <NavLink to="/admin/risk-heatmap" className={linkClass} onClick={onNavigate}>
+          <LineChart size={18} /> Heatmap
+        </NavLink>
+        <NavLink to="/admin/kill-switch" className={linkClass} onClick={onNavigate}>
+          <ShieldAlert size={18} /> Kill Switch
+        </NavLink>
 
         <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-6">Operations</p>
         <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-4">Escrow</p>
