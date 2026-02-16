@@ -8,6 +8,26 @@ export default function P2PMyOffers() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const payOffer = async (offer) => {
+    const input = window.prompt(`Montant ${offer.token} a payer ?`);
+    if (!input) return;
+    const amount = Number(input);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      window.alert("Montant invalide.");
+      return;
+    }
+
+    try {
+      const trade = await api.post("/api/p2p/trades", {
+        offer_id: offer.offer_id,
+        token_amount: amount,
+      });
+      navigate(`/app/p2p/trades/${trade.trade_id}`);
+    } catch (err) {
+      window.alert(err.message || "Erreur creation trade.");
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -53,7 +73,15 @@ export default function P2PMyOffers() {
               Limites: {offer.min_token_amount} - {offer.max_token_amount}
             </div>
             <div className="text-sm text-slate-700">Disponible: {offer.available_amount}</div>
+            <div className="text-sm text-slate-700">Paiement BIF: {offer.payment_method === "ECOCASH" ? "eNOTI" : offer.payment_method}</div>
             <div className="text-sm text-slate-500">Status: {offer.is_active ? "ACTIVE" : "INACTIVE"}</div>
+            <button
+              onClick={() => payOffer(offer)}
+              disabled={!offer.is_active}
+              className="mt-2 w-full px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
+            >
+              Payer l'offre
+            </button>
           </div>
         ))}
       </div>
