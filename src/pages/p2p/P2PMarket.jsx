@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/services/api";
 
+const formatPaymentMethod = (m) => (m === "ECOCASH" ? "eNOTI" : m);
+
 export default function P2PMarket() {
   const navigate = useNavigate();
   const [offers, setOffers] = useState([]);
@@ -112,7 +114,7 @@ export default function P2PMarket() {
                   {offer.side} {offer.token}
                 </span>
                 <span className="text-sm px-2 py-1 rounded-full bg-slate-100 text-slate-700">
-                  {offer.payment_method}
+                  {formatPaymentMethod(offer.payment_method)}
                 </span>
               </div>
               <div className="text-sm text-slate-700">

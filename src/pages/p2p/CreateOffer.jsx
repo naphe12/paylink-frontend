@@ -92,7 +92,7 @@ export default function CreateOffer() {
           <span>Methode paiement</span>
           <select name="payment_method" value={form.payment_method} onChange={onChange} className="w-full border border-slate-300 rounded-lg px-3 py-2">
             <option value="LUMICASH">LUMICASH</option>
-            <option value="ECOCASH">ECOCASH</option>
+            <option value="ENOTI">eNOTI</option>
             <option value="BANK">BANK</option>
             <option value="CASH">CASH</option>
             <option value="OTHER">OTHER</option>

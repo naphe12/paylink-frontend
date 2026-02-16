@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "@/services/api";
 
+const formatPaymentMethod = (m) => (m === "ECOCASH" ? "eNOTI" : m);
+
 export default function TradeRoom() {
   const { id } = useParams();
   const [trade, setTrade] = useState(null);
@@ -88,6 +90,9 @@ export default function TradeRoom() {
         </div>
         <div>
           <b>BIF:</b> {trade.bif_amount} (prix: {trade.price_bif_per_usd})
+        </div>
+        <div>
+          <b>Paiement BIF:</b> {formatPaymentMethod(trade.payment_method)}
         </div>
 
         <div className="mt-3">
