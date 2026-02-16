@@ -1,35 +1,5 @@
 import { useEffect, useState } from "react";
-
-const API_BASE = import.meta.env.VITE_API_URL || "";
-
-async function api(url, timeoutMs = 10000) {
-  const token = localStorage.getItem("access_token");
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  const res = await fetch(`${API_BASE}${url}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    signal: controller.signal,
-  });
-  clearTimeout(timer);
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const data = await res.json();
-      detail = data?.detail || JSON.stringify(data);
-    } catch {
-      detail = await res.text();
-    }
-    const err = new Error(detail || `HTTP ${res.status}`);
-    err.status = res.status;
-    throw err;
-  }
-  const contentType = res.headers.get("content-type") || "";
-  if (!contentType.includes("application/json")) {
-    const txt = await res.text();
-    throw new Error(`API did not return JSON (${res.status}). Body starts with: ${txt.slice(0, 80)}`);
-  }
-  return res.json();
-}
+import api from "@/services/api";
 
 export default function AdminLiquidityPage() {
   const [summary, setSummary] = useState(null);
@@ -37,16 +7,12 @@ export default function AdminLiquidityPage() {
   const [authExpired, setAuthExpired] = useState(false);
 
   useEffect(() => {
-    api("/api/admin/dashboard/summary")
+    api.get("/api/admin/dashboard/summary")
       .then(setSummary)
       .catch((e) => {
-        if (e?.status === 401) {
+        if (String(e?.message || "").includes("-> 401")) {
           setAuthExpired(true);
           setError("Session expiree. Merci de vous reconnecter.");
-          return;
-        }
-        if (e?.name === "AbortError") {
-          setError("Timeout API /api/admin/dashboard/summary");
           return;
         }
         setError(String(e.message || e));
