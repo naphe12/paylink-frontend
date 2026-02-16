@@ -12,7 +12,16 @@ async function api(url, timeoutMs = 10000) {
   });
   clearTimeout(timer);
   if (!res.ok) {
-    throw new Error(await res.text());
+    let detail = "";
+    try {
+      const data = await res.json();
+      detail = data?.detail || JSON.stringify(data);
+    } catch {
+      detail = await res.text();
+    }
+    const err = new Error(detail || `HTTP ${res.status}`);
+    err.status = res.status;
+    throw err;
   }
   const contentType = res.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
@@ -25,11 +34,17 @@ async function api(url, timeoutMs = 10000) {
 export default function AdminLiquidityPage() {
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState("");
+  const [authExpired, setAuthExpired] = useState(false);
 
   useEffect(() => {
     api("/api/admin/dashboard/summary")
       .then(setSummary)
       .catch((e) => {
+        if (e?.status === 401) {
+          setAuthExpired(true);
+          setError("Session expiree. Merci de vous reconnecter.");
+          return;
+        }
         if (e?.name === "AbortError") {
           setError("Timeout API /api/admin/dashboard/summary");
           return;
@@ -43,6 +58,17 @@ export default function AdminLiquidityPage() {
       <div style={{ padding: 20 }}>
         <h2>Liquidity & System Health</h2>
         <div style={{ color: "#b91c1c" }}>Erreur de chargement: {error}</div>
+        {authExpired && (
+          <button
+            style={{ marginTop: 12, padding: "8px 12px" }}
+            onClick={() => {
+              localStorage.removeItem("access_token");
+              window.location.href = "/auth";
+            }}
+          >
+            Se reconnecter
+          </button>
+        )}
       </div>
     );
   }

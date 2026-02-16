@@ -206,6 +206,9 @@ export default function AppRouter() {
         <Route path="ledger/t-accounts" element={<TAccounts />} />
         <Route path="webhooks" element={<WebhookLogs />} />
         <Route path="risk" element={<RiskMonitoring />} />
+        <Route path="trades" element={<P2PAdminTrades />} />
+        <Route path="disputes" element={<P2PAdminDisputes />} />
+        <Route path="risk-flags" element={<P2PAdminRisk />} />
         <Route path="p2p/trades" element={<P2PAdminTrades />} />
         <Route path="p2p/disputes" element={<P2PAdminDisputes />} />
         <Route path="p2p/risk" element={<P2PAdminRisk />} />
@@ -238,6 +241,9 @@ export default function AppRouter() {
       <Route path="/admin/arbitrage" element={<Navigate to="/dashboard/admin/arbitrage" replace />} />
       <Route path="/admin/risk-heatmap" element={<Navigate to="/dashboard/admin/risk-heatmap" replace />} />
       <Route path="/admin/kill-switch" element={<Navigate to="/dashboard/admin/kill-switch" replace />} />
+      <Route path="/admin/trades" element={<Navigate to="/dashboard/admin/trades" replace />} />
+      <Route path="/admin/disputes" element={<Navigate to="/dashboard/admin/disputes" replace />} />
+      <Route path="/admin/risk-flags" element={<Navigate to="/dashboard/admin/risk-flags" replace />} />
 
       <Route
         path="/admin/p2p/trades"
