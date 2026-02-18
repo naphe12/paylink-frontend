@@ -11,6 +11,7 @@ export default function P2PMarket() {
   const [error, setError] = useState("");
   const [token, setToken] = useState("");
   const [side, setSide] = useState("");
+  const [meId, setMeId] = useState("");
 
   const loadOffers = useCallback(async () => {
     setLoading(true);
@@ -32,6 +33,18 @@ export default function P2PMarket() {
   useEffect(() => {
     loadOffers();
   }, [loadOffers]);
+
+  useEffect(() => {
+    const loadMe = async () => {
+      try {
+        const me = await api.get("/auth/me");
+        if (me?.user_id) setMeId(me.user_id);
+      } catch {
+        // no-op
+      }
+    };
+    loadMe();
+  }, []);
 
   const emptyText = useMemo(() => {
     if (loading) return "Chargement des offres...";
@@ -130,8 +143,13 @@ export default function P2PMarket() {
               <button
                 className="w-full px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
                 onClick={() => createTrade(offer)}
+                disabled={offer.user_id === meId}
               >
-                {offer.side === "SELL" ? "Acheter" : "Vendre"}
+                {offer.user_id === meId
+                  ? "Votre propre offre"
+                  : offer.side === "SELL"
+                    ? "Acheter"
+                    : "Vendre"}
               </button>
             </div>
           ))}
