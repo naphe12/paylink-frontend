@@ -27,7 +27,7 @@ export default function CryptoPayPage() {
     }
 
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new ethers.BrowserProvider(window.ethereum);
       const accounts = await provider.send("eth_requestAccounts", []);
       setAccount(accounts[0] || null);
     } catch (err) {
@@ -42,14 +42,14 @@ export default function CryptoPayPage() {
     setLoading(true);
 
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
 
       const abi = ["function transfer(address to, uint256 amount) returns (bool)"];
 
       const contract = new ethers.Contract(USDC_ADDRESS, abi, signer);
 
-      const amount = ethers.utils.parseUnits("1000", 18);
+      const amount = ethers.parseUnits("1000", 18);
 
       const tx = await contract.transfer(ESCROW_ADDRESS, amount);
 
