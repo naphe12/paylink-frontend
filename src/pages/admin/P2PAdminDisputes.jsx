@@ -30,10 +30,13 @@ export default function P2PAdminDisputes() {
           }}
         >
           <div>
-            <b>Trade:</b> {d.trade_id}
+            <b>Ref:</b> {d.trade_id || d.tx_id}
           </div>
           <div>
             <b>Status:</b> {d.status}
+          </div>
+          <div>
+            <b>Source:</b> {d.source || "p2p"}
           </div>
           <div>
             <b>Reason:</b> {d.reason}
