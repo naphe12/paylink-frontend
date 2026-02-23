@@ -1,6 +1,11 @@
 // src/services/api.js
 const API_URL = import.meta.env.VITE_API_URL || "";
 
+function getAuthToken() {
+  const raw = localStorage.getItem("token") || localStorage.getItem("access_token");
+  return raw && raw !== "null" && raw !== "undefined" ? raw : null;
+}
+
 async function parseJsonOrThrow(res, path, method = "GET") {
   const contentType = res.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
@@ -14,7 +19,7 @@ async function parseJsonOrThrow(res, path, method = "GET") {
 
 const api = {
   async get(path) {
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     const res = await fetch(`${API_URL}${path}`, {
       headers: {
         Accept: "application/json",
@@ -26,7 +31,7 @@ const api = {
   },
 
   async post(path, data) {
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     const res = await fetch(`${API_URL}${path}`, {
       method: "POST",
       headers: {
@@ -41,7 +46,7 @@ const api = {
   },
 
   async patch(path, data) {
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     const res = await fetch(`${API_URL}${path}`, {
       method: "PATCH",
       headers: {
@@ -56,7 +61,7 @@ const api = {
   },
 
   async put(path, data) {
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     const res = await fetch(`${API_URL}${path}`, {
       method: "PUT",
       headers: {
@@ -70,7 +75,7 @@ const api = {
     return parseJsonOrThrow(res, path, "PUT");
   },
   async del(path) {
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     const res = await fetch(`${API_URL}${path}`, {
       method: "DELETE",
       headers: {

@@ -31,10 +31,15 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
+function getAuthToken() {
+  const raw = localStorage.getItem("token") || localStorage.getItem("access_token");
+  return raw && raw !== "null" && raw !== "undefined" ? raw : null;
+}
+
 async function api(url) {
-  const token = localStorage.getItem("access_token");
+  const token = getAuthToken();
   const res = await fetch(`${API_BASE}${url}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   if (!res.ok) return null;
   return res.json();
