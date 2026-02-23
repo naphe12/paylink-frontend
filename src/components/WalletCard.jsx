@@ -70,7 +70,7 @@ export default function WalletCard({ wallet: walletProp = null, onRefresh }) {
   const stars = "★".repeat(level);
 
   return (
-    <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-lg border w-full max-w-lg text-center mx-auto">
+    <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-lg border w-full text-center">
       <div className="flex justify-center mb-3">
         <Wallet size={32} className="text-blue-600" />
       </div>
