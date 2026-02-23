@@ -181,6 +181,12 @@ const api = {
   async requestCashWithdraw(payload) {
     return this.post("/wallet/cash/withdraw", payload);
   },
+  async requestUsdcWithdraw(payload) {
+    return this.post("/wallet/usdc/withdraw", payload);
+  },
+  async getUsdcWallet() {
+    return this.get("/wallet/usdc");
+  },
   async getAgentAccounts() {
     return this.get("/wallet/cash/agent-accounts");
   },

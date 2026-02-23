@@ -8,6 +8,7 @@ import MobileTopupPage from "@/pages/dashboard/MobileTopupPage";
 import ProfilePage from "@/pages/dashboard/ProfilePage";
 import DepositPage from "@/pages/dashboard/DepositPage";
 import WithdrawPage from "@/pages/dashboard/WithdrawPage";
+import WithdrawUSDCPage from "@/pages/dashboard/WithdrawUSDCPage";
 import CreditHistoryPage from "@/pages/dashboard/CreditHistoryPage";
 import CreditLinePage from "@/pages/dashboard/CreditLinePage";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -135,6 +136,7 @@ export default function AppRouter() {
         <Route path="mobiletopup" element={<MobileTopupPage />} />
         <Route path="deposit" element={<DepositPage />} />
         <Route path="withdraw" element={<WithdrawPage />} />
+        <Route path="withdraw-usdc" element={<WithdrawUSDCPage />} />
         <Route path="credit-history" element={<CreditHistoryPage />} />
         <Route path="credit-line" element={<CreditLinePage />} />
         <Route path="microfinance" element={<LoansPage />} />

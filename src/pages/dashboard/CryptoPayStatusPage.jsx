@@ -8,6 +8,8 @@ const API_URL = import.meta.env.VITE_API_URL || "";
 export default function CryptoPayStatusPage() {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
+  const [tracking, setTracking] = useState(null);
+  const [etaSeconds, setEtaSeconds] = useState(null);
   const [error, setError] = useState(null);
   const [retrying, setRetrying] = useState(false);
   const [sandboxActionLoading, setSandboxActionLoading] = useState(false);
@@ -24,23 +26,30 @@ export default function CryptoPayStatusPage() {
           setError("Session expiree. Reconnectez-vous.");
           return;
         }
-        const res = await fetch(`${API_URL}/escrow/orders/${id}`, {
-          credentials: "include",
-          headers: {
-            ...(token
-              ? {
-                  Authorization: `Bearer ${token}`,
-                  "X-Access-Token": token,
-                }
-              : {}),
-          },
-        });
-        if (!res.ok) {
+        const authHeaders = token
+          ? {
+              Authorization: `Bearer ${token}`,
+              "X-Access-Token": token,
+            }
+          : {};
+        const [orderRes, trackingRes] = await Promise.all([
+          fetch(`${API_URL}/escrow/orders/${id}`, {
+            credentials: "include",
+            headers: authHeaders,
+          }),
+          fetch(`${API_URL}/escrow/orders/${id}/tracking`, {
+            credentials: "include",
+            headers: authHeaders,
+          }),
+        ]);
+        if (!orderRes.ok) {
           throw new Error("Impossible de charger la transaction");
         }
-        const data = await res.json();
+        const data = await orderRes.json();
+        const trackingData = trackingRes.ok ? await trackingRes.json() : null;
         if (mounted) {
           setOrder(data);
+          setTracking(trackingData);
           setError(null);
         }
       } catch (err) {
@@ -57,6 +66,43 @@ export default function CryptoPayStatusPage() {
       clearInterval(interval);
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return undefined;
+    const wsUrl = buildTrackingWsUrl(API_URL, id);
+    const ws = new WebSocket(wsUrl);
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data?.event !== "STATUS_UPDATE") return;
+        setTracking(data);
+        if (data.status) {
+          setOrder((prev) => (prev ? { ...prev, status: data.status } : prev));
+        }
+      } catch {
+        // Ignore malformed messages
+      }
+    };
+
+    return () => ws.close();
+  }, [id]);
+
+  useEffect(() => {
+    if (typeof tracking?.eta_seconds === "number") {
+      setEtaSeconds(tracking.eta_seconds);
+      return;
+    }
+    setEtaSeconds(null);
+  }, [tracking?.eta_seconds]);
+
+  useEffect(() => {
+    if (typeof etaSeconds !== "number" || etaSeconds <= 0) return undefined;
+    const interval = setInterval(() => {
+      setEtaSeconds((prev) => (typeof prev === "number" && prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [etaSeconds]);
 
   if (error) {
     return (
@@ -86,35 +132,36 @@ export default function CryptoPayStatusPage() {
       if (!token) {
         throw new Error("Session expiree. Reconnectez-vous.");
       }
+      const authHeaders = token
+        ? {
+            Authorization: `Bearer ${token}`,
+            "X-Access-Token": token,
+          }
+        : {};
       const res = await fetch(`${API_URL}/escrow/orders/${id}/retry`, {
         method: "POST",
         credentials: "include",
-        headers: {
-          ...(token
-            ? {
-                Authorization: `Bearer ${token}`,
-                "X-Access-Token": token,
-              }
-            : {}),
-        },
+        headers: authHeaders,
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.detail || "Relance impossible");
       }
-      const fresh = await fetch(`${API_URL}/escrow/orders/${id}`, {
-        credentials: "include",
-        headers: {
-          ...(token
-            ? {
-                Authorization: `Bearer ${token}`,
-                "X-Access-Token": token,
-              }
-            : {}),
-        },
-      });
-      if (fresh.ok) {
-        setOrder(await fresh.json());
+      const [freshOrder, freshTracking] = await Promise.all([
+        fetch(`${API_URL}/escrow/orders/${id}`, {
+          credentials: "include",
+          headers: authHeaders,
+        }),
+        fetch(`${API_URL}/escrow/orders/${id}/tracking`, {
+          credentials: "include",
+          headers: authHeaders,
+        }),
+      ]);
+      if (freshOrder.ok) {
+        setOrder(await freshOrder.json());
+      }
+      if (freshTracking.ok) {
+        setTracking(await freshTracking.json());
       }
       alert("Paiement relance");
     } catch (err) {
@@ -133,35 +180,36 @@ export default function CryptoPayStatusPage() {
       if (!token) {
         throw new Error("Session expiree. Reconnectez-vous.");
       }
+      const authHeaders = token
+        ? {
+            Authorization: `Bearer ${token}`,
+            "X-Access-Token": token,
+          }
+        : {};
       const res = await fetch(`${API_URL}/escrow/orders/${id}/sandbox/${action}`, {
         method: "POST",
         credentials: "include",
-        headers: {
-          ...(token
-            ? {
-                Authorization: `Bearer ${token}`,
-                "X-Access-Token": token,
-              }
-            : {}),
-        },
+        headers: authHeaders,
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.detail || "Simulation impossible");
       }
-      const fresh = await fetch(`${API_URL}/escrow/orders/${id}`, {
-        credentials: "include",
-        headers: {
-          ...(token
-            ? {
-                Authorization: `Bearer ${token}`,
-                "X-Access-Token": token,
-              }
-            : {}),
-        },
-      });
-      if (fresh.ok) {
-        setOrder(await fresh.json());
+      const [freshOrder, freshTracking] = await Promise.all([
+        fetch(`${API_URL}/escrow/orders/${id}`, {
+          credentials: "include",
+          headers: authHeaders,
+        }),
+        fetch(`${API_URL}/escrow/orders/${id}/tracking`, {
+          credentials: "include",
+          headers: authHeaders,
+        }),
+      ]);
+      if (freshOrder.ok) {
+        setOrder(await freshOrder.json());
+      }
+      if (freshTracking.ok) {
+        setTracking(await freshTracking.json());
       }
     } catch (err) {
       alert(err.message || "Erreur");
@@ -332,28 +380,65 @@ export default function CryptoPayStatusPage() {
 
         <div className="h-px bg-slate-200" />
 
-        <Timeline status={order.status} />
+        <TrackingProgress status={order.status} tracking={tracking} etaSeconds={etaSeconds} />
+        <Timeline status={order.status} tracking={tracking} />
       </section>
     </div>
   );
 }
 
-function Timeline({ status }) {
-  const steps = [
-    { key: "CREATED", label: "Ordre cree" },
-    { key: "FUNDED", label: "USDC recus" },
-    { key: "SWAPPED", label: "Conversion effectuee" },
-    { key: "PAYOUT_PENDING", label: "Paiement en cours" },
-    { key: "PAID_OUT", label: "Paiement finalise" },
-  ];
+function TrackingProgress({ status, tracking, etaSeconds }) {
+  const progress = getProgressValue(status, tracking);
+  const etaText = formatEta(etaSeconds);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm text-slate-700">
+        <span>Progression du paiement</span>
+        <span className="font-medium">{progress}%</span>
+      </div>
+      <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-emerald-500 transition-all duration-700 ease-in-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      {etaText && <p className="text-sm text-slate-600">Temps estime restant : {etaText}</p>}
+    </div>
+  );
+}
+
+function Timeline({ status, tracking }) {
+  const hasTracking = Array.isArray(tracking?.steps) && tracking.steps.length > 0;
+  const steps = hasTracking
+    ? tracking.steps.map((step) => ({
+        key: step.code,
+        label: step.label,
+        completed: Boolean(step.completed),
+        at: step.at,
+      }))
+    : [
+        { key: "CREATED", label: "Ordre cree", completed: isActive(status, "CREATED"), at: null },
+        { key: "FUNDED", label: "USDC recus", completed: isActive(status, "FUNDED"), at: null },
+        { key: "SWAPPED", label: "Conversion effectuee", completed: isActive(status, "SWAPPED"), at: null },
+        {
+          key: "PAYOUT_PENDING",
+          label: "Paiement en cours",
+          completed: isActive(status, "PAYOUT_PENDING"),
+          at: null,
+        },
+        { key: "PAID_OUT", label: "Paiement finalise", completed: isActive(status, "PAID_OUT"), at: null },
+      ];
 
   return (
     <ul className="space-y-2">
       {steps.map((step) => {
-        const active = isActive(status, step.key);
+        const active = Boolean(step.completed);
+        const stepTime = formatStepTime(step.at);
         return (
           <li key={step.key} className={active ? "text-green-700 font-medium" : "text-slate-400"}>
             {active ? "OK" : "O"} {step.label}
+            {stepTime && <span className="ml-2 text-xs text-slate-500">({stepTime})</span>}
           </li>
         );
       })}
@@ -363,6 +448,13 @@ function Timeline({ status }) {
 
 function isActive(current, step) {
   return ORDER_STEPS.indexOf(current) >= ORDER_STEPS.indexOf(step);
+}
+
+function formatStepTime(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString("fr-FR");
 }
 
 function buildExplorerTxUrl(network, txHash) {
@@ -377,4 +469,37 @@ function buildExplorerTxUrl(network, txHash) {
       TRON: "https://tronscan.org/#/transaction/",
     }[net] || "https://polygonscan.com/tx/";
   return `${base}${txHash}`;
+}
+
+function buildTrackingWsUrl(apiBase, orderId) {
+  const normalizedBase = String(apiBase || window.location.origin).replace(/\/+$/, "");
+  const wsBase = normalizedBase.replace(/^http/i, "ws");
+  return `${wsBase}/ws/escrow/${orderId}`;
+}
+
+function getProgressValue(status, tracking) {
+  if (typeof tracking?.progress === "number") {
+    return clampProgress(tracking.progress);
+  }
+  const fallbackMap = {
+    CREATED: 10,
+    FUNDED: 40,
+    SWAPPED: 60,
+    PAYOUT_PENDING: 80,
+    PAID_OUT: 100,
+  };
+  return clampProgress(fallbackMap[String(status)] ?? 0);
+}
+
+function clampProgress(value) {
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) return 0;
+  return Math.max(0, Math.min(100, Math.round(parsed)));
+}
+
+function formatEta(seconds) {
+  if (typeof seconds !== "number") return null;
+  if (seconds <= 0) return "moins d'une minute";
+  const minutes = Math.ceil(seconds / 60);
+  return `${minutes} min`;
 }

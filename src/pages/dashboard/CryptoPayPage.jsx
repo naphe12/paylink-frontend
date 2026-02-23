@@ -124,7 +124,9 @@ export default function CryptoPayPage() {
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-slate-900">Payer en crypto (USDC)</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">
+          Transfert crypto sécurisé (USDC)
+        </h1>
         <p className="text-slate-600">
           Creez un paiement escrow USDC vers un beneficiaire local.
         </p>
@@ -192,7 +194,10 @@ export default function CryptoPayPage() {
         </label>
         {sandbox && (
           <div className="space-y-1">
-            <label htmlFor="sandbox_scenario" className="text-sm text-slate-700">
+            <label
+              htmlFor="sandbox_scenario"
+              className="text-sm text-slate-700"
+            >
               Scenario sandbox
             </label>
             <select

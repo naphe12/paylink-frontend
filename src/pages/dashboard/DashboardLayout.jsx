@@ -36,6 +36,7 @@ const baseMenu = [
   { name: "Mobile Money", path: "/dashboard/client/mobiletopup", icon: <Smartphone size={18} /> },
   { name: "Dépôt cash", path: "/dashboard/client/deposit", icon: <ArrowDown size={18} /> },
   { name: "Retrait cash", path: "/dashboard/client/withdraw", icon: <ArrowUp size={18} /> },
+  { name: "Retrait USDC", path: "/dashboard/client/withdraw-usdc", icon: <ArrowUp size={18} /> },
   { name: "Historique crédit", path: "/dashboard/client/credit-history", icon: <CreditCard size={18} /> },
   { name: "Ligne de crédit", path: "/dashboard/client/credit-line", icon: <CreditCard size={18} /> },
   { name: "Microfinance", path: "/dashboard/client/microfinance", icon: <Shield size={18} /> },
