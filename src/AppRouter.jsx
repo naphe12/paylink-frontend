@@ -349,6 +349,30 @@ export default function AppRouter() {
         }
       />
       <Route
+        path="/backoffice/p2p/trades"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Navigate to="/dashboard/admin/p2p/trades" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/backoffice/p2p/disputes"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Navigate to="/dashboard/admin/p2p/disputes" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/backoffice/p2p/risk"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Navigate to="/dashboard/admin/p2p/risk" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/backoffice"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
