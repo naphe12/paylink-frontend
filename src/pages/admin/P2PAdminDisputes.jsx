@@ -8,12 +8,12 @@ export default function P2PAdminDisputes() {
   const load = async () => {
     try {
       setError("");
-      const data = await api.get("/admin/p2p/disputes");
+      const data = await api.get("/api/admin/p2p/disputes");
       if (Array.isArray(data)) {
         setDisputes(data);
       } else {
         setDisputes([]);
-        setError("Format de reponse inattendu pour /admin/p2p/disputes");
+        setError("Format de reponse inattendu pour /api/admin/p2p/disputes");
       }
     } catch (e) {
       setDisputes([]);
