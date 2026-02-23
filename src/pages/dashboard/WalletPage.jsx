@@ -40,7 +40,7 @@ export default function WalletPage() {
 
   return (
     <div className="space-y-6">
-      <WalletCard wallet={wallet} onRefresh={loadWallet} />
+      <WalletCard wallet={wallet} usdcWallet={usdcWallet} onRefresh={loadWallet} />
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
         <div className="flex items-start justify-between gap-4">
           <div>
