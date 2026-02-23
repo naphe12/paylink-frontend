@@ -349,6 +349,14 @@ export default function AppRouter() {
         }
       />
       <Route
+        path="/backoffice/agents"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Navigate to="/dashboard/admin/agents" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/backoffice/p2p/trades"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
