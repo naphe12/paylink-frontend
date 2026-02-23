@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "@/services/api";
 import { Wallet, Star, Send } from "lucide-react";
 
-export default function WalletCard({ wallet: walletProp = null, usdcWallet = null, onRefresh }) {
+export default function WalletCard({ wallet: walletProp = null, onRefresh }) {
   const [wallet, setWallet] = useState(walletProp);
   const [loading, setLoading] = useState(!walletProp);
   const navigate = useNavigate();
@@ -82,13 +82,6 @@ export default function WalletCard({ wallet: walletProp = null, usdcWallet = nul
       <p className="text-3xl sm:text-4xl font-bold text-[#0066ff] mb-6">
         {currencySymbol} {Number(wallet.available).toFixed(2)}
       </p>
-      <div className="bg-emerald-50 border border-emerald-200 rounded-xl py-3 px-3 sm:px-4 mb-4 text-left sm:text-center">
-        <p className="text-sm text-emerald-700">Wallet USDC</p>
-        <p className="text-xl font-bold text-emerald-800">
-          {Number(usdcWallet?.balance || 0).toFixed(6)} USDC
-        </p>
-      </div>
-
       <div className="bg-blue-50 border border-blue-200 rounded-xl py-3 px-3 sm:px-4 mb-4">
         <p className="text-sm text-gray-600">Solde Bonus</p>
         <p className="text-xl font-bold text-blue-700">
