@@ -1,15 +1,24 @@
 import { useEffect, useState } from "react";
+import api from "@/services/api";
 
 export default function P2PAdminDisputes() {
   const [disputes, setDisputes] = useState([]);
+  const [error, setError] = useState("");
 
   const load = async () => {
-    const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-    const res = await fetch("/api/admin/p2p/disputes", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    setDisputes(data);
+    try {
+      setError("");
+      const data = await api.get("/admin/p2p/disputes");
+      if (Array.isArray(data)) {
+        setDisputes(data);
+      } else {
+        setDisputes([]);
+        setError("Format de reponse inattendu pour /admin/p2p/disputes");
+      }
+    } catch (e) {
+      setDisputes([]);
+      setError(e?.message || "Impossible de charger les disputes");
+    }
   };
 
   useEffect(() => {
@@ -19,6 +28,12 @@ export default function P2PAdminDisputes() {
   return (
     <div style={{ padding: 20 }}>
       <h2>Disputes</h2>
+      {error ? <div style={{ color: "#b91c1c", marginBottom: 12 }}>{error}</div> : null}
+      {!error && disputes.length === 0 ? (
+        <div style={{ color: "#64748b", marginBottom: 12 }}>
+          Aucune dispute retournee par l'API.
+        </div>
+      ) : null}
       {disputes.map((d) => (
         <div
           key={d.dispute_id}
