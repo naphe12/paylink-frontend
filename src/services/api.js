@@ -129,11 +129,22 @@ const api = {
   async getAgentDashboard() {
     return this.get("/agent/dashboard");
   },
+  async getAgentAssignments(agentId) {
+    const query = new URLSearchParams();
+    if (agentId) query.append("agent_id", agentId);
+    return this.get(`/agent/assignments${query.toString() ? `?${query.toString()}` : ""}`);
+  },
+  async confirmAgentAssignment(assignmentId, payload) {
+    return this.post(`/agent/assignments/${assignmentId}/confirm`, payload);
+  },
   async scanAgentQr(payload) {
     return this.post("/agent/qr/scan", payload);
   },
   async confirmAgentQr(payload) {
     return this.post("/agent/qr/confirm", payload);
+  },
+  async getOpsLiquidityBif() {
+    return this.get("/ops/liquidity/bif");
   },
 
   async getExchangeRate(origin = "EUR", destination) {

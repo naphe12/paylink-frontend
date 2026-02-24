@@ -200,6 +200,9 @@ export default function AdminSidebar() {
         <NavLink to="ledger/t-accounts" className={linkClass} onClick={onNavigate}>
           <BookOpen size={18} /> T-Accounts
         </NavLink>
+        <NavLink to="ops/liquidity-bif" className={linkClass} onClick={onNavigate}>
+          <Droplets size={18} /> Liquidite BIF (OPS)
+        </NavLink>
 
         <NavLink to="wallets" className={linkClass} onClick={onNavigate}>
           <Wallet size={18} /> Portefeuilles

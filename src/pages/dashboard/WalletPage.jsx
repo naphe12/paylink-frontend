@@ -70,7 +70,13 @@ export default function WalletPage() {
 
           <div className="flex flex-wrap gap-2">
             <Link
-              to="/dashboard/client/withdraw-usdc"
+              to="/dashboard/client/withdraw/bif"
+              className="inline-flex items-center rounded-lg bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-700 transition"
+            >
+              Retirer BIF
+            </Link>
+            <Link
+              to="/dashboard/client/withdraw/usdc"
               className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
             >
               Retirer USDC

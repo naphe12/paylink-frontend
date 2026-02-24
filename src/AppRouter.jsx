@@ -72,6 +72,7 @@ import AdminLiquidityPage from "@/pages/admin/AdminLiquidityPage";
 import AdminArbitragePage from "@/pages/admin/AdminArbitragePage";
 import AdminRiskHeatmap from "@/pages/admin/AdminRiskHeatmap";
 import AdminKillSwitch from "@/pages/admin/AdminKillSwitch";
+import LiquidityBifPage from "@/pages/admin/LiquidityBifPage";
 
 import AgentOperationPage from "@/pages/agent/AgentOperationPage";
 import AgentDashboard from "@/pages/agent/AgentDashboard";
@@ -79,6 +80,8 @@ import AgentScanPage from "@/pages/agent/AgentScanPage";
 import CashInPage from "@/pages/agent/CashInPage";
 import CashOutPage from "@/pages/agent/CashOutPage";
 import AgentHistoryPage from "@/pages/agent/AgentHistoryPage";
+import AgentAssignmentsPage from "@/pages/agent/AgentAssignmentsPage";
+import AgentConfirmPage from "@/pages/agent/AgentConfirmPage";
 import AgentSidebar from "@/layouts/AgentSidebar";
 import MyQrPage from "@/pages/profile/MyQrPage";
 import AgentTransferClosurePage from "@/pages/agent/AgentTransferClosurePage";
@@ -136,7 +139,9 @@ export default function AppRouter() {
         <Route path="mobiletopup" element={<MobileTopupPage />} />
         <Route path="deposit" element={<DepositPage />} />
         <Route path="withdraw" element={<WithdrawPage />} />
+        <Route path="withdraw/bif" element={<WithdrawPage />} />
         <Route path="withdraw-usdc" element={<WithdrawUSDCPage />} />
+        <Route path="withdraw/usdc" element={<WithdrawUSDCPage />} />
         <Route path="credit-history" element={<CreditHistoryPage />} />
         <Route path="credit-line" element={<CreditLinePage />} />
         <Route path="microfinance" element={<LoansPage />} />
@@ -173,6 +178,7 @@ export default function AppRouter() {
         <Route path="arbitrage" element={<AdminArbitragePage />} />
         <Route path="risk-heatmap" element={<AdminRiskHeatmap />} />
         <Route path="kill-switch" element={<AdminKillSwitch />} />
+        <Route path="ops/liquidity-bif" element={<LiquidityBifPage />} />
         <Route path="users" element={<AdminUsersList />} />
         <Route path="users/:user_id" element={<AdminUserProfilePanel />} />
         <Route path="agents" element={<AdminAgentsPage />} />
@@ -231,6 +237,8 @@ export default function AppRouter() {
         <Route path="cash-in" element={<CashInPage />} />
         <Route path="cash-out" element={<CashOutPage />} />
         <Route path="history" element={<AgentHistoryPage />} />
+        <Route path="assignments" element={<AgentAssignmentsPage />} />
+        <Route path="assignments/:assignmentId" element={<AgentConfirmPage />} />
         <Route path="external-transfer" element={<AgentExternalTransferPage />} />
         <Route path="transfers/close" element={<AgentTransferClosurePage />} />
       </Route>

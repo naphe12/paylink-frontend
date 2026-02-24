@@ -66,6 +66,9 @@ export default function AgentSidebar() {
         <NavLink to="history" className={linkClass} onClick={onNavigate}>
           <History size={18} /> Historique
         </NavLink>
+        <NavLink to="assignments" className={linkClass} onClick={onNavigate}>
+          <CheckCircle size={18} /> Assignments payout
+        </NavLink>
         <NavLink to="transfers/close" className={linkClass} onClick={onNavigate}>
           <CheckCircle size={18} /> Transferts à clôturer
         </NavLink>
