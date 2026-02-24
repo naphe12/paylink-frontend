@@ -164,7 +164,7 @@ const api = {
   },
   async getAdminNotifications(params = {}) {
     const query = new URLSearchParams(params).toString();
-    return this.get(`/admin/notifications${query ? `?${query}` : ""}`);
+    return this.get(`/admin/notifications/${query ? `?${query}` : ""}`);
   },
 
   // ----------- AGENTS -----------

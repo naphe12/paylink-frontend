@@ -23,8 +23,23 @@ const TOPIC_LABELS = {
   kyc_reset: "KYC",
 };
 
-const WS_BASE =
-  import.meta.env.VITE_WS_BASE_URL || "ws://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
+function resolveAdminWsUrl() {
+  if (API_BASE) {
+    try {
+      const u = new URL(API_BASE);
+      u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+      u.pathname = "/ws/admin";
+      u.search = "";
+      return u.toString();
+    } catch {
+      // fallback below
+    }
+  }
+  const proto = window.location.protocol === "https:" ? "wss" : "ws";
+  return `${proto}://${window.location.host}/ws/admin`;
+}
 
 const SEVERITY_STYLE = {
   critical: "bg-red-100 text-red-700 border-red-200",
@@ -59,7 +74,7 @@ export default function SecurityDashboard() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token") || localStorage.getItem("access_token");
     if (!token) {
       setConnectionStatus("unauthorized");
       return;
@@ -72,7 +87,7 @@ export default function SecurityDashboard() {
         .join(","),
     });
 
-    const ws = new WebSocket(`${WS_BASE}/ws/admin?${params.toString()}`);
+    const ws = new WebSocket(`${resolveAdminWsUrl()}?${params.toString()}`);
     ws.onopen = () => setConnectionStatus("connected");
     ws.onerror = () => setConnectionStatus("error");
     ws.onclose = () => setConnectionStatus("disconnected");
