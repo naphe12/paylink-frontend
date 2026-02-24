@@ -15,6 +15,7 @@ import {
   BookOpen,
   ArrowLeftRight,
   ShieldCheck,
+  Bell,
   TrendingUp,
   Settings,
   LineChart,
@@ -124,7 +125,7 @@ export default function AdminSidebar() {
           <Users size={18} /> Utilisateurs
         </NavLink>
         <NavLink to="agents" className={linkClass} onClick={onNavigate}>
-          <Briefcase size={18} /> Agents
+          <Briefcase size={18} /> Gestion agents
         </NavLink>
         <NavLink to="/dashboard/admin/overview" className={linkClass} onClick={onNavigate}>
           <LayoutDashboard size={18} /> Dashboard
@@ -144,7 +145,10 @@ export default function AdminSidebar() {
           <Activity size={18} /> Risk Heatmap
         </NavLink>
         <NavLink to="/dashboard/admin/liquidity" className={linkClass} onClick={onNavigate}>
-          <Droplets size={18} /> Liquidity
+          <Droplets size={18} /> Gestion liquidite
+        </NavLink>
+        <NavLink to="/dashboard/admin/notifications" className={linkClass} onClick={onNavigate}>
+          <Bell size={18} /> Notifications
         </NavLink>
         <NavLink to="/dashboard/admin/arbitrage" className={linkClass} onClick={onNavigate}>
           <TrendingUp size={18} /> Arbitrage
