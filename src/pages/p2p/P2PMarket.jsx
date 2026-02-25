@@ -3,6 +3,23 @@ import { useNavigate } from "react-router-dom";
 import api from "@/services/api";
 
 const formatPaymentMethod = (m) => (m === "ECOCASH" ? "eNOTI" : m);
+const sideLabel = (side) => (side === "SELL" ? "Vente" : "Achat");
+const sideBadgeClass = (side) =>
+  side === "SELL"
+    ? "bg-amber-100 text-amber-800 border border-amber-200"
+    : "bg-sky-100 text-sky-800 border border-sky-200";
+const tokenBadgeClass = (token) =>
+  token === "USDT"
+    ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+    : "bg-indigo-100 text-indigo-800 border border-indigo-200";
+const actionButtonClass = (side, disabled) => {
+  if (disabled) {
+    return "w-full px-4 py-2.5 rounded-lg bg-slate-200 text-slate-500 cursor-not-allowed font-medium";
+  }
+  return side === "SELL"
+    ? "w-full px-4 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 shadow-sm"
+    : "w-full px-4 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-400 hover:to-rose-400 shadow-sm";
+};
 
 export default function P2PMarket() {
   const navigate = useNavigate();
@@ -76,18 +93,21 @@ export default function P2PMarket() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-slate-900">Marche P2P</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">Marche P2P</h1>
+          <p className="text-sm text-slate-600 mt-1">Offres de vente et achat USDC/USDT</p>
+        </div>
         <button
-          className="px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+          className="px-4 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-slate-900 to-slate-700 hover:from-slate-800 hover:to-slate-600 shadow-sm"
           onClick={() => navigate("/app/p2p/offers/new")}
         >
           Creer une offre
         </button>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
         <select
-          className="border border-slate-300 rounded-lg px-3 py-2"
+          className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
           value={token}
           onChange={(e) => setToken(e.target.value)}
         >
@@ -97,7 +117,7 @@ export default function P2PMarket() {
         </select>
 
         <select
-          className="border border-slate-300 rounded-lg px-3 py-2"
+          className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
           value={side}
           onChange={(e) => setSide(e.target.value)}
         >
@@ -107,7 +127,7 @@ export default function P2PMarket() {
         </select>
 
         <button
-          className="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50"
+          className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50"
           onClick={loadOffers}
           disabled={loading}
         >
@@ -121,27 +141,34 @@ export default function P2PMarket() {
       {offers.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {offers.map((offer) => (
-            <div key={offer.offer_id} className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+            <div key={offer.offer_id} className="bg-white border border-slate-200 shadow-sm rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-900">
-                  {offer.side} {offer.token}
-                </span>
-                <span className="text-sm px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${sideBadgeClass(offer.side)}`}>
+                    {sideLabel(offer.side)}
+                  </span>
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${tokenBadgeClass(offer.token)}`}>
+                    {offer.token}
+                  </span>
+                </div>
+                <span className="text-sm px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                   {formatPaymentMethod(offer.payment_method)}
                 </span>
               </div>
-              <div className="text-sm text-slate-700">
-                Prix: <b>{offer.price_bif_per_usd}</b> BIF/USD
-              </div>
-              <div className="text-sm text-slate-700">
-                Limites: {offer.min_token_amount} - {offer.max_token_amount} {offer.token}
-              </div>
-              <div className="text-sm text-slate-700">
-                Disponible: <b>{offer.available_amount}</b> {offer.token}
+              <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-1">
+                <div className="text-sm text-slate-700">
+                  Prix: <b>{offer.price_bif_per_usd}</b> BIF/USD
+                </div>
+                <div className="text-sm text-slate-700">
+                  Limites: {offer.min_token_amount} - {offer.max_token_amount} {offer.token}
+                </div>
+                <div className="text-sm text-slate-700">
+                  Disponible: <b>{offer.available_amount}</b> {offer.token}
+                </div>
               </div>
               {offer.terms && <div className="text-sm text-slate-600">{offer.terms}</div>}
               <button
-                className="w-full px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
+                className={actionButtonClass(offer.side, offer.user_id === meId)}
                 onClick={() => createTrade(offer)}
                 disabled={offer.user_id === meId}
               >
