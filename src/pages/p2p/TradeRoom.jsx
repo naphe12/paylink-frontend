@@ -9,6 +9,8 @@ export default function TradeRoom() {
   const [trade, setTrade] = useState(null);
   const [history, setHistory] = useState([]);
   const [proofUrl, setProofUrl] = useState("");
+  const [sandboxTxHash, setSandboxTxHash] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,6 +27,18 @@ export default function TradeRoom() {
   useEffect(() => {
     load().catch((err) => setError(err.message || "Erreur chargement trade"));
   }, [load]);
+
+  useEffect(() => {
+    const loadMe = async () => {
+      try {
+        const me = await api.get("/auth/me");
+        setIsAdmin(String(me?.role || "").toLowerCase() === "admin");
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+    loadMe();
+  }, []);
 
   const markPaid = async () => {
     setLoading(true);
@@ -62,6 +76,21 @@ export default function TradeRoom() {
       await load();
     } catch (err) {
       setError(err.message || "Erreur ouverture litige");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const forceCryptoLocked = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      await api.post(`/api/p2p/trades/${id}/sandbox/crypto-locked`, {
+        escrow_tx_hash: sandboxTxHash || null,
+      });
+      await load();
+    } catch (err) {
+      setError(err.message || "Erreur sandbox CRYPTO_LOCKED");
     } finally {
       setLoading(false);
     }
@@ -123,6 +152,27 @@ export default function TradeRoom() {
           Ouvrir litige
         </button>
       </div>
+
+      {isAdmin && (
+        <div className="p-4 border border-indigo-200 bg-indigo-50 rounded-xl space-y-3">
+          <div className="text-sm font-semibold text-indigo-900">Sandbox Admin</div>
+          <div className="flex gap-3 flex-wrap">
+            <input
+              value={sandboxTxHash}
+              onChange={(e) => setSandboxTxHash(e.target.value)}
+              placeholder="Tx hash optionnel (sinon auto)"
+              className="flex-1 min-w-[280px] px-3 py-2 border border-indigo-300 rounded-lg"
+            />
+            <button
+              disabled={loading}
+              onClick={forceCryptoLocked}
+              className="px-4 py-2 rounded-lg bg-indigo-700 text-white disabled:opacity-60"
+            >
+              Forcer CRYPTO_LOCKED
+            </button>
+          </div>
+        </div>
+      )}
 
       <h3 className="text-lg font-semibold text-slate-900">Timeline</h3>
       <div className="border border-slate-200 bg-white rounded-xl p-4">
