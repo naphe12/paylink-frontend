@@ -1,9 +1,14 @@
-// src/pages/WalletPage.jsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import WalletCard from "@/components/WalletCard";
 import WalletHistoryTable from "@/components/wallet/WalletHistoryTable";
 import api from "@/services/api";
+
+const TABS = [
+  { id: "fiat", label: "BIF / EUR" },
+  { id: "usdc", label: "USDC" },
+  { id: "usdt", label: "USDT" },
+];
 
 export default function WalletPage() {
   const [wallet, setWallet] = useState(null);
@@ -15,7 +20,7 @@ export default function WalletPage() {
   });
   const [depositRequestAmounts, setDepositRequestAmounts] = useState({ USDC: "", USDT: "" });
   const [loading, setLoading] = useState(true);
-  const [activeCryptoWallet, setActiveCryptoWallet] = useState("USDC");
+  const [activeTab, setActiveTab] = useState("fiat");
   const [showHistory, setShowHistory] = useState({
     fiat: false,
     usdc: false,
@@ -83,149 +88,162 @@ export default function WalletPage() {
     return <p className="p-4 text-red-500">Portefeuille introuvable.</p>;
   }
 
-  const selectedToken = activeCryptoWallet;
-  const selectedInstruction = depositInstructions[selectedToken];
-  const selectedBalance =
-    selectedToken === "USDC"
+  const activeToken = activeTab === "usdt" ? "USDT" : "USDC";
+  const activeInstruction = depositInstructions[activeToken];
+  const activeBalance =
+    activeToken === "USDC"
       ? Number(cryptoBalances.USDC || usdcWallet?.balance || 0)
       : Number(cryptoBalances.USDT || 0);
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <WalletCard wallet={wallet} onRefresh={loadWallet} />
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3 h-full">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-800">Wallet Crypto</h3>
-              <p className="text-sm text-slate-500">
-                Creez une demande de depot, envoyez les fonds a l'adresse PayLink, puis le watcher credite votre wallet interne.
-              </p>
-            </div>
-            <button
-              onClick={loadWallet}
-              className="text-sm rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50"
-            >
-              Rafraichir
-            </button>
-          </div>
-
-          <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-            {["USDC", "USDT"].map((tokenSymbol) => (
-              <button
-                key={tokenSymbol}
-                onClick={() => setActiveCryptoWallet(tokenSymbol)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                  activeCryptoWallet === tokenSymbol
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                {tokenSymbol}
-              </button>
-            ))}
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-            <div className="rounded-xl bg-white border border-slate-200 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Solde {selectedToken}</p>
-              <p className="mt-1 text-2xl font-bold text-slate-900">
-                {selectedBalance.toFixed(6)} {selectedToken}
-              </p>
-              {selectedToken === "USDC" && usdcWallet?.account_code && (
-                <p className="mt-1 text-xs text-slate-500">Compte: {usdcWallet.account_code}</p>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-slate-800">
-                Adresse de depot {selectedToken}
-              </p>
-              <span className="text-xs text-slate-500">Polygon</span>
-            </div>
-            <p className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 break-all">
-              {selectedInstruction?.paylink_deposit_address || "Adresse PayLink non configuree"}
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">Mes wallets</h2>
+            <p className="text-sm text-slate-500">
+              Consultez un wallet a la fois avec ses actions et son historique dedie.
             </p>
-            <div className="flex items-center gap-3">
-              <input
-                type="number"
-                min="0"
-                step="0.000001"
-                value={depositRequestAmounts[selectedToken] || ""}
-                onChange={(e) =>
-                  setDepositRequestAmounts((prev) => ({ ...prev, [selectedToken]: e.target.value }))
-                }
-                placeholder={`Montant attendu ${selectedToken} (optionnel)`}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-              <button
-                onClick={() => createDepositRequest(selectedToken)}
-                className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-white"
+          </div>
+          <button
+            onClick={loadWallet}
+            className="text-sm rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50"
+          >
+            Rafraichir
+          </button>
+        </div>
+
+        <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                activeTab === tab.id
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "fiat" ? (
+          <div className="space-y-4">
+            <WalletCard wallet={wallet} onRefresh={loadWallet} />
+            <div className="flex flex-wrap gap-2">
+              <Link
+                to="/dashboard/client/withdraw/bif"
+                className="inline-flex items-center rounded-lg bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-700 transition"
               >
-                Generer
+                Retirer BIF
+              </Link>
+              <button
+                onClick={() => setShowHistory((prev) => ({ ...prev, fiat: !prev.fiat }))}
+                className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+              >
+                {showHistory.fiat ? "Masquer historique BIF/EUR" : "Historique BIF/EUR"}
               </button>
             </div>
-            <div className="text-xs text-slate-500 space-y-1">
-              {selectedInstruction?.active_request ? (
-                <>
-                  <p>Demande active: {selectedInstruction.active_request.request_id}</p>
-                  <p>
-                    Montant attendu: {selectedInstruction.active_request.expected_amount ?? "-"} {selectedToken}
-                  </p>
-                  <p>Expire le: {selectedInstruction.active_request.expires_at || "-"}</p>
-                  <button
-                    onClick={() => cancelDepositRequest(selectedToken)}
-                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-white"
-                  >
-                    Annuler la demande
-                  </button>
-                </>
-              ) : (
-                <p>Aucune demande active pour le moment.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm space-y-4">
+              <div className="rounded-xl bg-white border border-slate-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Solde {activeToken}</p>
+                <p className="mt-1 text-2xl font-bold text-slate-900">
+                  {activeBalance.toFixed(6)} {activeToken}
+                </p>
+                {activeToken === "USDC" && usdcWallet?.account_code && (
+                  <p className="mt-1 text-xs text-slate-500">Compte: {usdcWallet.account_code}</p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-slate-800">
+                  Adresse de depot {activeToken}
+                </p>
+                <span className="text-xs text-slate-500">Polygon</span>
+              </div>
+              <p className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 break-all">
+                {activeInstruction?.paylink_deposit_address || "Adresse PayLink non configuree"}
+              </p>
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.000001"
+                  value={depositRequestAmounts[activeToken] || ""}
+                  onChange={(e) =>
+                    setDepositRequestAmounts((prev) => ({ ...prev, [activeToken]: e.target.value }))
+                  }
+                  placeholder={`Montant attendu ${activeToken} (optionnel)`}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+                <button
+                  onClick={() => createDepositRequest(activeToken)}
+                  className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-white"
+                >
+                  Generer
+                </button>
+              </div>
+
+              <div className="text-xs text-slate-500 space-y-1">
+                {activeInstruction?.active_request ? (
+                  <>
+                    <p>Demande active: {activeInstruction.active_request.request_id}</p>
+                    <p>
+                      Montant attendu: {activeInstruction.active_request.expected_amount ?? "-"} {activeToken}
+                    </p>
+                    <p>Expire le: {activeInstruction.active_request.expires_at || "-"}</p>
+                    <button
+                      onClick={() => cancelDepositRequest(activeToken)}
+                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-white"
+                    >
+                      Annuler la demande
+                    </button>
+                  </>
+                ) : (
+                  <p>Aucune demande active pour le moment.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {activeToken === "USDC" && (
+                <Link
+                  to="/dashboard/client/withdraw/usdc"
+                  className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
+                >
+                  Retirer USDC
+                </Link>
               )}
+              <Link
+                to="/dashboard/client/crypto-pay"
+                className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+              >
+                Crediter via CryptoPay
+              </Link>
+              <button
+                onClick={() =>
+                  setShowHistory((prev) => ({
+                    ...prev,
+                    [activeToken.toLowerCase()]: !prev[activeToken.toLowerCase()],
+                  }))
+                }
+                className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+              >
+                {showHistory[activeToken.toLowerCase()]
+                  ? `Masquer historique ${activeToken}`
+                  : `Historique ${activeToken}`}
+              </button>
             </div>
           </div>
+        )}
+      </section>
 
-          <div className="flex flex-wrap gap-2">
-            <Link
-              to="/dashboard/client/withdraw/bif"
-              className="inline-flex items-center rounded-lg bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-700 transition"
-            >
-              Retirer BIF
-            </Link>
-            <Link
-              to="/dashboard/client/withdraw/usdc"
-              className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
-            >
-              Retirer USDC
-            </Link>
-            <Link
-              to="/dashboard/client/crypto-pay"
-              className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-            >
-              Crediter via CryptoPay
-            </Link>
-            <button
-              onClick={() => setShowHistory((prev) => ({ ...prev, fiat: !prev.fiat }))}
-              className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-            >
-              {showHistory.fiat ? "Masquer historique BIF/EUR" : "Historique BIF/EUR"}
-            </button>
-            <button
-              onClick={() => setShowHistory((prev) => ({ ...prev, usdc: !prev.usdc }))}
-              className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-            >
-              {showHistory.usdc ? "Masquer historique USDC" : "Historique USDC"}
-            </button>
-            <button
-              onClick={() => setShowHistory((prev) => ({ ...prev, usdt: !prev.usdt }))}
-              className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-            >
-              {showHistory.usdt ? "Masquer historique USDT" : "Historique USDT"}
-            </button>
-          </div>
-        </section>
-      </div>
       {showHistory.fiat && (
         <WalletHistoryTable
           walletId={wallet.wallet_id}
