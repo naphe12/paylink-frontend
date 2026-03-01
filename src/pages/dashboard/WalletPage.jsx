@@ -10,6 +10,23 @@ const TABS = [
   { id: "usdt", label: "USDT" },
 ];
 
+const CRYPTO_THEME = {
+  USDC: {
+    panel: "border-cyan-200 bg-gradient-to-br from-cyan-50 via-sky-50 to-white",
+    balance: "border-cyan-200 bg-white",
+    amount: "text-cyan-700",
+    chip: "bg-cyan-100 text-cyan-800 border-cyan-200",
+    button: "bg-cyan-600 hover:bg-cyan-700 text-white border-cyan-600",
+  },
+  USDT: {
+    panel: "border-emerald-200 bg-gradient-to-br from-emerald-50 via-teal-50 to-white",
+    balance: "border-emerald-200 bg-white",
+    amount: "text-emerald-700",
+    chip: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    button: "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600",
+  },
+};
+
 export default function WalletPage() {
   const [wallet, setWallet] = useState(null);
   const [usdcWallet, setUsdcWallet] = useState(null);
@@ -94,6 +111,7 @@ export default function WalletPage() {
     activeToken === "USDC"
       ? Number(cryptoBalances.USDC || usdcWallet?.balance || 0)
       : Number(cryptoBalances.USDT || 0);
+  const theme = CRYPTO_THEME[activeToken];
 
   return (
     <div className="space-y-6">
@@ -149,10 +167,10 @@ export default function WalletPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm space-y-4">
-              <div className="rounded-xl bg-white border border-slate-200 p-4">
+            <div className={`rounded-2xl border p-5 shadow-sm space-y-4 ${theme.panel}`}>
+              <div className={`rounded-xl border p-4 ${theme.balance}`}>
                 <p className="text-xs uppercase tracking-wide text-slate-500">Solde {activeToken}</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">
+                <p className={`mt-1 text-2xl font-bold ${theme.amount}`}>
                   {activeBalance.toFixed(6)} {activeToken}
                 </p>
                 {activeToken === "USDC" && usdcWallet?.account_code && (
@@ -164,7 +182,7 @@ export default function WalletPage() {
                 <p className="text-sm font-semibold text-slate-800">
                   Adresse de depot {activeToken}
                 </p>
-                <span className="text-xs text-slate-500">Polygon</span>
+                <span className={`border px-2 py-1 rounded-full text-xs ${theme.chip}`}>Polygon</span>
               </div>
               <p className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 break-all">
                 {activeInstruction?.paylink_deposit_address || "Adresse PayLink non configuree"}
@@ -184,7 +202,7 @@ export default function WalletPage() {
                 />
                 <button
                   onClick={() => createDepositRequest(activeToken)}
-                  className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-white"
+                  className={`shrink-0 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${theme.button}`}
                 >
                   Generer
                 </button>
