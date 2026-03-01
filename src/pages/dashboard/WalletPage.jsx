@@ -200,6 +200,18 @@ export default function WalletPage() {
         walletId={wallet.wallet_id}
         currency={wallet.display_currency_code || wallet.currency_code}
       />
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <WalletHistoryTable
+          tokenSymbol="USDC"
+          currency="USDC"
+          title="Historique Wallet USDC"
+        />
+        <WalletHistoryTable
+          tokenSymbol="USDT"
+          currency="USDT"
+          title="Historique Wallet USDT"
+        />
+      </div>
     </div>
   );
 }

@@ -206,6 +206,15 @@ const api = {
   async getCryptoWalletBalances() {
     return this.get("/wallet/crypto/balances");
   },
+  async getCryptoWalletHistory(tokenSymbol, params = {}) {
+    const search = new URLSearchParams({ token_symbol: tokenSymbol });
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        search.append(key, value);
+      }
+    });
+    return this.get(`/wallet/crypto/history?${search.toString()}`);
+  },
   async getCryptoDepositInstructions(tokenSymbol, network = "POLYGON") {
     const query = new URLSearchParams({
       token_symbol: tokenSymbol,

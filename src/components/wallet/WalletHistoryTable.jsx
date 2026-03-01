@@ -4,7 +4,12 @@ import { History, RefreshCw } from "lucide-react";
 
 const DEFAULT_FILTERS = { limit: 20, search: "" };
 
-export default function WalletHistoryTable({ walletId, currency }) {
+export default function WalletHistoryTable({
+  walletId,
+  currency,
+  tokenSymbol = null,
+  title = "Historique du portefeuille",
+}) {
   const effectiveCurrency = currency || "";
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -13,13 +18,15 @@ export default function WalletHistoryTable({ walletId, currency }) {
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
-    if (!walletId) return;
+    if (!walletId && !tokenSymbol) return;
     let active = true;
 
     const loadHistory = async () => {
       setLoading(true);
       try {
-        const data = await api.getWalletLedger(walletId, appliedFilters);
+        const data = tokenSymbol
+          ? await api.getCryptoWalletHistory(tokenSymbol, appliedFilters)
+          : await api.getWalletLedger(walletId, appliedFilters);
         if (active) setEntries(data);
       } catch (err) {
         console.error("Erreur chargement historique wallet:", err);
@@ -33,7 +40,7 @@ export default function WalletHistoryTable({ walletId, currency }) {
     return () => {
       active = false;
     };
-  }, [walletId, appliedFilters, reloadToken]);
+  }, [walletId, tokenSymbol, appliedFilters, reloadToken]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -51,7 +58,7 @@ export default function WalletHistoryTable({ walletId, currency }) {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <History size={20} /> Historique du portefeuille
+            <History size={20} /> {title}
           </h3>
           <p className="text-xs text-slate-500">{badge}</p>
         </div>
