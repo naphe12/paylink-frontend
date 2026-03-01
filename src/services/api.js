@@ -203,6 +203,28 @@ const api = {
   async getUsdcWallet() {
     return this.get("/wallet/usdc");
   },
+  async getCryptoWalletBalances() {
+    return this.get("/wallet/crypto/balances");
+  },
+  async getCryptoDepositInstructions(tokenSymbol, network = "POLYGON") {
+    const query = new URLSearchParams({
+      token_symbol: tokenSymbol,
+      network,
+    }).toString();
+    return this.get(`/wallet/crypto/deposit-instructions?${query}`);
+  },
+  async getCryptoDepositRequests(tokenSymbol) {
+    const query = tokenSymbol
+      ? `?${new URLSearchParams({ token_symbol: tokenSymbol }).toString()}`
+      : "";
+    return this.get(`/wallet/crypto/deposit-requests${query}`);
+  },
+  async createCryptoDepositRequest(payload) {
+    return this.post("/wallet/crypto/deposit-requests", payload);
+  },
+  async cancelCryptoDepositRequest(requestId) {
+    return this.post(`/wallet/crypto/deposit-requests/${requestId}/cancel`, {});
+  },
   async getAgentAccounts() {
     return this.get("/wallet/cash/agent-accounts");
   },
