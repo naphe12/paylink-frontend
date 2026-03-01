@@ -15,6 +15,7 @@ export default function WalletPage() {
   });
   const [depositRequestAmounts, setDepositRequestAmounts] = useState({ USDC: "", USDT: "" });
   const [loading, setLoading] = useState(true);
+  const [showHistories, setShowHistories] = useState(false);
 
   const loadWallet = async () => {
     try {
@@ -193,25 +194,35 @@ export default function WalletPage() {
             >
               Crediter via CryptoPay
             </Link>
+            <button
+              onClick={() => setShowHistories((prev) => !prev)}
+              className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+            >
+              {showHistories ? "Masquer historiques" : "Montrer historiques"}
+            </button>
           </div>
         </section>
       </div>
-      <WalletHistoryTable
-        walletId={wallet.wallet_id}
-        currency={wallet.display_currency_code || wallet.currency_code}
-      />
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <WalletHistoryTable
-          tokenSymbol="USDC"
-          currency="USDC"
-          title="Historique Wallet USDC"
-        />
-        <WalletHistoryTable
-          tokenSymbol="USDT"
-          currency="USDT"
-          title="Historique Wallet USDT"
-        />
-      </div>
+      {showHistories && (
+        <>
+          <WalletHistoryTable
+            walletId={wallet.wallet_id}
+            currency={wallet.display_currency_code || wallet.currency_code}
+          />
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <WalletHistoryTable
+              tokenSymbol="USDC"
+              currency="USDC"
+              title="Historique Wallet USDC"
+            />
+            <WalletHistoryTable
+              tokenSymbol="USDT"
+              currency="USDT"
+              title="Historique Wallet USDT"
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }
