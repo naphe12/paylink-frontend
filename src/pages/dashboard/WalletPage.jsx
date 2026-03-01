@@ -232,23 +232,19 @@ export default function WalletPage() {
           currency={wallet.display_currency_code || wallet.currency_code}
         />
       )}
-      {(showHistory.usdc || showHistory.usdt) && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {showHistory.usdc && (
-            <WalletHistoryTable
-              tokenSymbol="USDC"
-              currency="USDC"
-              title="Historique Wallet USDC"
-            />
-          )}
-          {showHistory.usdt && (
-            <WalletHistoryTable
-              tokenSymbol="USDT"
-              currency="USDT"
-              title="Historique Wallet USDT"
-            />
-          )}
-        </div>
+      {showHistory.usdc && (
+        <WalletHistoryTable
+          tokenSymbol="USDC"
+          currency="USDC"
+          title="Historique Wallet USDC"
+        />
+      )}
+      {showHistory.usdt && (
+        <WalletHistoryTable
+          tokenSymbol="USDT"
+          currency="USDT"
+          title="Historique Wallet USDT"
+        />
       )}
     </div>
   );
