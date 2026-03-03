@@ -28,24 +28,54 @@ export default function P2PMyOffers() {
   const [offers, setOffers] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [actionId, setActionId] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const mine = await api.get("/api/p2p/offers/mine");
+      setOffers(Array.isArray(mine) ? mine : []);
+    } catch (err) {
+      setError(err.message || "Erreur chargement offres");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const me = await api.get("/auth/me");
-        const all = await api.get("/api/p2p/offers");
-        const mine = (Array.isArray(all) ? all : []).filter((o) => o.user_id === me.user_id);
-        setOffers(mine);
-      } catch (err) {
-        setError(err.message || "Erreur chargement offres");
-      } finally {
-        setLoading(false);
-      }
-    };
     load();
   }, []);
+
+  const toggleOffer = async (offer) => {
+    setActionId(offer.offer_id);
+    setError("");
+    try {
+      const path = offer.is_active
+        ? `/api/p2p/offers/${offer.offer_id}/deactivate`
+        : `/api/p2p/offers/${offer.offer_id}/activate`;
+      await api.post(path, {});
+      await load();
+    } catch (err) {
+      setError(err.message || "Erreur mise a jour offre");
+    } finally {
+      setActionId("");
+    }
+  };
+
+  const deleteOffer = async (offer) => {
+    if (!window.confirm("Supprimer cette offre ?")) return;
+    setActionId(offer.offer_id);
+    setError("");
+    try {
+      await api.del(`/api/p2p/offers/${offer.offer_id}`);
+      await load();
+    } catch (err) {
+      setError(err.message || "Erreur suppression offre");
+    } finally {
+      setActionId("");
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-5">
@@ -100,20 +130,43 @@ export default function P2PMyOffers() {
 
             <div className="text-sm text-slate-700">{paymentLabel(offer.payment_method)}</div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                className="flex-1 px-3 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-500 hover:to-blue-400 shadow-sm"
+                className="px-3 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-500 hover:to-blue-400 shadow-sm"
                 onClick={() => navigate("/app/p2p")}
               >
-                Voir marche
+                Voir le marche P2P
               </button>
               <button
                 type="button"
-                className="flex-1 px-3 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 shadow-sm"
-                onClick={() => navigate("/app/p2p/offers/new")}
+                className="px-3 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-slate-900 to-slate-700 hover:from-slate-800 hover:to-slate-600 shadow-sm"
+                onClick={() => navigate(`/app/p2p/offers/${offer.offer_id}/edit`)}
+              >
+                Modifier
+              </button>
+              <button
+                type="button"
+                className="px-3 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 shadow-sm"
+                onClick={() => navigate("/app/p2p/offers/new", { state: { prefillOffer: offer } })}
               >
                 Dupliquer
+              </button>
+              <button
+                type="button"
+                disabled={actionId === offer.offer_id}
+                className="px-3 py-2 rounded-lg font-semibold border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                onClick={() => toggleOffer(offer)}
+              >
+                {offer.is_active ? "Mettre en pause" : "Reprendre"}
+              </button>
+              <button
+                type="button"
+                disabled={actionId === offer.offer_id}
+                className="px-3 py-2 rounded-lg font-semibold border border-rose-200 text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                onClick={() => deleteOffer(offer)}
+              >
+                Supprimer
               </button>
             </div>
 

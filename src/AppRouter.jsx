@@ -299,6 +299,7 @@ export default function AppRouter() {
         <Route path="p2p/my-trades" element={<P2PMyTrades />} />
         <Route path="p2p/my-offers" element={<P2PMyOffers />} />
         <Route path="p2p/offers/new" element={<CreateOffer />} />
+        <Route path="p2p/offers/:id/edit" element={<CreateOffer />} />
         <Route path="p2p/trades/:id" element={<TradeRoom />} />
       </Route>
       <Route
