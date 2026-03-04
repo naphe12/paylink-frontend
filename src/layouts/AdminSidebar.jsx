@@ -119,7 +119,7 @@ export default function AdminSidebar() {
         </button>
       </div>
 
-      <nav className="flex-1 px-4 py-6 space-y-2">
+      <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2">Surveillance</p>
         <NavLink to="users" className={linkClass} onClick={onNavigate}>
           <Users size={18} /> Utilisateurs
