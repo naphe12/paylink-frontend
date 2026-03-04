@@ -119,7 +119,7 @@ export default function AdminSidebar() {
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <nav className="flex-1 px-4 py-6 space-y-2">
         <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2">Surveillance</p>
         <NavLink to="users" className={linkClass} onClick={onNavigate}>
           <Users size={18} /> Utilisateurs
@@ -332,12 +332,12 @@ export default function AdminSidebar() {
       )}
 
       <aside
-        className={`${sidebarVisible ? "hidden lg:flex" : "hidden"} lg:fixed lg:inset-y-0 lg:left-0 w-72 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white flex-col border-r border-white/5`}
+        className={`${sidebarVisible ? "hidden lg:flex" : "hidden"} w-72 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white flex-col border-r border-white/5`}
       >
         <SidebarContent />
       </aside>
 
-      <main className={`flex-1 flex flex-col pt-16 lg:pt-0 ${sidebarVisible ? "lg:ml-72" : ""}`}>
+      <main className="flex-1 flex flex-col pt-16 lg:pt-0">
         <div className="hidden lg:flex justify-end px-4 pt-4">
           <button
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition"
@@ -347,7 +347,7 @@ export default function AdminSidebar() {
             {sidebarVisible ? "Masquer le menu" : "Afficher le menu"}
           </button>
         </div>
-        <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-slate-50 rounded-t-3xl lg:rounded-none lg:rounded-l-3xl shadow-inner">
+        <div className="p-4 sm:p-6 lg:p-8 bg-slate-50 rounded-t-3xl lg:rounded-none lg:rounded-l-3xl shadow-inner">
           <Outlet />
         </div>
       </main>
