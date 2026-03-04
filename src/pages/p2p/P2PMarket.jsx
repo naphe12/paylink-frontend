@@ -29,6 +29,10 @@ export default function P2PMarket() {
   const [token, setToken] = useState("");
   const [side, setSide] = useState("");
   const [meId, setMeId] = useState("");
+  const [marketToken, setMarketToken] = useState("USDC");
+  const [marketSide, setMarketSide] = useState("BUY");
+  const [marketAmount, setMarketAmount] = useState("");
+  const [marketLoading, setMarketLoading] = useState(false);
 
   const loadOffers = useCallback(async () => {
     setLoading(true);
@@ -90,6 +94,30 @@ export default function P2PMarket() {
     }
   };
 
+  const createMarketOrder = async () => {
+    const amount = Number(marketAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      window.alert("Montant invalide.");
+      return;
+    }
+
+    setMarketLoading(true);
+    setError("");
+    try {
+      const query = new URLSearchParams({
+        token: marketToken,
+        side: marketSide,
+        token_amount: String(amount),
+      }).toString();
+      const trade = await api.post(`/api/p2p/market-order?${query}`, {});
+      navigate(`/app/p2p/trades/${trade.trade_id}`);
+    } catch (err) {
+      setError(err.message || "Impossible de creer l'ordre au marche");
+    } finally {
+      setMarketLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -133,6 +161,49 @@ export default function P2PMarket() {
         >
           Rafraichir
         </button>
+      </div>
+
+      <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-4 space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Ordre au marche</h2>
+          <p className="text-sm text-slate-600 mt-1">
+            Execute rapidement au meilleur prix disponible. Si aucune offre ne correspond, le backend peut utiliser le market maker.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <select
+            className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            value={marketToken}
+            onChange={(e) => setMarketToken(e.target.value)}
+          >
+            <option value="USDC">USDC</option>
+            <option value="USDT">USDT</option>
+          </select>
+          <select
+            className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            value={marketSide}
+            onChange={(e) => setMarketSide(e.target.value)}
+          >
+            <option value="BUY">Acheter</option>
+            <option value="SELL">Vendre</option>
+          </select>
+          <input
+            className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            type="number"
+            min="0"
+            step="0.00000001"
+            placeholder={`Montant ${marketToken}`}
+            value={marketAmount}
+            onChange={(e) => setMarketAmount(e.target.value)}
+          />
+          <button
+            className="px-4 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-fuchsia-600 to-rose-500 hover:from-fuchsia-500 hover:to-rose-400 shadow-sm disabled:opacity-60"
+            onClick={createMarketOrder}
+            disabled={marketLoading}
+          >
+            {marketLoading ? "Execution..." : "Executer au marche"}
+          </button>
+        </div>
       </div>
 
       {error && <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700">{error}</div>}
