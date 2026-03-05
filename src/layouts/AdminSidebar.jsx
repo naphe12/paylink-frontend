@@ -28,6 +28,8 @@ import {
   Droplets,
   Power,
   Wifi,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
@@ -68,6 +70,16 @@ export default function AdminSidebar() {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [amlCount, setAmlCount] = useState(0);
   const [wsLive, setWsLive] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState({
+    surveillance: false,
+    p2p: false,
+    escrowLedger: false,
+    operations: false,
+    microfinance: false,
+    tontines: false,
+    config: false,
+    modeAgent: false,
+  });
   const env = import.meta.env.VITE_APP_ENV || "dev";
 
   useEffect(() => {
@@ -95,6 +107,13 @@ export default function AdminSidebar() {
       isActive ? "bg-white/15 text-white shadow-lg shadow-black/10" : "text-slate-200 hover:bg-white/10"
     }`;
 
+  const toggleGroup = (key) => {
+    setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const groupButtonClass =
+    "w-full flex items-center justify-between px-2 py-2 text-[11px] uppercase tracking-[0.3em] text-slate-500 hover:text-slate-300 transition";
+
   const SidebarContent = ({ onNavigate }) => (
     <div className="h-full flex flex-col">
       <div className="px-6 py-8 border-b border-white/10">
@@ -120,165 +139,226 @@ export default function AdminSidebar() {
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-2">
-        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2">Surveillance</p>
-        <NavLink to="users" className={linkClass} onClick={onNavigate}>
-          <Users size={18} /> Utilisateurs
-        </NavLink>
-        <NavLink to="agents" className={linkClass} onClick={onNavigate}>
-          <Briefcase size={18} /> Gestion agents
-        </NavLink>
-        <NavLink to="/dashboard/admin/overview" className={linkClass} onClick={onNavigate}>
-          <LayoutDashboard size={18} /> Dashboard
-        </NavLink>
-        <NavLink to="/dashboard/admin/aml-cases" className={linkClass} onClick={onNavigate}>
-          <div className="flex items-center gap-3">
-            <ShieldAlert size={18} />
-            <span>AML Cases</span>
+        <button className={groupButtonClass} onClick={() => toggleGroup("surveillance")}>
+          <span>Surveillance</span>
+          {collapsedGroups.surveillance ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        </button>
+        {!collapsedGroups.surveillance && (
+          <div className="space-y-2">
+            <NavLink to="users" className={linkClass} onClick={onNavigate}>
+              <Users size={18} /> Utilisateurs
+            </NavLink>
+            <NavLink to="agents" className={linkClass} onClick={onNavigate}>
+              <Briefcase size={18} /> Gestion agents
+            </NavLink>
+            <NavLink to="/dashboard/admin/overview" className={linkClass} onClick={onNavigate}>
+              <LayoutDashboard size={18} /> Dashboard
+            </NavLink>
+            <NavLink to="/dashboard/admin/aml-cases" className={linkClass} onClick={onNavigate}>
+              <div className="flex items-center gap-3">
+                <ShieldAlert size={18} />
+                <span>AML Cases</span>
+              </div>
+              {amlCount > 0 && (
+                <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
+                  {amlCount}
+                </span>
+              )}
+            </NavLink>
+            <NavLink to="/dashboard/admin/risk-heatmap" className={linkClass} onClick={onNavigate}>
+              <Activity size={18} /> Risk Heatmap
+            </NavLink>
+            <NavLink to="/dashboard/admin/liquidity" className={linkClass} onClick={onNavigate}>
+              <Droplets size={18} /> Gestion liquidite
+            </NavLink>
+            <NavLink to="/dashboard/admin/notifications" className={linkClass} onClick={onNavigate}>
+              <Bell size={18} /> Notifications
+            </NavLink>
+            <NavLink to="/dashboard/admin/arbitrage" className={linkClass} onClick={onNavigate}>
+              <TrendingUp size={18} /> Arbitrage
+            </NavLink>
+            <NavLink
+              to="/dashboard/admin/kill-switch"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  isActive ? "bg-white/15 text-red-300 shadow-lg shadow-black/10" : "text-red-400 hover:bg-white/10"
+                }`
+              }
+              onClick={onNavigate}
+            >
+              <Power size={18} /> Kill Switch
+            </NavLink>
+            <NavLink to="security" className={linkClass} onClick={onNavigate}>
+              <ShieldAlert size={18} /> Securite live
+            </NavLink>
+            <NavLink to="webhooks" className={linkClass} onClick={onNavigate}>
+              <ShieldCheck size={18} /> Logs webhooks
+            </NavLink>
+            <NavLink to="/backoffice/audit" className={linkClass} onClick={onNavigate}>
+              <FileSearch size={18} /> Audit Log
+            </NavLink>
+            <NavLink to="/backoffice/monitoring" className={linkClass} onClick={onNavigate}>
+              <BarChart3 size={18} /> Monitoring
+            </NavLink>
+            <NavLink to="risk" className={linkClass} onClick={onNavigate}>
+              <ShieldAlert size={18} /> Risk monitoring
+            </NavLink>
           </div>
-          {amlCount > 0 && (
-            <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
-              {amlCount}
-            </span>
-          )}
-        </NavLink>
-        <NavLink to="/dashboard/admin/risk-heatmap" className={linkClass} onClick={onNavigate}>
-          <Activity size={18} /> Risk Heatmap
-        </NavLink>
-        <NavLink to="/dashboard/admin/liquidity" className={linkClass} onClick={onNavigate}>
-          <Droplets size={18} /> Gestion liquidite
-        </NavLink>
-        <NavLink to="/dashboard/admin/notifications" className={linkClass} onClick={onNavigate}>
-          <Bell size={18} /> Notifications
-        </NavLink>
-        <NavLink to="/dashboard/admin/arbitrage" className={linkClass} onClick={onNavigate}>
-          <TrendingUp size={18} /> Arbitrage
-        </NavLink>
-        <NavLink
-          to="/dashboard/admin/kill-switch"
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-medium transition ${
-              isActive ? "bg-white/15 text-red-300 shadow-lg shadow-black/10" : "text-red-400 hover:bg-white/10"
-            }`
-          }
-          onClick={onNavigate}
-        >
-          <Power size={18} /> Kill Switch
-        </NavLink>
-        <NavLink to="security" className={linkClass} onClick={onNavigate}>
-          <ShieldAlert size={18} /> Securite live
-        </NavLink>
-        <NavLink to="webhooks" className={linkClass} onClick={onNavigate}>
-          <ShieldCheck size={18} /> Logs webhooks
-        </NavLink>
-        <NavLink to="/backoffice/audit" className={linkClass} onClick={onNavigate}>
-          <FileSearch size={18} /> Audit Log
-        </NavLink>
-        <NavLink to="/backoffice/monitoring" className={linkClass} onClick={onNavigate}>
-          <BarChart3 size={18} /> Monitoring
-        </NavLink>
-        <NavLink to="risk" className={linkClass} onClick={onNavigate}>
-          <ShieldAlert size={18} /> Risk monitoring
-        </NavLink>
-        <NavLink to="p2p/trades" className={linkClass} onClick={onNavigate}>
-          <ArrowLeftRight size={18} /> P2P Monitoring
-        </NavLink>
-        <NavLink to="p2p/disputes" className={linkClass} onClick={onNavigate}>
-          <FileSearch size={18} /> Disputes
-        </NavLink>
-        <NavLink to="p2p/risk" className={linkClass} onClick={onNavigate}>
-          <ShieldAlert size={18} /> Risk / Flags
-        </NavLink>
+        )}
 
-        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-6">Operations</p>
-        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-4">Escrow</p>
-        <NavLink to="escrow" className={linkClass} onClick={onNavigate}>
-          <Coins size={18} /> File Escrow
-        </NavLink>
-        <NavLink to="escrow/audit" className={linkClass} onClick={onNavigate}>
-          <ShieldCheck size={18} /> Audit Escrow
-        </NavLink>
-        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mt-4">Ledger</p>
-        <NavLink to="ledger/balances" className={linkClass} onClick={onNavigate}>
-          <Wallet size={18} /> Balances
-        </NavLink>
-        <NavLink to="ledger/t-accounts" className={linkClass} onClick={onNavigate}>
-          <BookOpen size={18} /> T-Accounts
-        </NavLink>
-        <NavLink to="ops/liquidity-bif" className={linkClass} onClick={onNavigate}>
-          <Droplets size={18} /> Liquidite BIF (OPS)
-        </NavLink>
+        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("p2p")}>
+          <span>P2P</span>
+          {collapsedGroups.p2p ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        </button>
+        {!collapsedGroups.p2p && (
+          <div className="space-y-2">
+            <NavLink to="p2p/trades" className={linkClass} onClick={onNavigate}>
+              <ArrowLeftRight size={18} /> P2P Monitoring
+            </NavLink>
+            <NavLink to="p2p/disputes" className={linkClass} onClick={onNavigate}>
+              <FileSearch size={18} /> Disputes
+            </NavLink>
+            <NavLink to="p2p/risk" className={linkClass} onClick={onNavigate}>
+              <ShieldAlert size={18} /> Risk / Flags
+            </NavLink>
+          </div>
+        )}
 
-        <NavLink to="wallets" className={linkClass} onClick={onNavigate}>
-          <Wallet size={18} /> Portefeuilles
-        </NavLink>
-        <NavLink to="loans" className={linkClass} onClick={onNavigate}>
-          <CreditCard size={18} /> Credits
-        </NavLink>
-        <NavLink to="mobilemoney" className={linkClass} onClick={onNavigate}>
-          <Wallet size={18} /> Mobile Money
-        </NavLink>
-        <NavLink to="transfers" className={linkClass} onClick={onNavigate}>
-          <GitPullRequest size={18} /> Transferts externes
-        </NavLink>
-        <NavLink to="transfer-gains" className={linkClass} onClick={onNavigate}>
-          <TrendingUp size={18} /> Gains transferts
-        </NavLink>
-        <NavLink to="balance-events" className={linkClass} onClick={onNavigate}>
-          <LineChart size={18} /> Balances clients
-        </NavLink>
-        <NavLink to="transfer-approvals" className={linkClass} onClick={onNavigate}>
-          <GitPullRequest size={18} /> Validations transferts
-        </NavLink>
-        <NavLink to="settings" className={linkClass} onClick={onNavigate}>
-          <Settings size={18} /> Parametres
-        </NavLink>
-        <NavLink to="transactions-audit" className={linkClass} onClick={onNavigate}>
-          <ShieldCheck size={18} /> Audit transactions
-        </NavLink>
-        <NavLink to="cash-requests" className={linkClass} onClick={onNavigate}>
-          <Coins size={18} /> Cash in/out
-        </NavLink>
-        <NavLink to="payment-requests" className={linkClass} onClick={onNavigate}>
-          <HandCoins size={18} /> Demandes de paiement
-        </NavLink>
-        <NavLink to="credit-history" className={linkClass} onClick={onNavigate}>
-          <BookOpen size={18} /> Historique credits
-        </NavLink>
-        <NavLink to="credit-lines" className={linkClass} onClick={onNavigate}>
-          <BookOpen size={18} /> Lignes de credit
-        </NavLink>
-        <NavLink to="credit-lines/repay" className={linkClass} onClick={onNavigate}>
-          <BookOpen size={18} /> Remboursement credit
-        </NavLink>
-        <NavLink to="microfinance" className={linkClass} onClick={onNavigate}>
-          <Shield size={18} /> Microfinance
-        </NavLink>
-        <NavLink to="loan-products" className={linkClass} onClick={onNavigate}>
-          <BookOpen size={18} /> Produits pret
-        </NavLink>
-        <NavLink to="kyc/reviews" className={linkClass} onClick={onNavigate}>
-          <UserCheck size={18} /> Verif KYC
-        </NavLink>
-        <NavLink to="analytics" className={linkClass} onClick={onNavigate}>
-          <BarChart3 size={18} /> Statistiques
-        </NavLink>
-        <NavLink to="tontines-dashboard" className={linkClass} onClick={onNavigate}>
-          <BarChart3 size={18} /> Dashboard tontines
-        </NavLink>
-        <NavLink to="tontines-arrears" className={linkClass} onClick={onNavigate}>
-          <BarChart3 size={18} /> Impayes tontines
-        </NavLink>
-        <NavLink to="tontines/create" className={linkClass} onClick={onNavigate}>
-          <BarChart3 size={18} /> Creer une tontine
-        </NavLink>
-        <NavLink to="tontines/members" className={linkClass} onClick={onNavigate}>
-          <BarChart3 size={18} /> Membres tontines
-        </NavLink>
+        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("escrowLedger")}>
+          <span>Escrow & Ledger</span>
+          {collapsedGroups.escrowLedger ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        </button>
+        {!collapsedGroups.escrowLedger && (
+          <div className="space-y-2">
+            <NavLink to="escrow" className={linkClass} onClick={onNavigate}>
+              <Coins size={18} /> File Escrow
+            </NavLink>
+            <NavLink to="escrow/audit" className={linkClass} onClick={onNavigate}>
+              <ShieldCheck size={18} /> Audit Escrow
+            </NavLink>
+            <NavLink to="ledger/balances" className={linkClass} onClick={onNavigate}>
+              <Wallet size={18} /> Balances
+            </NavLink>
+            <NavLink to="ledger/t-accounts" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> T-Accounts
+            </NavLink>
+            <NavLink to="balance-events" className={linkClass} onClick={onNavigate}>
+              <LineChart size={18} /> Balances clients
+            </NavLink>
+          </div>
+        )}
+
+        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("operations")}>
+          <span>Operations</span>
+          {collapsedGroups.operations ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        </button>
+        {!collapsedGroups.operations && (
+          <div className="space-y-2">
+            <NavLink to="wallets" className={linkClass} onClick={onNavigate}>
+              <Wallet size={18} /> Portefeuilles
+            </NavLink>
+            <NavLink to="mobilemoney" className={linkClass} onClick={onNavigate}>
+              <Wallet size={18} /> Mobile Money
+            </NavLink>
+            <NavLink to="transfers" className={linkClass} onClick={onNavigate}>
+              <GitPullRequest size={18} /> Transferts externes
+            </NavLink>
+            <NavLink to="transfer-approvals" className={linkClass} onClick={onNavigate}>
+              <GitPullRequest size={18} /> Validations transferts
+            </NavLink>
+            <NavLink to="transfer-gains" className={linkClass} onClick={onNavigate}>
+              <TrendingUp size={18} /> Gains transferts
+            </NavLink>
+            <NavLink to="cash-requests" className={linkClass} onClick={onNavigate}>
+              <Coins size={18} /> Cash in/out
+            </NavLink>
+            <NavLink to="payment-requests" className={linkClass} onClick={onNavigate}>
+              <HandCoins size={18} /> Demandes de paiement
+            </NavLink>
+            <NavLink to="ops/liquidity-bif" className={linkClass} onClick={onNavigate}>
+              <Droplets size={18} /> Liquidite BIF (OPS)
+            </NavLink>
+          </div>
+        )}
+
+        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("microfinance")}>
+          <span>Microfinance</span>
+          {collapsedGroups.microfinance ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        </button>
+        {!collapsedGroups.microfinance && (
+          <div className="space-y-2">
+            <NavLink to="loans" className={linkClass} onClick={onNavigate}>
+              <CreditCard size={18} /> Credits
+            </NavLink>
+            <NavLink to="credit-history" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Historique credits
+            </NavLink>
+            <NavLink to="credit-lines" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Lignes de credit
+            </NavLink>
+            <NavLink to="credit-lines/repay" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Remboursement credit
+            </NavLink>
+            <NavLink to="microfinance" className={linkClass} onClick={onNavigate}>
+              <Shield size={18} /> Microfinance
+            </NavLink>
+            <NavLink to="loan-products" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Produits pret
+            </NavLink>
+          </div>
+        )}
+
+        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("tontines")}>
+          <span>Tontines</span>
+          {collapsedGroups.tontines ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        </button>
+        {!collapsedGroups.tontines && (
+          <div className="space-y-2">
+            <NavLink to="tontines-dashboard" className={linkClass} onClick={onNavigate}>
+              <BarChart3 size={18} /> Dashboard tontines
+            </NavLink>
+            <NavLink to="tontines-arrears" className={linkClass} onClick={onNavigate}>
+              <BarChart3 size={18} /> Impayes tontines
+            </NavLink>
+            <NavLink to="tontines/create" className={linkClass} onClick={onNavigate}>
+              <BarChart3 size={18} /> Creer une tontine
+            </NavLink>
+            <NavLink to="tontines/members" className={linkClass} onClick={onNavigate}>
+              <BarChart3 size={18} /> Membres tontines
+            </NavLink>
+          </div>
+        )}
+
+        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("config")}>
+          <span>Configuration</span>
+          {collapsedGroups.config ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        </button>
+        {!collapsedGroups.config && (
+          <div className="space-y-2">
+            <NavLink to="settings" className={linkClass} onClick={onNavigate}>
+              <Settings size={18} /> Parametres
+            </NavLink>
+            <NavLink to="kyc/reviews" className={linkClass} onClick={onNavigate}>
+              <UserCheck size={18} /> Verif KYC
+            </NavLink>
+            <NavLink to="analytics" className={linkClass} onClick={onNavigate}>
+              <BarChart3 size={18} /> Statistiques
+            </NavLink>
+          </div>
+        )}
+
         <div className="mt-8 pt-6 border-t border-white/10">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 px-2 mb-3">Mode Agent</p>
-          <NavLink to="/dashboard/agent/dashboard" className={linkClass} onClick={onNavigate}>
-            <ArrowLeftRight size={18} /> Hub agent
-          </NavLink>
+          <button className={groupButtonClass} onClick={() => toggleGroup("modeAgent")}>
+            <span>Mode Agent</span>
+            {collapsedGroups.modeAgent ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+          </button>
+          {!collapsedGroups.modeAgent && (
+            <div className="space-y-2 mt-2">
+              <NavLink to="/dashboard/agent/dashboard" className={linkClass} onClick={onNavigate}>
+                <ArrowLeftRight size={18} /> Hub agent
+              </NavLink>
+            </div>
+          )}
         </div>
       </nav>
 
