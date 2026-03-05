@@ -4,6 +4,7 @@ import { ArrowDownCircle } from "lucide-react";
 import api from "@/services/api";
 
 const agentMobileAccount = import.meta.env.VITE_AGENT_CASH_ACCOUNT || "+257 71 11 11 11";
+const bankTransferIban = "DE23 3706 9520 1020 0010 18";
 
 export default function DepositPage() {
   const [amount, setAmount] = useState("");
@@ -13,11 +14,12 @@ export default function DepositPage() {
   const [confirmation, setConfirmation] = useState(null);
   const [agentAccounts, setAgentAccounts] = useState([]);
   const [selectedAccountId, setSelectedAccountId] = useState("");
+  const [depositChannel, setDepositChannel] = useState("mobile_money");
 
   const fetchRequests = async () => {
     try {
       const data = await api.getCashRequests({ type: "deposit" });
-      setRequests(data);
+      setRequests(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Impossible de charger les demandes", err);
     }
@@ -26,9 +28,10 @@ export default function DepositPage() {
   const fetchAgentAccounts = async () => {
     try {
       const data = await api.getAgentAccounts();
-      setAgentAccounts(data || []);
-      if (data?.length && !selectedAccountId) {
-        setSelectedAccountId(data[0].id);
+      const list = Array.isArray(data) ? data : [];
+      setAgentAccounts(list);
+      if (list.length && !selectedAccountId) {
+        setSelectedAccountId(list[0].id);
       }
     } catch (err) {
       console.error("Impossible de charger les comptes agents", err);
@@ -42,15 +45,22 @@ export default function DepositPage() {
 
   const handleSubmit = async () => {
     if (!amount || Number(amount) <= 0) {
-      return alert("Indiquez un montant valide.");
+      alert("Indiquez un montant valide.");
+      return;
     }
-    const selectedAccount =
-      agentAccounts.find((a) => a.id === selectedAccountId) || agentAccounts[0];
+
+    const selectedAccount = agentAccounts.find((a) => a.id === selectedAccountId) || agentAccounts[0];
+    const channelNote =
+      depositChannel === "bank_transfer"
+        ? `Depot via transfert bancaire IBAN ${bankTransferIban}`
+        : null;
+    const mergedNote = [note?.trim(), channelNote].filter(Boolean).join(" | ") || null;
+
     setLoading(true);
     try {
       const res = await api.requestCashDeposit({
         amount: Number(amount),
-        note: note || null,
+        note: mergedNote,
       });
       setAmount("");
       setNote("");
@@ -59,13 +69,15 @@ export default function DepositPage() {
       setConfirmation({
         amount: Number.isFinite(confirmedAmount) ? confirmedAmount : Number(amount),
         currency,
+        depositChannel,
+        bankIban: bankTransferIban,
         agentAccount: selectedAccount?.account_service || agentMobileAccount,
         agentService: selectedAccount?.service,
       });
       fetchRequests().catch(() => {});
-      alert("Demande enregistrée. Envoyez le montant sur le compte agent indiqué ci-dessous.");
+      alert("Demande enregistree. Suivez les instructions de depot ci-dessous.");
     } catch (err) {
-      alert(`Erreur dépôt : ${err.message}`);
+      alert(`Erreur depot: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -76,18 +88,16 @@ export default function DepositPage() {
       <div className="flex items-center gap-3">
         <ArrowDownCircle className="text-blue-600" size={32} />
         <div>
-          <h2 className="text-2xl font-semibold text-slate-800">Demande de dépôt cash</h2>
+          <h2 className="text-2xl font-semibold text-slate-800">Demande de depot cash</h2>
           <p className="text-slate-500 text-sm">
-            Encodez un dépôt qui sera validé par un administrateur PayLink.
+            Encodez un depot qui sera valide par un administrateur PayLink.
           </p>
         </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow p-6 max-w-xl space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-600 mb-1">
-            Montant (€)
-          </label>
+          <label className="block text-sm font-medium text-slate-600 mb-1">Montant (EUR)</label>
           <input
             type="number"
             min="0"
@@ -98,43 +108,57 @@ export default function DepositPage() {
             placeholder="Ex: 250"
           />
         </div>
+
         <div>
-          <label className="block text-sm font-medium text-slate-600 mb-1">
-            Note (optionnelle)
-          </label>
+          <label className="block text-sm font-medium text-slate-600 mb-1">Mode de depot</label>
+          <select
+            value={depositChannel}
+            onChange={(e) => setDepositChannel(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
+          >
+            <option value="mobile_money">Mobile money</option>
+            <option value="bank_transfer">Transfert bancaire</option>
+          </select>
+        </div>
+
+        {depositChannel === "mobile_money" ? (
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-1">Service / compte agent</label>
+            <div className="grid gap-2">
+              <select
+                value={selectedAccountId}
+                onChange={(e) => setSelectedAccountId(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                disabled={!agentAccounts.length}
+              >
+                {agentAccounts.length === 0 && <option value="">Aucun compte agent disponible</option>}
+                {agentAccounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.service} - {acc.account_service}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500">Envoyez le montant sur le numero mobile de l'agent choisi.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+            <p className="text-sm text-slate-700">Transfert bancaire (IBAN):</p>
+            <p className="font-mono text-sm text-slate-900 mt-1">{bankTransferIban}</p>
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-slate-600 mb-1">Note (optionnelle)</label>
           <textarea
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
-            placeholder="Ex: Dépôt effectué via agent PayLink"
+            placeholder="Ex: Depot effectue via PayLink"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-600 mb-1">
-            Service / compte agent
-          </label>
-          <div className="grid gap-2">
-            <select
-              value={selectedAccountId}
-              onChange={(e) => setSelectedAccountId(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
-              disabled={!agentAccounts.length}
-            >
-              {agentAccounts.length === 0 && (
-                <option value="">Aucun compte agent disponible</option>
-              )}
-              {agentAccounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>
-                  {acc.service} — {acc.account_service}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-slate-500">
-              Envoyez le montant sur le numéro mobile de l'agent choisi.
-            </p>
-          </div>
-        </div>
+
         <button
           onClick={handleSubmit}
           disabled={loading}
@@ -148,30 +172,38 @@ export default function DepositPage() {
         <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-blue-700">Récapitulatif de votre demande</p>
+              <p className="text-sm font-semibold text-blue-700">Recapitulatif de votre demande</p>
               <p className="text-slate-800 mt-2">
-                Montant déposé :{" "}
+                Montant depose:{" "}
                 <span className="font-semibold">
                   {confirmation.currency} {confirmation.amount.toFixed(2)}
                 </span>
               </p>
               <p className="text-slate-800">
-                Compte mobile agent :{" "}
-                <span className="font-semibold">{confirmation.agentAccount}</span>
+                Mode de depot:{" "}
+                <span className="font-semibold">
+                  {confirmation.depositChannel === "bank_transfer" ? "Transfert bancaire" : "Mobile money"}
+                </span>
               </p>
-              {confirmation.agentService && (
+              {confirmation.depositChannel === "bank_transfer" ? (
+                <p className="text-slate-800">
+                  IBAN: <span className="font-semibold font-mono">{confirmation.bankIban}</span>
+                </p>
+              ) : (
+                <p className="text-slate-800">
+                  Compte mobile agent: <span className="font-semibold">{confirmation.agentAccount}</span>
+                </p>
+              )}
+              {confirmation.depositChannel !== "bank_transfer" && confirmation.agentService && (
                 <p className="text-slate-700 text-sm">
-                  Service : <span className="font-semibold">{confirmation.agentService}</span>
+                  Service: <span className="font-semibold">{confirmation.agentService}</span>
                 </p>
               )}
               <p className="text-xs text-slate-500 mt-2">
-                Envoyez le montant sur ce compte mobile money, puis attendez la validation PayLink.
+                Effectuez le depot puis attendez la validation PayLink.
               </p>
             </div>
-            <button
-              onClick={() => setConfirmation(null)}
-              className="text-xs text-blue-700 hover:underline"
-            >
+            <button onClick={() => setConfirmation(null)} className="text-xs text-blue-700 hover:underline">
               Fermer
             </button>
           </div>
@@ -180,12 +212,9 @@ export default function DepositPage() {
 
       <div className="bg-white rounded-2xl shadow p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-800">Historique des dépôts</h3>
-          <button
-            onClick={fetchRequests}
-            className="text-sm text-blue-600 hover:underline"
-          >
-            Rafraîchir
+          <h3 className="text-lg font-semibold text-slate-800">Historique des depots</h3>
+          <button onClick={fetchRequests} className="text-sm text-blue-600 hover:underline">
+            Rafraichir
           </button>
         </div>
         <div className="overflow-x-auto">
@@ -195,15 +224,13 @@ export default function DepositPage() {
                 <th className="text-left py-2 px-3">Montant</th>
                 <th className="text-left py-2 px-3">Statut</th>
                 <th className="text-left py-2 px-3">Note</th>
-                <th className="text-left py-2 px-3">Créée le</th>
+                <th className="text-left py-2 px-3">Creee le</th>
               </tr>
             </thead>
             <tbody>
               {requests.map((req) => (
                 <tr key={req.request_id} className="border-t">
-                  <td className="py-2 px-3 font-medium text-slate-700">
-                    € {Number(req.amount).toFixed(2)}
-                  </td>
+                  <td className="py-2 px-3 font-medium text-slate-700">EUR {Number(req.amount).toFixed(2)}</td>
                   <td className="py-2 px-3">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -217,12 +244,8 @@ export default function DepositPage() {
                       {req.status}
                     </span>
                   </td>
-                  <td className="py-2 px-3 text-slate-600">
-                    {req.note || "—"}
-                  </td>
-                  <td className="py-2 px-3 text-slate-500">
-                    {new Date(req.created_at).toLocaleString()}
-                  </td>
+                  <td className="py-2 px-3 text-slate-600">{req.note || "-"}</td>
+                  <td className="py-2 px-3 text-slate-500">{new Date(req.created_at).toLocaleString()}</td>
                 </tr>
               ))}
               {requests.length === 0 && (
