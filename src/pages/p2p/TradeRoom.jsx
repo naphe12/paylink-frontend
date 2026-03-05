@@ -11,6 +11,7 @@ export default function TradeRoom() {
   const [proofUrl, setProofUrl] = useState("");
   const [sandboxTxHash, setSandboxTxHash] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -31,16 +32,29 @@ export default function TradeRoom() {
   useEffect(() => {
     const loadMe = async () => {
       try {
-        const me = await api.get("/auth/me");
-        setIsAdmin(String(me?.role || "").toLowerCase() === "admin");
+        const current = await api.get("/auth/me");
+        setMe(current || null);
+        setIsAdmin(String(current?.role || "").toLowerCase() === "admin");
       } catch {
+        setMe(null);
         setIsAdmin(false);
       }
     };
     loadMe();
   }, []);
 
+  const myUserId = String(me?.user_id || "");
+  const isBuyer = myUserId && String(trade?.buyer_id || "") === myUserId;
+  const isSeller = myUserId && String(trade?.seller_id || "") === myUserId;
+  const status = String(trade?.status || "");
+  const canMarkPaid = isBuyer && (status === "AWAITING_FIAT" || status === "CRYPTO_LOCKED");
+  const canConfirmFiat = isSeller && status === "FIAT_SENT";
+
   const markPaid = async () => {
+    if (!canMarkPaid) {
+      setError("Action non autorisee: seul l'acheteur peut marquer le fiat envoye (status requis: AWAITING_FIAT/CRYPTO_LOCKED).");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -54,6 +68,10 @@ export default function TradeRoom() {
   };
 
   const confirmFiat = async () => {
+    if (!canConfirmFiat) {
+      setError("Action non autorisee: seul le vendeur peut confirmer le fiat recu (status requis: FIAT_SENT).");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -115,6 +133,10 @@ export default function TradeRoom() {
           <b>Status:</b> {trade.status}
         </div>
         <div>
+          <b>Mon role:</b>{" "}
+          {isBuyer ? "Acheteur" : isSeller ? "Vendeur" : "Observateur"}
+        </div>
+        <div>
           <b>Token:</b> {trade.token} - <b>Montant:</b> {trade.token_amount}
         </div>
         <div>
@@ -142,16 +164,29 @@ export default function TradeRoom() {
           placeholder="URL preuve paiement (recu photo uploade)"
           className="flex-1 min-w-[280px] px-3 py-2 border border-slate-300 rounded-lg"
         />
-        <button disabled={loading || !proofUrl} onClick={markPaid} className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-60">
+        <button
+          disabled={loading || !proofUrl || !canMarkPaid}
+          onClick={markPaid}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-60"
+          title="Acheteur uniquement, status AWAITING_FIAT ou CRYPTO_LOCKED"
+        >
           J'ai paye (BIF)
         </button>
-        <button disabled={loading} onClick={confirmFiat} className="px-4 py-2 rounded-lg bg-emerald-600 text-white disabled:opacity-60">
+        <button
+          disabled={loading || !canConfirmFiat}
+          onClick={confirmFiat}
+          className="px-4 py-2 rounded-lg bg-emerald-600 text-white disabled:opacity-60"
+          title="Vendeur uniquement, status FIAT_SENT"
+        >
           Confirmer reception (Seller)
         </button>
         <button disabled={loading} onClick={openDispute} className="px-4 py-2 rounded-lg bg-amber-600 text-white disabled:opacity-60">
           Ouvrir litige
         </button>
       </div>
+      <p className="text-xs text-slate-500">
+        Regle: confirmation fiat possible uniquement pour le vendeur quand le trade est en FIAT_SENT.
+      </p>
 
       {isAdmin && (
         <div className="p-4 border border-indigo-200 bg-indigo-50 rounded-xl space-y-3">
