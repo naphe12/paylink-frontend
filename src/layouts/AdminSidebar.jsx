@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   ShieldAlert,
   Users,
@@ -33,6 +33,54 @@ import {
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
+const DEFAULT_COLLAPSED_GROUPS = {
+  surveillance: false,
+  p2p: true,
+  escrowLedger: true,
+  operations: true,
+  microfinance: true,
+  tontines: true,
+  config: true,
+  modeAgent: true,
+};
+
+function getGroupForPath(pathname = "") {
+  if (pathname.startsWith("/dashboard/agent")) return "modeAgent";
+  if (pathname.includes("/p2p/") || pathname.endsWith("/trades") || pathname.endsWith("/disputes")) return "p2p";
+  if (
+    pathname.includes("/escrow") ||
+    pathname.includes("/ledger/") ||
+    pathname.includes("/balance-events")
+  ) {
+    return "escrowLedger";
+  }
+  if (
+    pathname.includes("/loans") ||
+    pathname.includes("/credit-history") ||
+    pathname.includes("/credit-lines") ||
+    pathname.includes("/microfinance") ||
+    pathname.includes("/loan-products")
+  ) {
+    return "microfinance";
+  }
+  if (pathname.includes("/tontines")) return "tontines";
+  if (pathname.includes("/settings") || pathname.includes("/analytics") || pathname.includes("/kyc/reviews")) {
+    return "config";
+  }
+  if (
+    pathname.includes("/wallets") ||
+    pathname.includes("/mobilemoney") ||
+    pathname.includes("/transfers") ||
+    pathname.includes("/transfer-approvals") ||
+    pathname.includes("/transfer-gains") ||
+    pathname.includes("/cash-requests") ||
+    pathname.includes("/payment-requests") ||
+    pathname.includes("/ops/liquidity-bif")
+  ) {
+    return "operations";
+  }
+  return "surveillance";
+}
 
 function getAuthToken() {
   const raw = localStorage.getItem("token") || localStorage.getItem("access_token");
@@ -66,20 +114,12 @@ function resolveAdminWsUrl() {
 
 export default function AdminSidebar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [amlCount, setAmlCount] = useState(0);
   const [wsLive, setWsLive] = useState(false);
-  const [collapsedGroups, setCollapsedGroups] = useState({
-    surveillance: false,
-    p2p: false,
-    escrowLedger: false,
-    operations: false,
-    microfinance: false,
-    tontines: false,
-    config: false,
-    modeAgent: false,
-  });
+  const [collapsedGroups, setCollapsedGroups] = useState(DEFAULT_COLLAPSED_GROUPS);
   const env = import.meta.env.VITE_APP_ENV || "dev";
 
   useEffect(() => {
@@ -95,6 +135,14 @@ export default function AdminSidebar() {
     ws.onerror = () => setWsLive(false);
     return () => ws.close();
   }, []);
+
+  useEffect(() => {
+    const activeGroup = getGroupForPath(location.pathname);
+    setCollapsedGroups((prev) => {
+      if (!prev[activeGroup]) return prev;
+      return { ...prev, [activeGroup]: false };
+    });
+  }, [location.pathname]);
 
   const logout = () => {
     localStorage.clear();
@@ -157,7 +205,7 @@ export default function AdminSidebar() {
             <NavLink to="/dashboard/admin/aml-cases" className={linkClass} onClick={onNavigate}>
               <div className="flex items-center gap-3">
                 <ShieldAlert size={18} />
-                <span>AML Cases</span>
+                <span>Cas AML</span>
               </div>
               {amlCount > 0 && (
                 <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
@@ -166,7 +214,7 @@ export default function AdminSidebar() {
               )}
             </NavLink>
             <NavLink to="/dashboard/admin/risk-heatmap" className={linkClass} onClick={onNavigate}>
-              <Activity size={18} /> Risk Heatmap
+              <Activity size={18} /> Carte de risque
             </NavLink>
             <NavLink to="/dashboard/admin/liquidity" className={linkClass} onClick={onNavigate}>
               <Droplets size={18} /> Gestion liquidite
@@ -186,7 +234,7 @@ export default function AdminSidebar() {
               }
               onClick={onNavigate}
             >
-              <Power size={18} /> Kill Switch
+              <Power size={18} /> Arret d'urgence
             </NavLink>
             <NavLink to="security" className={linkClass} onClick={onNavigate}>
               <ShieldAlert size={18} /> Securite live
@@ -201,7 +249,7 @@ export default function AdminSidebar() {
               <BarChart3 size={18} /> Monitoring
             </NavLink>
             <NavLink to="risk" className={linkClass} onClick={onNavigate}>
-              <ShieldAlert size={18} /> Risk monitoring
+              <ShieldAlert size={18} /> Monitoring risque
             </NavLink>
           </div>
         )}
@@ -213,25 +261,25 @@ export default function AdminSidebar() {
         {!collapsedGroups.p2p && (
           <div className="space-y-2">
             <NavLink to="p2p/trades" className={linkClass} onClick={onNavigate}>
-              <ArrowLeftRight size={18} /> P2P Monitoring
+              <ArrowLeftRight size={18} /> Suivi P2P
             </NavLink>
             <NavLink to="p2p/disputes" className={linkClass} onClick={onNavigate}>
               <FileSearch size={18} /> Disputes
             </NavLink>
             <NavLink to="p2p/risk" className={linkClass} onClick={onNavigate}>
-              <ShieldAlert size={18} /> Risk / Flags
+              <ShieldAlert size={18} /> Risque / alertes
             </NavLink>
           </div>
         )}
 
         <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("escrowLedger")}>
-          <span>Escrow & Ledger</span>
+          <span>Escrow et Ledger</span>
           {collapsedGroups.escrowLedger ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
         </button>
         {!collapsedGroups.escrowLedger && (
           <div className="space-y-2">
             <NavLink to="escrow" className={linkClass} onClick={onNavigate}>
-              <Coins size={18} /> File Escrow
+              <Coins size={18} /> File escrow
             </NavLink>
             <NavLink to="escrow/audit" className={linkClass} onClick={onNavigate}>
               <ShieldCheck size={18} /> Audit Escrow
@@ -240,7 +288,7 @@ export default function AdminSidebar() {
               <Wallet size={18} /> Balances
             </NavLink>
             <NavLink to="ledger/t-accounts" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> T-Accounts
+              <BookOpen size={18} /> Comptes T
             </NavLink>
             <NavLink to="balance-events" className={linkClass} onClick={onNavigate}>
               <LineChart size={18} /> Balances clients
