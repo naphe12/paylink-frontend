@@ -83,10 +83,26 @@ export default function P2PMarket() {
       return;
     }
 
+    const min = Number(offer.min_token_amount);
+    const max = Number(offer.max_token_amount);
+    const available = Number(offer.available_amount);
+    if (Number.isFinite(min) && amount < min) {
+      window.alert(`Montant trop faible. Minimum: ${offer.min_token_amount} ${offer.token}.`);
+      return;
+    }
+    if (Number.isFinite(max) && amount > max) {
+      window.alert(`Montant trop eleve. Maximum: ${offer.max_token_amount} ${offer.token}.`);
+      return;
+    }
+    if (Number.isFinite(available) && amount > available) {
+      window.alert(`Liquidite insuffisante. Disponible: ${offer.available_amount} ${offer.token}.`);
+      return;
+    }
+
     try {
       const trade = await api.post("/api/p2p/trades", {
         offer_id: offer.offer_id,
-        token_amount: amount,
+        token_amount: String(amount),
       });
       navigate(`/app/p2p/trades/${trade.trade_id}`);
     } catch (err) {

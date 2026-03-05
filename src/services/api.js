@@ -17,6 +17,30 @@ async function parseJsonOrThrow(res, path, method = "GET") {
   );
 }
 
+async function readErrorMessage(res, path, method = "GET") {
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    try {
+      const payload = await res.json();
+      const detail = payload?.detail;
+      if (Array.isArray(detail)) {
+        const msg = detail
+          .map((d) => (typeof d === "string" ? d : d?.msg || JSON.stringify(d)))
+          .join(" | ");
+        return `${method} ${path} -> ${res.status}: ${msg}`;
+      }
+      if (typeof detail === "string" && detail.trim()) {
+        return `${method} ${path} -> ${res.status}: ${detail}`;
+      }
+      return `${method} ${path} -> ${res.status}`;
+    } catch {
+      return `${method} ${path} -> ${res.status}`;
+    }
+  }
+  const text = await res.text();
+  return `${method} ${path} -> ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}`;
+}
+
 const api = {
   async get(path) {
     const token = getAuthToken();
@@ -26,7 +50,7 @@ const api = {
         ...(token && { Authorization: `Bearer ${token}` }),
       },
     });
-    if (!res.ok) throw new Error(`GET ${path} -> ${res.status}`);
+    if (!res.ok) throw new Error(await readErrorMessage(res, path, "GET"));
     return parseJsonOrThrow(res, path, "GET");
   },
 
@@ -41,7 +65,7 @@ const api = {
       },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error(`POST ${path} -> ${res.status}`);
+    if (!res.ok) throw new Error(await readErrorMessage(res, path, "POST"));
     return parseJsonOrThrow(res, path, "POST");
   },
 
@@ -56,7 +80,7 @@ const api = {
       },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error(`PATCH ${path} -> ${res.status}`);
+    if (!res.ok) throw new Error(await readErrorMessage(res, path, "PATCH"));
     return parseJsonOrThrow(res, path, "PATCH");
   },
 
@@ -71,7 +95,7 @@ const api = {
       },
       body: data !== undefined ? JSON.stringify(data) : undefined,
     });
-    if (!res.ok) throw new Error(`PUT ${path} -> ${res.status}`);
+    if (!res.ok) throw new Error(await readErrorMessage(res, path, "PUT"));
     return parseJsonOrThrow(res, path, "PUT");
   },
   async del(path) {
@@ -83,7 +107,7 @@ const api = {
         ...(token && { Authorization: `Bearer ${token}` }),
       },
     });
-    if (!res.ok) throw new Error(`DELETE ${path} -> ${res.status}`);
+    if (!res.ok) throw new Error(await readErrorMessage(res, path, "DELETE"));
     return parseJsonOrThrow(res, path, "DELETE");
   },
 
