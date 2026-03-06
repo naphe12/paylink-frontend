@@ -114,7 +114,7 @@ export default function ExternalTransferPage() {
       });
     } catch (err) {
       console.error(err);
-      setError("Erreur lors de l'envoi du transfert.");
+      setError(err?.message || "Erreur lors de l'envoi du transfert.");
     } finally {
       setLoading(false);
     }
