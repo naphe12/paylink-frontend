@@ -41,72 +41,103 @@ async function readErrorMessage(res, path, method = "GET") {
   return `${method} ${path} -> ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}`;
 }
 
+function formatNetworkError(path, method = "GET", err) {
+  const target = `${API_URL}${path}`;
+  const reason = err?.message ? ` (${err.message})` : "";
+  return `${method} ${path} -> impossible de joindre l'API: ${target}${reason}`;
+}
+
 const api = {
   async get(path) {
     const token = getAuthToken();
-    const res = await fetch(`${API_URL}${path}`, {
-      headers: {
-        Accept: "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    });
+    let res;
+    try {
+      res = await fetch(`${API_URL}${path}`, {
+        headers: {
+          Accept: "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+    } catch (err) {
+      throw new Error(formatNetworkError(path, "GET", err));
+    }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "GET"));
     return parseJsonOrThrow(res, path, "GET");
   },
 
   async post(path, data) {
     const token = getAuthToken();
-    const res = await fetch(`${API_URL}${path}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: JSON.stringify(data),
-    });
+    let res;
+    try {
+      res = await fetch(`${API_URL}${path}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      throw new Error(formatNetworkError(path, "POST", err));
+    }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "POST"));
     return parseJsonOrThrow(res, path, "POST");
   },
 
   async patch(path, data) {
     const token = getAuthToken();
-    const res = await fetch(`${API_URL}${path}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: JSON.stringify(data),
-    });
+    let res;
+    try {
+      res = await fetch(`${API_URL}${path}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      throw new Error(formatNetworkError(path, "PATCH", err));
+    }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "PATCH"));
     return parseJsonOrThrow(res, path, "PATCH");
   },
 
   async put(path, data) {
     const token = getAuthToken();
-    const res = await fetch(`${API_URL}${path}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: data !== undefined ? JSON.stringify(data) : undefined,
-    });
+    let res;
+    try {
+      res = await fetch(`${API_URL}${path}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: data !== undefined ? JSON.stringify(data) : undefined,
+      });
+    } catch (err) {
+      throw new Error(formatNetworkError(path, "PUT", err));
+    }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "PUT"));
     return parseJsonOrThrow(res, path, "PUT");
   },
   async del(path) {
     const token = getAuthToken();
-    const res = await fetch(`${API_URL}${path}`, {
-      method: "DELETE",
-      headers: {
-        Accept: "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    });
+    let res;
+    try {
+      res = await fetch(`${API_URL}${path}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+    } catch (err) {
+      throw new Error(formatNetworkError(path, "DELETE", err));
+    }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "DELETE"));
     return parseJsonOrThrow(res, path, "DELETE");
   },
