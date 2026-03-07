@@ -14,7 +14,7 @@ export default function ExternalTransferPage() {
   });
 
   const [rate, setRate] = useState(0);
-  const [feesPercent, setFeesPercent] = useState(0);
+  const [feesEur, setFeesEur] = useState(0);
   const [recipientAmount, setRecipientAmount] = useState(0);
   const [availableBalance, setAvailableBalance] = useState(100);
   const [creditLimit, setCreditLimit] = useState(150);
@@ -32,10 +32,9 @@ export default function ExternalTransferPage() {
       return;
     }
     const eur = parseFloat(form.amount);
-    const fees = eur * (feesPercent / 100);
-    const converted = (eur - fees) * rate;
+    const converted = eur * rate;
     setRecipientAmount(converted);
-  }, [form.amount, rate, feesPercent]);
+  }, [form.amount, rate]);
 
   useEffect(() => {
     const loadRate = async () => {
@@ -43,7 +42,7 @@ export default function ExternalTransferPage() {
         const dest = form.country_destination === "Burundi" ? "BIF" : form.country_destination;
         const res = await api.getExchangeRate("EUR", dest);
         if (res?.rate) setRate(Number(res.rate));
-        if (res?.fees_percent) setFeesPercent(Number(res.fees_percent));
+        if (res?.fees_percent) setFeesEur(Number(res.fees_percent));
       } catch (err) {
         console.error("Impossible de charger le taux FX", err);
       }
@@ -137,7 +136,7 @@ export default function ExternalTransferPage() {
           </p>
           <p className="text-[13px] text-blue-700 mt-1">
             Taux FX appliqué: <span className="font-semibold">{rate || "-"}</span> | Frais:{" "}
-            <span className="font-semibold">{feesPercent || 0}%</span>
+            <span className="font-semibold">{feesEur || 0} EUR</span>
           </p>
           <p className="text-[13px] text-blue-700">
             Montant reçu estimé: <span className="font-semibold">{recipientAmount.toFixed(2)} </span>
@@ -239,7 +238,7 @@ export default function ExternalTransferPage() {
             placeholder="100.00"
           />
           <p className="text-xs text-slate-500 mt-1">
-            Frais estimés : {(parseFloat(form.amount || 0) * (feesPercent / 100)).toFixed(2)} €
+            Frais estimés : {(feesEur || 0).toFixed(2)} €
           </p>
         </div>
 
@@ -250,7 +249,7 @@ export default function ExternalTransferPage() {
           </div>
           <div className="flex justify-between">
             <span>Frais</span>
-            <span className="font-semibold">{feesPercent || 0}%</span>
+            <span className="font-semibold">{feesEur || 0} EUR</span>
           </div>
           <div className="flex justify-between">
             <span>Montant reçu estimé</span>
