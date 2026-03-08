@@ -46,6 +46,7 @@ const menuGroups = [
       { name: "Depot cash", path: "/dashboard/client/deposit", icon: <ArrowDown size={18} /> },
       { name: "Retrait cash", path: "/dashboard/client/withdraw/bif", icon: <ArrowUp size={18} /> },
       { name: "Retrait USDC", path: "/dashboard/client/withdraw/usdc", icon: <ArrowUp size={18} /> },
+      { name: "Bonus", path: "/dashboard/client/bonus", icon: <Gift size={18} /> },
     ],
   },
   {
@@ -74,7 +75,6 @@ const menuGroups = [
     title: "Communaute",
     items: [
       { name: "Tontines", path: "/dashboard/client/tontines", icon: <RefreshCcw size={18} /> },
-      { name: "Bonus", path: "/dashboard/client/bonus", icon: <Gift size={18} /> },
     ],
   },
   {

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api from "@/services/api";
 
 export default function CashInPage() {
@@ -6,8 +7,10 @@ export default function CashInPage() {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [amount, setAmount] = useState("");
-  const [msg, setMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const idemKeyRef = useRef(null);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -23,20 +26,26 @@ export default function CashInPage() {
 
   const submit = async () => {
     if (!selectedUserId || !Number(amount)) {
-      setMsg("Selectionnez un user et un montant valide.");
+      setErrorMsg("Selectionnez un user et un montant valide.");
+      setSuccessMsg("");
       return;
     }
     setLoading(true);
-    setMsg("");
+    setErrorMsg("");
+    setSuccessMsg("");
     try {
+      if (!idemKeyRef.current) {
+        idemKeyRef.current = api.newIdempotencyKey("agent-cash-deposit");
+      }
       const res = await api.agentCashDeposit({
         user_id: selectedUserId,
         amount: Number(amount),
-      });
-      setMsg(`Depot cash effectue. Nouveau solde user: ${res.new_balance} ${res.currency}`);
+      }, idemKeyRef.current);
+      idemKeyRef.current = null;
+      setSuccessMsg(`Depot cash effectue. Nouveau solde user: ${res.new_balance} ${res.currency}`);
       setAmount("");
     } catch (err) {
-      setMsg(`Erreur: ${err.message}`);
+      setErrorMsg(err?.message || "Erreur depot cash.");
     } finally {
       setLoading(false);
     }
@@ -83,7 +92,8 @@ export default function CashInPage() {
         {loading ? "Traitement..." : "Valider"}
       </button>
 
-      {msg ? <div className="p-3 bg-green-100 text-green-700 rounded-lg">{msg}</div> : null}
+      <ApiErrorAlert message={errorMsg} />
+      {successMsg ? <div className="p-3 bg-green-100 text-green-700 rounded-lg">{successMsg}</div> : null}
     </div>
   );
 }

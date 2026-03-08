@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import {
   ShieldAlert,
   Users,
@@ -33,6 +34,7 @@ import {
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
+const OPS_ALERT_MUTE_KEY = "ops_alert_muted_until";
 const DEFAULT_COLLAPSED_GROUPS = {
   surveillance: false,
   p2p: true,
@@ -44,13 +46,31 @@ const DEFAULT_COLLAPSED_GROUPS = {
   modeAgent: true,
 };
 
+function computeOpsLevel(metrics) {
+  const unbalanced = Number(metrics?.ledger?.unbalanced_journals || 0);
+  const err5xx = Number(metrics?.api?.errors_5xx || 0);
+  const errRate = Number(metrics?.api?.error_rate_percent || 0);
+  const p95 = Number(metrics?.api?.latency_p95_ms || 0);
+  const failedRetry = Number(metrics?.webhooks?.failed_retry || 0);
+  const retryQueue = Number(metrics?.webhooks?.retry_queue_size || 0);
+
+  if (unbalanced > 0 || err5xx >= 10 || errRate >= 10 || p95 >= 2000 || failedRetry > 0 || retryQueue >= 30) {
+    return "CRITICAL";
+  }
+  if (err5xx >= 1 || errRate >= 3 || p95 >= 1000 || retryQueue >= 10) {
+    return "WARN";
+  }
+  return "OK";
+}
+
 function getGroupForPath(pathname = "") {
   if (pathname.startsWith("/dashboard/agent")) return "modeAgent";
   if (pathname.includes("/p2p/") || pathname.endsWith("/trades") || pathname.endsWith("/disputes")) return "p2p";
   if (
     pathname.includes("/escrow") ||
     pathname.includes("/ledger/") ||
-    pathname.includes("/balance-events")
+    pathname.includes("/balance-events") ||
+    pathname.includes("/unbalanced-journals")
   ) {
     return "escrowLedger";
   }
@@ -119,8 +139,16 @@ export default function AdminSidebar() {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [amlCount, setAmlCount] = useState(0);
   const [wsLive, setWsLive] = useState(false);
+  const [opsLevel, setOpsLevel] = useState("OK");
+  const [opsMutedUntil, setOpsMutedUntil] = useState(() => {
+    const raw = localStorage.getItem(OPS_ALERT_MUTE_KEY);
+    const ts = Number(raw || 0);
+    return Number.isFinite(ts) ? ts : 0;
+  });
+  const [nowTs, setNowTs] = useState(Date.now());
   const [collapsedGroups, setCollapsedGroups] = useState(DEFAULT_COLLAPSED_GROUPS);
   const env = import.meta.env.VITE_APP_ENV || "dev";
+  const isOpsMuted = nowTs < Number(opsMutedUntil || 0);
 
   useEffect(() => {
     api("/api/admin/aml/cases?status=OPEN").then((data) => {
@@ -137,6 +165,34 @@ export default function AdminSidebar() {
   }, []);
 
   useEffect(() => {
+    let alive = true;
+    let previousLevel = null;
+    const refreshOpsLevel = async () => {
+      const metrics = await api("/backoffice/monitoring/ops-metrics?window_hours=24");
+      if (alive && metrics) {
+        const nextLevel = computeOpsLevel(metrics);
+        setOpsLevel(nextLevel);
+        if (
+          previousLevel !== null &&
+          previousLevel !== "CRITICAL" &&
+          nextLevel === "CRITICAL" &&
+          !isOpsMuted
+        ) {
+          playCriticalBeep();
+          toast.error("Alerte OPS: statut CRITICAL detecte. Ouvre Ops Dashboard.");
+        }
+        previousLevel = nextLevel;
+      }
+    };
+    refreshOpsLevel();
+    const id = setInterval(refreshOpsLevel, 60000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [isOpsMuted]);
+
+  useEffect(() => {
     const activeGroup = getGroupForPath(location.pathname);
     setCollapsedGroups((prev) => {
       if (!prev[activeGroup]) return prev;
@@ -149,6 +205,48 @@ export default function AdminSidebar() {
     navigate("/auth", { replace: true });
     setDrawerOpen(false);
   };
+
+  const playCriticalBeep = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.value = 880;
+      gain.gain.value = 0.05;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      setTimeout(() => {
+        osc.stop();
+        ctx.close();
+      }, 220);
+    } catch {
+      // noop
+    }
+  };
+
+  const muteOpsAlerts = (minutes = 15) => {
+    const until = Date.now() + minutes * 60 * 1000;
+    localStorage.setItem(OPS_ALERT_MUTE_KEY, String(until));
+    setOpsMutedUntil(until);
+    toast.success(`Alertes OPS silencieuses pendant ${minutes} min.`);
+  };
+
+  const unmuteOpsAlerts = () => {
+    localStorage.removeItem(OPS_ALERT_MUTE_KEY);
+    setOpsMutedUntil(0);
+    toast.success("Alertes OPS reactives.");
+  };
+
+  const mutedRemainingMinutes = Math.max(0, Math.ceil((Number(opsMutedUntil || 0) - nowTs) / 60000));
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const linkClass = ({ isActive }) =>
     `flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-medium transition ${
@@ -251,6 +349,46 @@ export default function AdminSidebar() {
             <NavLink to="/backoffice/monitoring" className={linkClass} onClick={onNavigate}>
               <BarChart3 size={18} /> Monitoring
             </NavLink>
+            <NavLink to="/dashboard/admin/ops-dashboard" className={linkClass} onClick={onNavigate}>
+              <Activity size={18} /> Ops Dashboard
+              <span
+                className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                  opsLevel === "CRITICAL"
+                    ? "bg-rose-500 text-white"
+                    : opsLevel === "WARN"
+                      ? "bg-amber-400 text-black"
+                      : "bg-emerald-500 text-white"
+                }`}
+              >
+                {opsLevel}
+              </span>
+            </NavLink>
+            {opsLevel === "CRITICAL" && (
+              <div className="space-y-2">
+                {!isOpsMuted ? (
+                  <button
+                    type="button"
+                    onClick={() => muteOpsAlerts(15)}
+                    className="w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-left text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                  >
+                    Silencier alertes OPS 15 min
+                  </button>
+                ) : (
+                  <>
+                    <div className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2 text-left text-xs font-semibold text-slate-700">
+                      Alertes OPS silencieuses ({mutedRemainingMinutes} min restantes)
+                    </div>
+                    <button
+                      type="button"
+                      onClick={unmuteOpsAlerts}
+                      className="w-full rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-left text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+                    >
+                      Reactiver alertes maintenant
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
             <NavLink to="risk" className={linkClass} onClick={onNavigate}>
               <ShieldAlert size={18} /> Monitoring risque
             </NavLink>
@@ -292,6 +430,12 @@ export default function AdminSidebar() {
             </NavLink>
             <NavLink to="ledger/t-accounts" className={linkClass} onClick={onNavigate}>
               <BookOpen size={18} /> Comptes T
+            </NavLink>
+            <NavLink to="ledger/unbalanced-journals" className={linkClass} onClick={onNavigate}>
+              <LineChart size={18} /> Journaux non equilibres
+            </NavLink>
+            <NavLink to="ledger/idempotency-scopes" className={linkClass} onClick={onNavigate}>
+              <LineChart size={18} /> Idempotence scopes
             </NavLink>
             <NavLink to="balance-events" className={linkClass} onClick={onNavigate}>
               <LineChart size={18} /> Balances clients

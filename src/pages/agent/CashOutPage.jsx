@@ -1,39 +1,39 @@
 import { useState } from "react";
-import api from "@/services/api";
 import { useNavigate } from "react-router-dom";
+
+import ApiErrorAlert from "@/components/ApiErrorAlert";
+import api from "@/services/api";
 
 export default function CashOutPage() {
   const navigate = useNavigate();
-  const [clientUid, setClientUid] = useState(""); // Identifiant du client
+  const [clientUid, setClientUid] = useState("");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleCashOut = async () => {
+    setErrorMessage("");
+    setSuccessMessage("");
+
     if (!clientUid || !amount || Number(amount) <= 0) {
-      setMessage("Veuillez entrer un montant valide.");
+      setErrorMessage("Veuillez entrer un montant valide.");
       return;
     }
 
     try {
       setLoading(true);
-      setMessage(null);
-
       await api.post("/agent/agent/cash-out", {
         client_uid: clientUid,
         amount: Number(amount),
       });
 
-      setMessage("✅ Cash-out effectué avec succès !");
+      setSuccessMessage("Cash-out effectue avec succes.");
       setAmount("");
       setClientUid("");
-
       setTimeout(() => navigate("/dashboard/agent"), 1500);
-    } catch (error) {
-      console.error("Erreur Cash-out:", error);
-      setMessage(
-        "❌ Échec : " + (error.response?.data?.detail || "Erreur inconnue")
-      );
+    } catch (err) {
+      setErrorMessage(err?.message || "Echec cash-out.");
     } finally {
       setLoading(false);
     }
@@ -41,7 +41,7 @@ export default function CashOutPage() {
 
   return (
     <div className="p-6 max-w-lg mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">💸 Cash-Out Client</h1>
+      <h1 className="text-2xl font-semibold mb-4">Cash-Out Client</h1>
 
       <label className="block mb-2">UID du client (QR ou identifiant)</label>
       <input
@@ -58,7 +58,7 @@ export default function CashOutPage() {
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
         className="w-full p-3 border rounded mb-4"
-        placeholder="Montant à retirer"
+        placeholder="Montant a retirer"
       />
 
       <button
@@ -69,8 +69,8 @@ export default function CashOutPage() {
         {loading ? "Traitement..." : "Confirmer le Cash-Out"}
       </button>
 
-      {message && <p className="mt-4 text-center">{message}</p>}
+      <ApiErrorAlert message={errorMessage} className="mt-4" />
+      {successMessage && <p className="mt-4 text-center text-green-700">{successMessage}</p>}
     </div>
   );
 }
-

@@ -1,17 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, RefreshCcw, X } from "lucide-react";
 
+import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api from "@/services/api";
 
 const statusOptions = [
   { value: "pending", label: "En attente" },
-  { value: "approved", label: "Approuvées" },
-  { value: "rejected", label: "Rejetées" },
+  { value: "approved", label: "Approuvees" },
+  { value: "rejected", label: "Rejetees" },
 ];
 
 const typeOptions = [
   { value: "withdraw", label: "Retraits" },
-  { value: "deposit", label: "Dépôts" },
+  { value: "deposit", label: "Depots" },
 ];
 
 export default function CashRequestsPage() {
@@ -23,17 +24,22 @@ export default function CashRequestsPage() {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
+  const [error, setError] = useState("");
+  const directDepositIdemRef = useRef(null);
+  const decisionIdemRef = useRef({});
+  const [decisionLoading, setDecisionLoading] = useState({});
 
   const fetchRequests = async () => {
     setLoading(true);
+    setError("");
     try {
       const data = await api.getAdminCashRequests({
         status,
         type: requestType,
       });
-      setRequests(data);
+      setRequests(Array.isArray(data) ? data : []);
     } catch (err) {
-      alert("Erreur chargement demandes : " + err.message);
+      setError(err?.message || "Erreur chargement demandes.");
     } finally {
       setLoading(false);
     }
@@ -56,36 +62,51 @@ export default function CashRequestsPage() {
   }, [userQuery]);
 
   const handleDirectDeposit = async () => {
+    setError("");
     if (!selectedUserId || !Number(depositAmount)) {
-      alert("Sélectionnez un user et un montant valide.");
+      alert("Selectionnez un user et un montant valide.");
       return;
     }
     try {
-      const res = await api.adminCashDeposit({
-        user_id: selectedUserId,
-        amount: Number(depositAmount),
-      });
-      alert(
-        `Dépôt effectué: ${res.amount} ${res.currency} | nouveau solde: ${res.new_balance}`
+      if (!directDepositIdemRef.current) {
+        directDepositIdemRef.current = api.newIdempotencyKey("admin-cash-deposit");
+      }
+      const res = await api.adminCashDeposit(
+        {
+          user_id: selectedUserId,
+          amount: Number(depositAmount),
+        },
+        directDepositIdemRef.current
       );
+      directDepositIdemRef.current = null;
+      alert(`Depot effectue: ${res.amount} ${res.currency} | nouveau solde: ${res.new_balance}`);
       setDepositAmount("");
       fetchRequests();
     } catch (err) {
-      alert(`Dépôt impossible: ${err.message}`);
+      setError(err?.message || "Depot impossible.");
     }
   };
 
   const handleDecision = async (requestId, action) => {
+    setError("");
     const note = window.prompt("Ajouter une note (optionnel)") || undefined;
+    const decisionScope = `${action}:${requestId}`;
     try {
-      if (action === "approve") {
-        await api.approveCashRequest(requestId, { note });
-      } else {
-        await api.rejectCashRequest(requestId, { note });
+      if (!decisionIdemRef.current[decisionScope]) {
+        decisionIdemRef.current[decisionScope] = api.newIdempotencyKey(`admin-cash-${action}`);
       }
+      setDecisionLoading((prev) => ({ ...prev, [decisionScope]: true }));
+      if (action === "approve") {
+        await api.approveCashRequest(requestId, { note }, decisionIdemRef.current[decisionScope]);
+      } else {
+        await api.rejectCashRequest(requestId, { note }, decisionIdemRef.current[decisionScope]);
+      }
+      delete decisionIdemRef.current[decisionScope];
+      setDecisionLoading((prev) => ({ ...prev, [decisionScope]: false }));
       fetchRequests();
     } catch (err) {
-      alert(`Action impossible : ${err.message}`);
+      setDecisionLoading((prev) => ({ ...prev, [decisionScope]: false }));
+      setError(err?.message || "Action impossible.");
     }
   };
 
@@ -95,24 +116,26 @@ export default function CashRequestsPage() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Validation cash in/out</h1>
           <p className="text-slate-500 text-sm">
-            Suivez les demandes des clients et appliquez les décisions d'encaissement.
+            Suivez les demandes des clients et appliquez les decisions d'encaissement.
           </p>
         </div>
         <button
           onClick={fetchRequests}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800"
         >
-          <RefreshCcw size={16} /> Rafraîchir
+          <RefreshCcw size={16} /> Rafraichir
         </button>
       </header>
 
+      <ApiErrorAlert message={error} onRetry={fetchRequests} retryLabel="Recharger les demandes" />
+
       <div className="flex flex-wrap gap-4 bg-white rounded-2xl shadow p-4">
         <div className="w-full lg:w-auto lg:min-w-[340px]">
-          <label className="text-xs uppercase tracking-wide text-slate-500">Dépôt direct user</label>
+          <label className="text-xs uppercase tracking-wide text-slate-500">Depot direct user</label>
           <input
             value={userQuery}
             onChange={(e) => setUserQuery(e.target.value)}
-            placeholder="Rechercher user (nom/email/téléphone)"
+            placeholder="Rechercher user (nom/email/telephone)"
             className="mt-1 border rounded-lg px-3 py-2 text-sm w-full"
           />
           <select
@@ -120,10 +143,10 @@ export default function CashRequestsPage() {
             onChange={(e) => setSelectedUserId(e.target.value)}
             className="mt-2 border rounded-lg px-3 py-2 text-sm w-full"
           >
-            <option value="">-- sélectionner --</option>
+            <option value="">-- selectionner --</option>
             {users.map((u) => (
               <option key={u.user_id} value={u.user_id}>
-                {u.full_name || "Sans nom"} • {u.email || "-"} • {u.phone_e164 || "-"}
+                {u.full_name || "Sans nom"} - {u.email || "-"} - {u.phone_e164 || "-"}
               </option>
             ))}
           </select>
@@ -141,7 +164,7 @@ export default function CashRequestsPage() {
               onClick={handleDirectDeposit}
               className="px-4 py-2 rounded-xl bg-blue-700 text-white text-sm font-medium hover:bg-blue-600"
             >
-              Déposer
+              Deposer
             </button>
           </div>
         </div>
@@ -184,24 +207,28 @@ export default function CashRequestsPage() {
               <th className="text-left py-3 px-4">Montant</th>
               <th className="text-left py-3 px-4">Frais</th>
               <th className="text-left py-3 px-4">Total</th>
-              <th className="text-left py-3 px-4">Référence</th>
+              <th className="text-left py-3 px-4">Reference</th>
               <th className="text-left py-3 px-4">Statut</th>
               <th className="text-left py-3 px-4">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {requests.map((req) => (
-              <tr key={req.request_id} className="border-t">
+            {requests.map((req) => {
+              const requestBusy =
+                !!decisionLoading[`approve:${req.request_id}`] ||
+                !!decisionLoading[`reject:${req.request_id}`];
+              return (
+                <tr key={req.request_id} className="border-t">
                 <td className="py-3 px-4">
-                  <p className="font-semibold text-slate-800">{req.user?.full_name || "—"}</p>
+                  <p className="font-semibold text-slate-800">{req.user?.full_name || "-"}</p>
                   <p className="text-xs text-slate-500">{req.user?.email}</p>
                 </td>
                 <td className="py-3 px-4 capitalize">{req.type}</td>
-                <td className="py-3 px-4">€ {Number(req.amount).toFixed(2)}</td>
-                <td className="py-3 px-4">€ {Number(req.fee_amount).toFixed(2)}</td>
-                <td className="py-3 px-4">€ {Number(req.total_amount).toFixed(2)}</td>
+                <td className="py-3 px-4">EUR {Number(req.amount).toFixed(2)}</td>
+                <td className="py-3 px-4">EUR {Number(req.fee_amount).toFixed(2)}</td>
+                <td className="py-3 px-4">EUR {Number(req.total_amount).toFixed(2)}</td>
                 <td className="py-3 px-4 text-slate-600">
-                  {req.provider_name || "—"} {req.mobile_number ? `• ${req.mobile_number}` : ""}
+                  {req.provider_name || "-"} {req.mobile_number ? `- ${req.mobile_number}` : ""}
                 </td>
                 <td className="py-3 px-4">
                   <span
@@ -209,8 +236,8 @@ export default function CashRequestsPage() {
                       req.status === "approved"
                         ? "bg-green-100 text-green-700"
                         : req.status === "rejected"
-                        ? "bg-red-100 text-red-600"
-                        : "bg-amber-100 text-amber-700"
+                          ? "bg-red-100 text-red-600"
+                          : "bg-amber-100 text-amber-700"
                     }`}
                   >
                     {req.status}
@@ -220,26 +247,29 @@ export default function CashRequestsPage() {
                   {req.status === "pending" ? (
                     <div className="flex gap-2">
                       <button
+                        disabled={requestBusy}
                         onClick={() => handleDecision(req.request_id, "approve")}
-                        className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-green-100 text-green-700"
+                        className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-green-100 text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Check size={14} /> Valider
                       </button>
                       <button
+                        disabled={requestBusy}
                         onClick={() => handleDecision(req.request_id, "reject")}
-                        className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-red-100 text-red-600"
+                        className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-red-100 text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <X size={14} /> Rejeter
                       </button>
                     </div>
                   ) : (
                     <span className="text-xs text-slate-400">
-                      Traité le {new Date(req.processed_at || req.created_at).toLocaleDateString()}
+                      Traite le {new Date(req.processed_at || req.created_at).toLocaleDateString()}
                     </span>
                   )}
                 </td>
-              </tr>
-            ))}
+                </tr>
+              );
+            })}
             {requests.length === 0 && (
               <tr>
                 <td className="py-6 text-center text-slate-500" colSpan={8}>

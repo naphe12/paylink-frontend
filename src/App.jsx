@@ -1,6 +1,7 @@
 // src/App.jsx
 import { useEffect } from "react";
 import AppRouter from "./AppRouter";
+import { Toaster } from "react-hot-toast";
 
 export default function App() {
   useEffect(() => {
@@ -11,5 +12,15 @@ export default function App() {
     }
   }, []);
 
-  return <AppRouter />;
+  return (
+    <>
+      <AppRouter />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 5000,
+        }}
+      />
+    </>
+  );
 }

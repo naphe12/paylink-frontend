@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowDownCircle } from "lucide-react";
 
+import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api from "@/services/api";
 
 const agentMobileAccount = import.meta.env.VITE_AGENT_CASH_ACCOUNT || "+257 71 11 11 11";
@@ -15,13 +16,17 @@ export default function DepositPage() {
   const [agentAccounts, setAgentAccounts] = useState([]);
   const [selectedAccountId, setSelectedAccountId] = useState("");
   const [depositChannel, setDepositChannel] = useState("mobile_money");
+  const [loadError, setLoadError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const idemKeyRef = useRef(null);
 
   const fetchRequests = async () => {
     try {
+      setLoadError("");
       const data = await api.getCashRequests({ type: "deposit" });
       setRequests(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Impossible de charger les demandes", err);
+      setLoadError(err?.message || "Impossible de charger les demandes.");
     }
   };
 
@@ -44,6 +49,7 @@ export default function DepositPage() {
   }, []);
 
   const handleSubmit = async () => {
+    setSubmitError("");
     if (!amount || Number(amount) <= 0) {
       alert("Indiquez un montant valide.");
       return;
@@ -58,10 +64,14 @@ export default function DepositPage() {
 
     setLoading(true);
     try {
+      if (!idemKeyRef.current) {
+        idemKeyRef.current = api.newIdempotencyKey("wallet-cash-deposit");
+      }
       const res = await api.requestCashDeposit({
         amount: Number(amount),
         note: mergedNote,
-      });
+      }, idemKeyRef.current);
+      idemKeyRef.current = null;
       setAmount("");
       setNote("");
       const confirmedAmount = Number(res?.amount ?? amount);
@@ -77,7 +87,7 @@ export default function DepositPage() {
       fetchRequests().catch(() => {});
       alert("Demande enregistree. Suivez les instructions de depot ci-dessous.");
     } catch (err) {
-      alert(`Erreur depot: ${err.message}`);
+      setSubmitError(err?.message || "Erreur depot.");
     } finally {
       setLoading(false);
     }
@@ -96,6 +106,7 @@ export default function DepositPage() {
       </div>
 
       <div className="bg-white rounded-2xl shadow p-6 max-w-xl space-y-4">
+        <ApiErrorAlert message={submitError} />
         <div>
           <label className="block text-sm font-medium text-slate-600 mb-1">Montant (EUR)</label>
           <input
@@ -211,6 +222,7 @@ export default function DepositPage() {
       )}
 
       <div className="bg-white rounded-2xl shadow p-6">
+        <ApiErrorAlert message={loadError} onRetry={fetchRequests} retryLabel="Recharger l'historique" className="mb-4" />
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-slate-800">Historique des depots</h3>
           <button onClick={fetchRequests} className="text-sm text-blue-600 hover:underline">

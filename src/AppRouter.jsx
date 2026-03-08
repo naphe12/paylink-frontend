@@ -73,6 +73,9 @@ import AdminArbitragePage from "@/pages/admin/AdminArbitragePage";
 import AdminRiskHeatmap from "@/pages/admin/AdminRiskHeatmap";
 import AdminKillSwitch from "@/pages/admin/AdminKillSwitch";
 import LiquidityBifPage from "@/pages/admin/LiquidityBifPage";
+import UnbalancedJournalsPage from "@/pages/admin/UnbalancedJournalsPage";
+import IdempotencyScopesPage from "@/pages/admin/IdempotencyScopesPage";
+import OpsDashboardPage from "@/pages/admin/OpsDashboardPage";
 
 import AgentOperationPage from "@/pages/agent/AgentOperationPage";
 import AgentDashboard from "@/pages/agent/AgentDashboard";
@@ -214,6 +217,9 @@ export default function AppRouter() {
         <Route path="escrow/audit" element={<EscrowAuditPage />} />
         <Route path="ledger/balances" element={<LedgerBalances />} />
         <Route path="ledger/t-accounts" element={<TAccounts />} />
+        <Route path="ledger/unbalanced-journals" element={<UnbalancedJournalsPage />} />
+        <Route path="ledger/idempotency-scopes" element={<IdempotencyScopesPage />} />
+        <Route path="ops-dashboard" element={<OpsDashboardPage />} />
         <Route path="webhooks" element={<WebhookLogs />} />
         <Route path="risk" element={<RiskMonitoring />} />
         <Route path="trades" element={<P2PAdminTrades />} />

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpCircle } from "lucide-react";
 
+import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api from "@/services/api";
 
 const FEE_RATE = 0.0625;
@@ -12,6 +13,9 @@ export default function WithdrawPage() {
   const [note, setNote] = useState("");
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const idemKeyRef = useRef(null);
 
   const numericAmount = useMemo(() => Number(amount || 0), [amount]);
   const feePreview = useMemo(() => numericAmount * FEE_RATE, [numericAmount]);
@@ -19,10 +23,11 @@ export default function WithdrawPage() {
 
   const fetchRequests = async () => {
     try {
+      setLoadError("");
       const data = await api.getCashRequests({ type: "withdraw" });
-      setRequests(data);
+      setRequests(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Impossible de charger les retraits", err);
+      setLoadError(err?.message || "Impossible de charger les retraits.");
     }
   };
 
@@ -31,6 +36,7 @@ export default function WithdrawPage() {
   }, []);
 
   const handleSubmit = async () => {
+    setSubmitError("");
     if (!amount || Number(amount) <= 0) {
       return alert("Indiquez un montant valide.");
     }
@@ -39,12 +45,16 @@ export default function WithdrawPage() {
     }
     setLoading(true);
     try {
+      if (!idemKeyRef.current) {
+        idemKeyRef.current = api.newIdempotencyKey("wallet-cash-withdraw");
+      }
       await api.requestCashWithdraw({
         amount: Number(amount),
         mobile_number: mobileNumber,
         provider_name: providerName,
         note: note || null,
-      });
+      }, idemKeyRef.current);
+      idemKeyRef.current = null;
       setAmount("");
       setMobileNumber("");
       setProviderName("");
@@ -52,7 +62,7 @@ export default function WithdrawPage() {
       await fetchRequests();
       alert("Demande de retrait enregistrée.");
     } catch (err) {
-      alert(`Erreur retrait : ${err.message}`);
+      setSubmitError(err?.message || "Erreur retrait.");
     } finally {
       setLoading(false);
     }
@@ -71,6 +81,7 @@ export default function WithdrawPage() {
       </div>
 
       <div className="bg-white rounded-2xl shadow p-6 max-w-2xl space-y-4">
+        <ApiErrorAlert message={submitError} />
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-600 mb-1">
@@ -143,6 +154,7 @@ export default function WithdrawPage() {
       </div>
 
       <div className="bg-white rounded-2xl shadow p-6">
+        <ApiErrorAlert message={loadError} onRetry={fetchRequests} retryLabel="Recharger l'historique" className="mb-4" />
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-slate-800">Retraits récents</h3>
           <button

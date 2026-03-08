@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "@/services/api";
 import { Send, Info } from "lucide-react";
+import ApiErrorAlert from "@/components/ApiErrorAlert";
 
 export default function AgentExternalTransferPage() {
   const [users, setUsers] = useState([]);
@@ -160,7 +161,7 @@ export default function AgentExternalTransferPage() {
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      <ApiErrorAlert message={error} className="mb-4" />
 
       <form className="space-y-5 text-gray-800" onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

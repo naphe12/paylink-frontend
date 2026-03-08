@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Info, Send } from "lucide-react";
+
+import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api from "@/services/api";
-import { Send, Info } from "lucide-react";
 
 const PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
 
@@ -12,19 +14,19 @@ export default function ExternalTransferPage() {
     partner_name: PARTNERS[0],
     amount: "",
   });
-
   const [rate, setRate] = useState(0);
   const [feesEur, setFeesEur] = useState(0);
   const [recipientAmount, setRecipientAmount] = useState(0);
   const [availableBalance, setAvailableBalance] = useState(100);
   const [creditLimit, setCreditLimit] = useState(150);
-  const totalAvailable = availableBalance + creditLimit;
-
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
   const [selectedBeneficiary, setSelectedBeneficiary] = useState("");
   const [beneficiaries, setBeneficiaries] = useState([]);
+  const [submitIdempotencyKey, setSubmitIdempotencyKey] = useState("");
+  const totalAvailable = availableBalance + creditLimit;
 
   useEffect(() => {
     if (!form.amount || isNaN(form.amount) || rate === 0) {
@@ -32,54 +34,63 @@ export default function ExternalTransferPage() {
       return;
     }
     const eur = parseFloat(form.amount);
-    const converted = eur * rate;
-    setRecipientAmount(converted);
+    setRecipientAmount(eur * rate);
   }, [form.amount, rate]);
 
+  const loadRate = async () => {
+    try {
+      setLoadError("");
+      const dest = form.country_destination === "Burundi" ? "BIF" : form.country_destination;
+      const res = await api.getExchangeRate("EUR", dest);
+      if (res?.rate) setRate(Number(res.rate));
+      if (res?.fees_percent) setFeesEur(Number(res.fees_percent));
+    } catch (err) {
+      setLoadError(err?.message || "Impossible de charger le taux de change.");
+    }
+  };
+
+  const loadBeneficiaries = async () => {
+    try {
+      setLoadError("");
+      const data = await api.get("/wallet/transfer/external/beneficiaries");
+      setBeneficiaries(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setLoadError(err?.message || "Impossible de charger les beneficiaires.");
+    }
+  };
+
   useEffect(() => {
-    const loadRate = async () => {
-      try {
-        const dest = form.country_destination === "Burundi" ? "BIF" : form.country_destination;
-        const res = await api.getExchangeRate("EUR", dest);
-        if (res?.rate) setRate(Number(res.rate));
-        if (res?.fees_percent) setFeesEur(Number(res.fees_percent));
-      } catch (err) {
-        console.error("Impossible de charger le taux FX", err);
-      }
-    };
     loadRate();
   }, [form.country_destination]);
 
   useEffect(() => {
-    const loadBeneficiaries = async () => {
-      try {
-        const data = await api.get("/wallet/transfer/external/beneficiaries");
-        setBeneficiaries(data || []);
-      } catch (err) {
-        console.error("Impossible de charger les bénéficiaires", err);
-      }
-    };
     loadBeneficiaries();
   }, []);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const retryLoad = async () => {
+    await Promise.allSettled([loadRate(), loadBeneficiaries()]);
+  };
+
+  const handleChange = (e) => {
+    setSubmitIdempotencyKey("");
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
   const handleBeneficiaryChange = (e) => {
     const id = e.target.value;
     setSelectedBeneficiary(id);
+    setSubmitIdempotencyKey("");
     const chosen = beneficiaries.find(
-      (b) =>
-        String(b.recipient_phone) === String(id) ||
-        String(b.id || b.recipient_phone) === String(id)
+      (b) => String(b.recipient_phone) === String(id) || String(b.id || b.recipient_phone) === String(id)
     );
-    if (chosen) {
-      setForm((prev) => ({
-        ...prev,
-        recipient_name: chosen.recipient_name,
-        recipient_phone: chosen.recipient_phone,
-        partner_name: chosen.partner_name,
-        country_destination: chosen.country_destination || prev.country_destination,
-      }));
-    }
+    if (!chosen) return;
+    setForm((prev) => ({
+      ...prev,
+      recipient_name: chosen.recipient_name,
+      recipient_phone: chosen.recipient_phone,
+      partner_name: chosen.partner_name,
+      country_destination: chosen.country_destination || prev.country_destination,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -89,21 +100,28 @@ export default function ExternalTransferPage() {
     setSuccess(null);
 
     if (parseFloat(form.amount) > totalAvailable) {
-      setError("Montant supérieur à votre limite disponible !");
+      setError("Montant superieur a votre limite disponible.");
       setLoading(false);
       return;
     }
 
     try {
-      const payload = {
-        partner_name: form.partner_name,
-        country_destination: form.country_destination,
-        recipient_name: form.recipient_name,
-        recipient_phone: form.recipient_phone,
-        amount: form.amount,
-      };
-      await api.post("/wallet/transfer/external", payload);
-      setSuccess("Transfert soumis avec succès !");
+      const idemKey = submitIdempotencyKey || api.newIdempotencyKey("external-transfer");
+      if (!submitIdempotencyKey) setSubmitIdempotencyKey(idemKey);
+      await api.postIdempotent(
+        "/wallet/transfer/external",
+        {
+          partner_name: form.partner_name,
+          country_destination: form.country_destination,
+          recipient_name: form.recipient_name,
+          recipient_phone: form.recipient_phone,
+          amount: form.amount,
+        },
+        idemKey,
+        "external-transfer"
+      );
+      setSuccess("Transfert soumis avec succes.");
+      setSubmitIdempotencyKey("");
       setForm({
         recipient_name: "",
         recipient_phone: "",
@@ -112,7 +130,6 @@ export default function ExternalTransferPage() {
         amount: "",
       });
     } catch (err) {
-      console.error(err);
       setError(err?.message || "Erreur lors de l'envoi du transfert.");
     } finally {
       setLoading(false);
@@ -129,36 +146,43 @@ export default function ExternalTransferPage() {
         <Info size={18} className="mt-0.5" />
         <div className="space-y-1">
           <p>
-            Vous pouvez envoyer jusqu'à <span className="font-semibold">{totalAvailable} €</span>
+            Vous pouvez envoyer jusqu'a <span className="font-semibold">{totalAvailable} EUR</span>
           </p>
           <p className="text-[13px] text-blue-700">
-            ({availableBalance} € solde + {creditLimit} € crédit)
+            ({availableBalance} EUR solde + {creditLimit} EUR credit)
           </p>
           <p className="text-[13px] text-blue-700 mt-1">
-            Taux FX appliqué: <span className="font-semibold">{rate || "-"}</span> | Frais:{" "}
+            Taux FX applique: <span className="font-semibold">{rate || "-"}</span> | Frais:{" "}
             <span className="font-semibold">{feesEur || 0} EUR</span>
           </p>
           <p className="text-[13px] text-blue-700">
-            Montant reçu estimé: <span className="font-semibold">{recipientAmount.toFixed(2)} </span>
+            Montant recu estime: <span className="font-semibold">{recipientAmount.toFixed(2)} </span>
             {form.country_destination === "Burundi" ? "BIF" : form.country_destination}
           </p>
         </div>
       </div>
 
+      <ApiErrorAlert
+        message={loadError}
+        onRetry={retryLoad}
+        retryLabel="Recharger les donnees"
+        className="mb-4"
+      />
+
       <form onSubmit={handleSubmit} className="space-y-5 text-gray-800">
         <div>
-          <label className="block text-sm font-semibold mb-1">Bénéficiaire enregistré</label>
+          <label className="block text-sm font-semibold mb-1">Beneficiaire enregistre</label>
           <select
             value={selectedBeneficiary}
             onChange={handleBeneficiaryChange}
             className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
           >
-            <option value="">-- Sélectionner --</option>
+            <option value="">-- Selectionner --</option>
             {beneficiaries.map((b) => {
               const value = b.recipient_phone;
               return (
                 <option key={value} value={value}>
-                  {b.recipient_name} • {b.partner_name} • {b.recipient_phone}
+                  {b.recipient_name} - {b.partner_name} - {b.recipient_phone}
                 </option>
               );
             })}
@@ -167,7 +191,7 @@ export default function ExternalTransferPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="block text-sm font-semibold mb-1">Nom du bénéficiaire</label>
+            <label className="block text-sm font-semibold mb-1">Nom du beneficiaire</label>
             <input
               type="text"
               name="recipient_name"
@@ -178,9 +202,8 @@ export default function ExternalTransferPage() {
               placeholder="Jean Ndayisenga"
             />
           </div>
-
           <div>
-            <label className="block text-sm font-semibold mb-1">Téléphone du bénéficiaire</label>
+            <label className="block text-sm font-semibold mb-1">Telephone du beneficiaire</label>
             <input
               type="text"
               name="recipient_phone"
@@ -207,7 +230,6 @@ export default function ExternalTransferPage() {
               <option value="DRC">RD Congo</option>
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-semibold mb-1">Partenaire</label>
             <select
@@ -226,7 +248,7 @@ export default function ExternalTransferPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-1">Montant (€)</label>
+          <label className="block text-sm font-semibold mb-1">Montant (EUR)</label>
           <input
             type="number"
             name="amount"
@@ -237,14 +259,12 @@ export default function ExternalTransferPage() {
             className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
             placeholder="100.00"
           />
-          <p className="text-xs text-slate-500 mt-1">
-            Frais estimés : {(feesEur || 0).toFixed(2)} €
-          </p>
+          <p className="text-xs text-slate-500 mt-1">Frais estimes : {(feesEur || 0).toFixed(2)} EUR</p>
         </div>
 
         <div className="rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700 space-y-1">
           <div className="flex justify-between">
-            <span>Taux appliqué</span>
+            <span>Taux applique</span>
             <span className="font-semibold">{rate || "-"}</span>
           </div>
           <div className="flex justify-between">
@@ -252,14 +272,14 @@ export default function ExternalTransferPage() {
             <span className="font-semibold">{feesEur || 0} EUR</span>
           </div>
           <div className="flex justify-between">
-            <span>Montant reçu estimé</span>
+            <span>Montant recu estime</span>
             <span className="font-semibold">
               {recipientAmount.toFixed(2)} {form.country_destination === "Burundi" ? "BIF" : form.country_destination}
             </span>
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <ApiErrorAlert message={error} />}
         {success && <p className="text-sm text-green-600">{success}</p>}
 
         <button

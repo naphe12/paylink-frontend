@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "@/services/api";
+import ApiErrorAlert from "@/components/ApiErrorAlert";
 
 const initialState = {
   side: "SELL",
@@ -35,6 +36,7 @@ export default function CreateOffer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [bootstrapping, setBootstrapping] = useState(false);
+  const [offerIdemKey, setOfferIdemKey] = useState("");
 
   const isEditMode = Boolean(id);
   const isDuplicateMode = !isEditMode && Boolean(location.state?.prefillOffer);
@@ -58,6 +60,7 @@ export default function CreateOffer() {
 
   const onChange = (e) => {
     const { name, value } = e.target;
+    setOfferIdemKey("");
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -80,7 +83,10 @@ export default function CreateOffer() {
       if (isEditMode) {
         await api.patch(`/api/p2p/offers/${id}`, payload);
       } else {
-        await api.post("/api/p2p/offers", payload);
+        const idemKey = offerIdemKey || api.newIdempotencyKey("p2p-create-offer");
+        if (!offerIdemKey) setOfferIdemKey(idemKey);
+        await api.postIdempotent("/api/p2p/offers", payload, idemKey, "p2p-create-offer");
+        setOfferIdemKey("");
       }
       navigate("/app/p2p/my-offers");
     } catch (err) {
@@ -96,6 +102,7 @@ export default function CreateOffer() {
         {isEditMode ? "Modifier l'offre P2P" : isDuplicateMode ? "Dupliquer une offre P2P" : "Creer une offre P2P"}
       </h1>
       {bootstrapping && <div className="rounded-xl border border-slate-200 bg-white p-4">Chargement de l'offre...</div>}
+      <ApiErrorAlert message={error} />
       <form onSubmit={submit} className="bg-white border border-slate-200 rounded-xl p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="text-sm text-slate-700 space-y-1">
           <span>Side</span>
@@ -148,8 +155,6 @@ export default function CreateOffer() {
           <span>Conditions (optionnel)</span>
           <textarea name="terms" value={form.terms} onChange={onChange} rows={3} className="w-full border border-slate-300 rounded-lg px-3 py-2" />
         </label>
-
-        {error && <div className="md:col-span-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700">{error}</div>}
 
         <div className="md:col-span-2 flex gap-3">
           <button type="submit" disabled={loading} className="px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-60">

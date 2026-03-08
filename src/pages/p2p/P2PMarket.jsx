@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/services/api";
+import ApiErrorAlert from "@/components/ApiErrorAlert";
 
 const formatPaymentMethod = (m) => (m === "ECOCASH" ? "eNOTI" : m);
 const sideLabel = (side) => (side === "SELL" ? "Vente" : "Achat");
@@ -33,6 +34,8 @@ export default function P2PMarket() {
   const [marketSide, setMarketSide] = useState("BUY");
   const [marketAmount, setMarketAmount] = useState("");
   const [marketLoading, setMarketLoading] = useState(false);
+  const [createTradeIdemKey, setCreateTradeIdemKey] = useState("");
+  const [marketOrderIdemKey, setMarketOrderIdemKey] = useState("");
 
   const loadOffers = useCallback(async () => {
     setLoading(true);
@@ -100,13 +103,16 @@ export default function P2PMarket() {
     }
 
     try {
-      const trade = await api.post("/api/p2p/trades", {
+      const idemKey = createTradeIdemKey || api.newIdempotencyKey("p2p-create-trade");
+      if (!createTradeIdemKey) setCreateTradeIdemKey(idemKey);
+      const trade = await api.postIdempotent("/api/p2p/trades", {
         offer_id: offer.offer_id,
         token_amount: String(amount),
-      });
+      }, idemKey, "p2p-create-trade");
+      setCreateTradeIdemKey("");
       navigate(`/app/p2p/trades/${trade.trade_id}`);
     } catch (err) {
-      window.alert(err.message || "Erreur lors de la creation du trade.");
+      setError(err.message || "Erreur lors de la creation du trade.");
     }
   };
 
@@ -120,12 +126,15 @@ export default function P2PMarket() {
     setMarketLoading(true);
     setError("");
     try {
+      const idemKey = marketOrderIdemKey || api.newIdempotencyKey("p2p-market-order");
+      if (!marketOrderIdemKey) setMarketOrderIdemKey(idemKey);
       const query = new URLSearchParams({
         token: marketToken,
         side: marketSide,
         token_amount: String(amount),
       }).toString();
-      const trade = await api.post(`/api/p2p/market-order?${query}`, {});
+      const trade = await api.postIdempotent(`/api/p2p/market-order?${query}`, {}, idemKey, "p2p-market-order");
+      setMarketOrderIdemKey("");
       navigate(`/app/p2p/trades/${trade.trade_id}`);
     } catch (err) {
       setError(err.message || "Impossible de creer l'ordre au marche");
@@ -222,7 +231,7 @@ export default function P2PMarket() {
         </div>
       </div>
 
-      {error && <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700">{error}</div>}
+      <ApiErrorAlert message={error} onRetry={loadOffers} retryLabel="Recharger les offres" />
       {emptyText && <div className="p-4 bg-white rounded-xl border border-slate-200">{emptyText}</div>}
 
       {offers.length > 0 && (

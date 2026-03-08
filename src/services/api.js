@@ -18,36 +18,55 @@ async function parseJsonOrThrow(res, path, method = "GET") {
 }
 
 async function readErrorMessage(res, path, method = "GET") {
+  const requestIdHeader = res.headers.get("x-request-id") || res.headers.get("X-Request-Id");
+  const statusPrefix = `${method} ${path} -> ${res.status}`;
   const contentType = res.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
     try {
       const payload = await res.json();
+      const requestIdPayload = payload?.request_id;
+      const requestId = requestIdPayload || requestIdHeader;
+      const requestIdSuffix = requestId ? ` [request_id=${requestId}]` : "";
       const detail = payload?.detail;
       if (Array.isArray(detail)) {
         const msg = detail
           .map((d) => (typeof d === "string" ? d : d?.msg || JSON.stringify(d)))
           .join(" | ");
-        return `${method} ${path} -> ${res.status}: ${msg}`;
+        return `${statusPrefix}: ${msg}${requestIdSuffix}`;
       }
       if (typeof detail === "string" && detail.trim()) {
-        return `${method} ${path} -> ${res.status}: ${detail}`;
+        return `${statusPrefix}: ${detail}${requestIdSuffix}`;
       }
-      return `${method} ${path} -> ${res.status}`;
+      const fallback = payload?.error || payload?.message;
+      if (typeof fallback === "string" && fallback.trim()) {
+        return `${statusPrefix}: ${fallback}${requestIdSuffix}`;
+      }
+      return `${statusPrefix}${requestIdSuffix}`;
     } catch {
-      return `${method} ${path} -> ${res.status}`;
+      const requestIdSuffix = requestIdHeader ? ` [request_id=${requestIdHeader}]` : "";
+      return `${statusPrefix}${requestIdSuffix}`;
     }
   }
   const text = await res.text();
-  return `${method} ${path} -> ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}`;
+  const requestIdSuffix = requestIdHeader ? ` [request_id=${requestIdHeader}]` : "";
+  return `${statusPrefix}${text ? `: ${text.slice(0, 200)}` : ""}${requestIdSuffix}`;
 }
 
 function formatNetworkError(path, method = "GET", err) {
   const target = `${API_URL}${path}`;
   const reason = err?.message ? ` (${err.message})` : "";
-  return `${method} ${path} -> impossible de joindre l'API: ${target}${reason}`;
+  return `${method} ${path} -> impossible de joindre l'API: ${target}${reason}. Verifiez l'URL backend, le CORS et la connectivite reseau.`;
 }
 
 const api = {
+  newIdempotencyKey(scope = "request") {
+    const rand =
+      (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function")
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    return `${scope}-${rand}`;
+  },
+
   async get(path) {
     const token = getAuthToken();
     let res;
@@ -83,6 +102,32 @@ const api = {
     }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "POST"));
     return parseJsonOrThrow(res, path, "POST");
+  },
+
+  async postWithHeaders(path, data, extraHeaders = {}) {
+    const token = getAuthToken();
+    let res;
+    try {
+      res = await fetch(`${API_URL}${path}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+          ...extraHeaders,
+        },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      throw new Error(formatNetworkError(path, "POST", err));
+    }
+    if (!res.ok) throw new Error(await readErrorMessage(res, path, "POST"));
+    return parseJsonOrThrow(res, path, "POST");
+  },
+
+  async postIdempotent(path, data, idempotencyKey, scope = "request") {
+    const key = idempotencyKey || this.newIdempotencyKey(scope);
+    return this.postWithHeaders(path, data, { "Idempotency-Key": key });
   },
 
   async patch(path, data) {
@@ -246,11 +291,11 @@ const api = {
     const query = search.toString();
     return this.get(`/wallet/cash/requests${query ? `?${query}` : ""}`);
   },
-  async requestCashDeposit(payload) {
-    return this.post("/wallet/cash/deposit", payload);
+  async requestCashDeposit(payload, idempotencyKey = null) {
+    return this.postIdempotent("/wallet/cash/deposit", payload, idempotencyKey, "wallet-cash-deposit");
   },
-  async requestCashWithdraw(payload) {
-    return this.post("/wallet/cash/withdraw", payload);
+  async requestCashWithdraw(payload, idempotencyKey = null) {
+    return this.postIdempotent("/wallet/cash/withdraw", payload, idempotencyKey, "wallet-cash-withdraw");
   },
   async requestUsdcWithdraw(payload) {
     return this.post("/wallet/usdc/withdraw", payload);
@@ -326,11 +371,21 @@ const api = {
     const query = search.toString();
     return this.get(`/admin/cash-requests/${query ? `?${query}` : ""}`);
   },
-  async approveCashRequest(requestId, payload = {}) {
-    return this.post(`/admin/cash-requests/${requestId}/approve`, payload);
+  async approveCashRequest(requestId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(
+      `/admin/cash-requests/${requestId}/approve`,
+      payload,
+      idempotencyKey,
+      `admin-cash-approve-${requestId}`
+    );
   },
-  async rejectCashRequest(requestId, payload = {}) {
-    return this.post(`/admin/cash-requests/${requestId}/reject`, payload);
+  async rejectCashRequest(requestId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(
+      `/admin/cash-requests/${requestId}/reject`,
+      payload,
+      idempotencyKey,
+      `admin-cash-reject-${requestId}`
+    );
   },
   async searchAdminCashUsers(q = "", limit = 50) {
     const search = new URLSearchParams();
@@ -338,8 +393,8 @@ const api = {
     if (limit) search.append("limit", String(limit));
     return this.get(`/admin/cash-requests/users${search.toString() ? `?${search.toString()}` : ""}`);
   },
-  async adminCashDeposit(payload = {}) {
-    return this.post("/admin/cash-requests/deposit", payload);
+  async adminCashDeposit(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/admin/cash-requests/deposit", payload, idempotencyKey, "admin-cash-deposit");
   },
   async getAdminCreditHistory(params = {}) {
     const search = new URLSearchParams();
@@ -403,6 +458,20 @@ const api = {
     ).toString();
     return this.get(`/admin/transactions-audit${query ? `?${query}` : ""}`);
   },
+  async getUnbalancedJournals(limit = 100) {
+    const search = new URLSearchParams();
+    if (limit) search.append("limit", String(limit));
+    return this.get(`/backoffice/monitoring/unbalanced-journals${search.toString() ? `?${search.toString()}` : ""}`);
+  },
+  async getUnbalancedJournalEntries(journalId) {
+    return this.get(`/backoffice/monitoring/unbalanced-journals/${journalId}/entries`);
+  },
+  async getIdempotencyScopes(params = {}) {
+    const search = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/backoffice/monitoring/idempotency-scopes${search ? `?${search}` : ""}`);
+  },
   async getPendingExternalTransfers() {
     return this.get("/agent/external/pending");
   },
@@ -412,8 +481,8 @@ const api = {
     if (limit) search.append("limit", String(limit));
     return this.get(`/agent/cash/users${search.toString() ? `?${search.toString()}` : ""}`);
   },
-  async agentCashDeposit(payload = {}) {
-    return this.post("/agent/cash/deposit", payload);
+  async agentCashDeposit(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/agent/cash/deposit", payload, idempotencyKey, "agent-cash-deposit");
   },
   async getReadyExternalTransfers() {
     return this.get("/agent/external/ready");

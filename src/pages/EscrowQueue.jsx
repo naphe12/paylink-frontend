@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/services/api";
+import ApiErrorAlert from "@/components/ApiErrorAlert";
 const API_URL = import.meta.env.VITE_API_URL || "";
 const STATUSES = [
   "ALL",
@@ -31,6 +32,8 @@ export default function EscrowQueue() {
   const [paidOutAmount, setPaidOutAmount] = useState("");
   const [proofType, setProofType] = useState("SCREENSHOT");
   const [proofRef, setProofRef] = useState("");
+  const [payoutPendingIdemKey, setPayoutPendingIdemKey] = useState("");
+  const [paidOutIdemKey, setPaidOutIdemKey] = useState("");
 
   const buildListQuery = () => {
     const params = new URLSearchParams();
@@ -139,6 +142,8 @@ export default function EscrowQueue() {
     setPayoutReference(order?.payout_reference || "");
     setPaidOutAmount(order?.bif_target ? String(order.bif_target) : "");
     setProofRef("");
+    setPayoutPendingIdemKey("");
+    setPaidOutIdemKey("");
     setActionMessage("");
     await loadOrderDetail(order.id);
   };
@@ -149,10 +154,14 @@ export default function EscrowQueue() {
     setActionMessage("");
     setError("");
     try {
-      await api.post(`/backoffice/escrow/orders/${selected.id}/payout-pending`, {
+      const idemKey =
+        payoutPendingIdemKey || api.newIdempotencyKey(`escrow-payout-pending-${selected.id}`);
+      if (!payoutPendingIdemKey) setPayoutPendingIdemKey(idemKey);
+      await api.postIdempotent(`/backoffice/escrow/orders/${selected.id}/payout-pending`, {
         payout_reference: payoutReference || null,
-      });
+      }, idemKey, `escrow-payout-pending-${selected.id}`);
       setActionMessage("Ordre passe en PAYOUT_PENDING.");
+      setPayoutPendingIdemKey("");
       await fetchOrders();
       await loadOrderDetail(selected.id);
     } catch (err) {
@@ -180,14 +189,18 @@ export default function EscrowQueue() {
     setActionMessage("");
     setError("");
     try {
-      await api.post(`/backoffice/escrow/orders/${selected.id}/paid-out`, {
+      const idemKey =
+        paidOutIdemKey || api.newIdempotencyKey(`escrow-paid-out-${selected.id}`);
+      if (!paidOutIdemKey) setPaidOutIdemKey(idemKey);
+      await api.postIdempotent(`/backoffice/escrow/orders/${selected.id}/paid-out`, {
         amount_bif: Number(paidOutAmount),
         payout_reference: payoutReference.trim(),
         proof_type: proofType,
         proof_ref: proofRef.trim(),
         proof_metadata: {},
-      });
+      }, idemKey, `escrow-paid-out-${selected.id}`);
       setActionMessage("Payout confirme (PAID_OUT).");
+      setPaidOutIdemKey("");
       await fetchOrders();
       await loadOrderDetail(selected.id);
     } catch (err) {
@@ -261,11 +274,12 @@ export default function EscrowQueue() {
           {filtered.length} ordre(s)
         </div>
 
-        {error ? (
-          <div className="mt-4 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-700">
-            {error}
-          </div>
-        ) : null}
+        <ApiErrorAlert
+          message={error}
+          onRetry={fetchOrders}
+          retryLabel="Recharger la file"
+          className="mt-4"
+        />
 
         <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
           <div className="max-h-[560px] overflow-auto">

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "@/services/api";
+import ApiErrorAlert from "@/components/ApiErrorAlert";
 
 const formatPaymentMethod = (m) => (m === "ECOCASH" ? "eNOTI" : m);
 
@@ -14,6 +15,9 @@ export default function TradeRoom() {
   const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fiatSentIdemKey, setFiatSentIdemKey] = useState("");
+  const [fiatConfirmIdemKey, setFiatConfirmIdemKey] = useState("");
+  const [disputeIdemKey, setDisputeIdemKey] = useState("");
 
   const load = useCallback(async () => {
     setError("");
@@ -58,7 +62,10 @@ export default function TradeRoom() {
     setLoading(true);
     setError("");
     try {
-      await api.post(`/api/p2p/trades/${id}/fiat-sent`, { proof_url: proofUrl, note: "" });
+      const idemKey = fiatSentIdemKey || api.newIdempotencyKey(`p2p-fiat-sent-${id}`);
+      if (!fiatSentIdemKey) setFiatSentIdemKey(idemKey);
+      await api.postIdempotent(`/api/p2p/trades/${id}/fiat-sent`, { proof_url: proofUrl, note: "" }, idemKey, `p2p-fiat-sent-${id}`);
+      setFiatSentIdemKey("");
       await load();
     } catch (err) {
       setError(err.message || "Erreur envoi preuve paiement");
@@ -75,7 +82,10 @@ export default function TradeRoom() {
     setLoading(true);
     setError("");
     try {
-      await api.post(`/api/p2p/trades/${id}/fiat-confirm`, {});
+      const idemKey = fiatConfirmIdemKey || api.newIdempotencyKey(`p2p-fiat-confirm-${id}`);
+      if (!fiatConfirmIdemKey) setFiatConfirmIdemKey(idemKey);
+      await api.postIdempotent(`/api/p2p/trades/${id}/fiat-confirm`, {}, idemKey, `p2p-fiat-confirm-${id}`);
+      setFiatConfirmIdemKey("");
       await load();
     } catch (err) {
       setError(err.message || "Erreur confirmation fiat");
@@ -90,7 +100,10 @@ export default function TradeRoom() {
     setLoading(true);
     setError("");
     try {
-      await api.post(`/api/p2p/trades/${id}/dispute`, { reason });
+      const idemKey = disputeIdemKey || api.newIdempotencyKey(`p2p-open-dispute-${id}`);
+      if (!disputeIdemKey) setDisputeIdemKey(idemKey);
+      await api.postIdempotent(`/api/p2p/trades/${id}/dispute`, { reason }, idemKey, `p2p-open-dispute-${id}`);
+      setDisputeIdemKey("");
       await load();
     } catch (err) {
       setError(err.message || "Erreur ouverture litige");
@@ -117,7 +130,11 @@ export default function TradeRoom() {
   if (!trade) {
     return (
       <div className="max-w-5xl mx-auto p-4">
-        {error ? <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700">{error}</div> : "Chargement..."}
+        {error ? (
+          <ApiErrorAlert message={error} onRetry={() => load()} retryLabel="Recharger le trade" />
+        ) : (
+          "Chargement..."
+        )}
       </div>
     );
   }
@@ -126,7 +143,7 @@ export default function TradeRoom() {
     <div className="max-w-5xl mx-auto p-4 space-y-4">
       <h2 className="text-2xl font-semibold text-slate-900">Trade {trade.trade_id}</h2>
 
-      {error && <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700">{error}</div>}
+      <ApiErrorAlert message={error} onRetry={() => load()} retryLabel="Recharger le trade" />
 
       <div className="p-4 border border-slate-200 bg-white rounded-xl">
         <div>
