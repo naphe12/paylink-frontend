@@ -202,6 +202,9 @@ export default function AdminSidebar() {
             <NavLink to="/dashboard/admin/overview" className={linkClass} onClick={onNavigate}>
               <LayoutDashboard size={18} /> Dashboard
             </NavLink>
+            <NavLink to="/dashboard/admin/overview-lite" className={linkClass} onClick={onNavigate}>
+              <LayoutDashboard size={18} /> Dashboard Lite
+            </NavLink>
             <NavLink to="/dashboard/admin/aml-cases" className={linkClass} onClick={onNavigate}>
               <div className="flex items-center gap-3">
                 <ShieldAlert size={18} />

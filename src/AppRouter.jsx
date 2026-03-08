@@ -172,7 +172,8 @@ export default function AppRouter() {
         }
       >
         <Route index element={<Navigate to="users" replace />} />
-        <Route path="overview" element={<AdminGlobalDashboard />} />
+        <Route path="overview" element={<RiskMonitorPage />} />
+        <Route path="overview-lite" element={<AdminGlobalDashboard />} />
         <Route path="aml-cases" element={<AdminAMLPage />} />
         <Route path="liquidity" element={<AdminLiquidityPage />} />
         <Route path="arbitrage" element={<AdminArbitragePage />} />
