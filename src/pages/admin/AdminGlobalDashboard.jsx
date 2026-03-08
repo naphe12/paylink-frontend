@@ -10,9 +10,16 @@ import {
   YAxis,
 } from "recharts";
 
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
+function getAuthToken() {
+  const raw = localStorage.getItem("token") || localStorage.getItem("access_token");
+  return raw && raw !== "null" && raw !== "undefined" ? raw : null;
+}
+
 async function api(url) {
-  const token = localStorage.getItem("access_token");
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const token = getAuthToken();
+  const res = await fetch(`${API_BASE}${url}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
@@ -20,23 +27,40 @@ async function api(url) {
 export default function AdminGlobalDashboard() {
   const [data, setData] = useState(null);
   const [series, setSeries] = useState([]);
+  const [error, setError] = useState("");
 
-  const load = async () => setData(await api("/api/admin/dashboard/summary"));
+  const load = async () => {
+    try {
+      setError("");
+      const result = await api("/api/admin/dashboard/summary");
+      setData(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Impossible de charger le dashboard admin.";
+      setError(msg);
+      setData(null);
+    }
+  };
+
   const loadSeries = async () => {
-    const token = localStorage.getItem("access_token");
-    const res = await fetch("/api/admin/dashboard/timeseries?days=14", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const result = await res.json();
-    setSeries(
-      result.map((x) => ({
-        ...x,
-        day: String(x.day),
-        trades_count: Number(x.trades_count),
-        hits_count: Number(x.hits_count),
-        avg_risk: Number(x.avg_risk),
-      }))
-    );
+    try {
+      const token = getAuthToken();
+      const res = await fetch(`${API_BASE}/api/admin/dashboard/timeseries?days=14`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const result = await res.json();
+      setSeries(
+        result.map((x) => ({
+          ...x,
+          day: String(x.day),
+          trades_count: Number(x.trades_count),
+          hits_count: Number(x.hits_count),
+          avg_risk: Number(x.avg_risk),
+        }))
+      );
+    } catch {
+      setSeries([]);
+    }
   };
 
   useEffect(() => {
@@ -60,6 +84,7 @@ export default function AdminGlobalDashboard() {
     return () => ws.close();
   }, []);
 
+  if (error) return <div style={{ padding: 20, color: "#b91c1c" }}>Erreur dashboard: {error}</div>;
   if (!data) return <div style={{ padding: 20 }}>Loading...</div>;
 
   return (
