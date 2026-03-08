@@ -37,7 +37,7 @@ const menuGroups = [
   },
   {
     key: "payments",
-    title: "Paiements et transferts",
+    title: "Paiements & transferts",
     items: [
       { name: "Demandes paiement", path: "/dashboard/client/payments", icon: <Send size={18} /> },
       { name: "Transfert interne", path: "/dashboard/client/transfer", icon: <RefreshCcw size={18} /> },
@@ -197,7 +197,7 @@ export default function DashboardLayout() {
         {menuGroups.map((group) => (
           <div key={group.key}>
             <button className={groupButtonClass} onClick={() => toggleGroup(group.key)}>
-              <span>{group.title}</span>
+              <span className="truncate whitespace-nowrap">{group.title}</span>
               {collapsedGroups[group.key] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
             </button>
             {!collapsedGroups[group.key] && (
