@@ -332,6 +332,15 @@ const api = {
   async rejectCashRequest(requestId, payload = {}) {
     return this.post(`/admin/cash-requests/${requestId}/reject`, payload);
   },
+  async searchAdminCashUsers(q = "", limit = 50) {
+    const search = new URLSearchParams();
+    if (q) search.append("q", q);
+    if (limit) search.append("limit", String(limit));
+    return this.get(`/admin/cash-requests/users${search.toString() ? `?${search.toString()}` : ""}`);
+  },
+  async adminCashDeposit(payload = {}) {
+    return this.post("/admin/cash-requests/deposit", payload);
+  },
   async getAdminCreditHistory(params = {}) {
     const search = new URLSearchParams();
     if (params.user_id) search.append("user_id", params.user_id);
@@ -396,6 +405,15 @@ const api = {
   },
   async getPendingExternalTransfers() {
     return this.get("/agent/external/pending");
+  },
+  async searchAgentCashUsers(q = "", limit = 50) {
+    const search = new URLSearchParams();
+    if (q) search.append("q", q);
+    if (limit) search.append("limit", String(limit));
+    return this.get(`/agent/cash/users${search.toString() ? `?${search.toString()}` : ""}`);
+  },
+  async agentCashDeposit(payload = {}) {
+    return this.post("/agent/cash/deposit", payload);
   },
   async getReadyExternalTransfers() {
     return this.get("/agent/external/ready");

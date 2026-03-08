@@ -19,6 +19,10 @@ export default function CashRequestsPage() {
   const [status, setStatus] = useState("pending");
   const [requestType, setRequestType] = useState("withdraw");
   const [loading, setLoading] = useState(false);
+  const [userQuery, setUserQuery] = useState("");
+  const [users, setUsers] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [depositAmount, setDepositAmount] = useState("");
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -38,6 +42,38 @@ export default function CashRequestsPage() {
   useEffect(() => {
     fetchRequests();
   }, [status, requestType]);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const data = await api.searchAdminCashUsers(userQuery, 30);
+        setUsers(Array.isArray(data) ? data : []);
+      } catch {
+        setUsers([]);
+      }
+    };
+    loadUsers();
+  }, [userQuery]);
+
+  const handleDirectDeposit = async () => {
+    if (!selectedUserId || !Number(depositAmount)) {
+      alert("Sélectionnez un user et un montant valide.");
+      return;
+    }
+    try {
+      const res = await api.adminCashDeposit({
+        user_id: selectedUserId,
+        amount: Number(depositAmount),
+      });
+      alert(
+        `Dépôt effectué: ${res.amount} ${res.currency} | nouveau solde: ${res.new_balance}`
+      );
+      setDepositAmount("");
+      fetchRequests();
+    } catch (err) {
+      alert(`Dépôt impossible: ${err.message}`);
+    }
+  };
 
   const handleDecision = async (requestId, action) => {
     const note = window.prompt("Ajouter une note (optionnel)") || undefined;
@@ -71,6 +107,44 @@ export default function CashRequestsPage() {
       </header>
 
       <div className="flex flex-wrap gap-4 bg-white rounded-2xl shadow p-4">
+        <div className="w-full lg:w-auto lg:min-w-[340px]">
+          <label className="text-xs uppercase tracking-wide text-slate-500">Dépôt direct user</label>
+          <input
+            value={userQuery}
+            onChange={(e) => setUserQuery(e.target.value)}
+            placeholder="Rechercher user (nom/email/téléphone)"
+            className="mt-1 border rounded-lg px-3 py-2 text-sm w-full"
+          />
+          <select
+            value={selectedUserId}
+            onChange={(e) => setSelectedUserId(e.target.value)}
+            className="mt-2 border rounded-lg px-3 py-2 text-sm w-full"
+          >
+            <option value="">-- sélectionner --</option>
+            {users.map((u) => (
+              <option key={u.user_id} value={u.user_id}>
+                {u.full_name || "Sans nom"} • {u.email || "-"} • {u.phone_e164 || "-"}
+              </option>
+            ))}
+          </select>
+          <div className="mt-2 flex gap-2">
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(e.target.value)}
+              placeholder="Montant"
+              className="border rounded-lg px-3 py-2 text-sm w-full"
+            />
+            <button
+              onClick={handleDirectDeposit}
+              className="px-4 py-2 rounded-xl bg-blue-700 text-white text-sm font-medium hover:bg-blue-600"
+            >
+              Déposer
+            </button>
+          </div>
+        </div>
         <div>
           <label className="text-xs uppercase tracking-wide text-slate-500">Statut</label>
           <select
