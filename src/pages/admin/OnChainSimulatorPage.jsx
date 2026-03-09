@@ -9,12 +9,21 @@ export default function OnChainSimulatorPage() {
   const [escrowTxHash, setEscrowTxHash] = useState("");
   const [orderId, setOrderId] = useState("");
   const [escrowAction, setEscrowAction] = useState("FUND");
+  const [webhookOrderId, setWebhookOrderId] = useState("");
+  const [webhookAmount, setWebhookAmount] = useState("10");
+  const [webhookConfirmations, setWebhookConfirmations] = useState("3");
+  const [webhookTxHash, setWebhookTxHash] = useState("");
+  const [webhookFromAddress, setWebhookFromAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
 
   const canSimulateP2P = useMemo(() => tradeId.trim().length > 0, [tradeId]);
   const canSimulateEscrow = useMemo(() => orderId.trim().length > 0, [orderId]);
+  const canSimulateWebhook = useMemo(
+    () => webhookOrderId.trim().length > 0 && Number(webhookAmount) > 0,
+    [webhookAmount, webhookOrderId]
+  );
 
   const simulateP2P = async () => {
     if (!canSimulateP2P) return;
@@ -55,6 +64,32 @@ export default function OnChainSimulatorPage() {
     }
   };
 
+  const simulateUsdcWebhook = async () => {
+    if (!canSimulateWebhook) return;
+    setLoading(true);
+    setError("");
+    setResult(null);
+    try {
+      const payload = {
+        order_id: webhookOrderId.trim(),
+        amount: Number(webhookAmount),
+        confirmations: Number(webhookConfirmations || 0),
+        tx_hash: webhookTxHash.trim() || undefined,
+        from_address: webhookFromAddress.trim() || undefined,
+      };
+      const res = await api.escrowSandboxUsdcWebhook(payload);
+      setResult({
+        scope: "Escrow Webhook",
+        action: "USDC_DEPOSIT",
+        data: res,
+      });
+    } catch (err) {
+      setError(err?.message || "Simulation webhook USDC impossible.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div>
@@ -66,7 +101,7 @@ export default function OnChainSimulatorPage() {
 
       <ApiErrorAlert message={error} />
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
           <h2 className="text-lg font-semibold text-slate-900">P2P: forcer CRYPTO_LOCKED</h2>
           <p className="text-xs text-slate-500">
@@ -123,6 +158,59 @@ export default function OnChainSimulatorPage() {
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
           >
             {loading ? "Execution..." : "Simuler Escrow"}
+          </button>
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+          <h2 className="text-lg font-semibold text-slate-900">Escrow: simuler webhook USDC</h2>
+          <p className="text-xs text-slate-500">
+            Endpoint: <span className="font-mono">POST /backoffice/webhooks/sandbox/usdc</span>
+          </p>
+          <input
+            value={webhookOrderId}
+            onChange={(e) => setWebhookOrderId(e.target.value)}
+            placeholder="order_id (sandbox)"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              value={webhookAmount}
+              onChange={(e) => setWebhookAmount(e.target.value)}
+              type="number"
+              min="0"
+              step="0.000001"
+              placeholder="amount"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              value={webhookConfirmations}
+              onChange={(e) => setWebhookConfirmations(e.target.value)}
+              type="number"
+              min="0"
+              step="1"
+              placeholder="confirmations"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <input
+            value={webhookTxHash}
+            onChange={(e) => setWebhookTxHash(e.target.value)}
+            placeholder="tx_hash (optionnel)"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+          <input
+            value={webhookFromAddress}
+            onChange={(e) => setWebhookFromAddress(e.target.value)}
+            placeholder="from_address (optionnel)"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+          <button
+            type="button"
+            disabled={loading || !canSimulateWebhook}
+            onClick={simulateUsdcWebhook}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+          >
+            {loading ? "Execution..." : "Simuler webhook USDC"}
           </button>
         </section>
       </div>

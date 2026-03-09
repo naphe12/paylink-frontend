@@ -483,6 +483,9 @@ const api = {
   async escrowSandboxAction(orderId, action) {
     return this.post(`/escrow/orders/${orderId}/sandbox/${action}`, {});
   },
+  async escrowSandboxUsdcWebhook(payload = {}) {
+    return this.post("/backoffice/webhooks/sandbox/usdc", payload);
+  },
   async getPendingExternalTransfers() {
     return this.get("/agent/external/pending");
   },
