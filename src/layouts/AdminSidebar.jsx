@@ -104,7 +104,12 @@ function getGroupForPath(pathname = "") {
 
 function getAuthToken() {
   const raw = localStorage.getItem("token") || localStorage.getItem("access_token");
-  return raw && raw !== "null" && raw !== "undefined" ? raw : null;
+  if (!raw || raw === "null" || raw === "undefined") return null;
+  let token = String(raw).trim();
+  token = token.replace(/^"+|"+$/g, "");
+  token = token.replace(/^Bearer\s+/i, "");
+  token = token.replace(/\s+/g, "");
+  return token || null;
 }
 
 async function api(url) {
