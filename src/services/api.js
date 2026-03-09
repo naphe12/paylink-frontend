@@ -477,6 +477,12 @@ const api = {
     ).toString();
     return this.get(`/backoffice/monitoring/idempotency-scopes${search ? `?${search}` : ""}`);
   },
+  async p2pSandboxCryptoLocked(tradeId, payload = {}) {
+    return this.post(`/api/p2p/trades/${tradeId}/sandbox/crypto-locked`, payload);
+  },
+  async escrowSandboxAction(orderId, action) {
+    return this.post(`/escrow/orders/${orderId}/sandbox/${action}`, {});
+  },
   async getPendingExternalTransfers() {
     return this.get("/agent/external/pending");
   },

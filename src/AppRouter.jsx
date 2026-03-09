@@ -76,6 +76,7 @@ import LiquidityBifPage from "@/pages/admin/LiquidityBifPage";
 import UnbalancedJournalsPage from "@/pages/admin/UnbalancedJournalsPage";
 import IdempotencyScopesPage from "@/pages/admin/IdempotencyScopesPage";
 import OpsDashboardPage from "@/pages/admin/OpsDashboardPage";
+import OnChainSimulatorPage from "@/pages/admin/OnChainSimulatorPage";
 
 import AgentOperationPage from "@/pages/agent/AgentOperationPage";
 import AgentDashboard from "@/pages/agent/AgentDashboard";
@@ -220,6 +221,7 @@ export default function AppRouter() {
         <Route path="ledger/unbalanced-journals" element={<UnbalancedJournalsPage />} />
         <Route path="ledger/idempotency-scopes" element={<IdempotencyScopesPage />} />
         <Route path="ops-dashboard" element={<OpsDashboardPage />} />
+        <Route path="onchain-simulator" element={<OnChainSimulatorPage />} />
         <Route path="webhooks" element={<WebhookLogs />} />
         <Route path="risk" element={<RiskMonitoring />} />
         <Route path="trades" element={<P2PAdminTrades />} />

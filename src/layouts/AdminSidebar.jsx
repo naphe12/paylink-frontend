@@ -442,6 +442,9 @@ export default function AdminSidebar() {
             <NavLink to="ledger/idempotency-scopes" className={linkClass} onClick={onNavigate}>
               <LineChart size={18} /> Idempotence scopes
             </NavLink>
+            <NavLink to="onchain-simulator" className={linkClass} onClick={onNavigate}>
+              <Activity size={18} /> Simulateur on-chain
+            </NavLink>
             <NavLink to="balance-events" className={linkClass} onClick={onNavigate}>
               <LineChart size={18} /> Balances clients
             </NavLink>
