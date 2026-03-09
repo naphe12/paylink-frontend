@@ -23,6 +23,21 @@ const statusBadgeClass = (isActive) =>
     ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
     : "bg-slate-100 text-slate-700 border border-slate-200";
 
+const myOfferNextAction = (offer) => {
+  if (!offer.is_active) {
+    return {
+      action: "Reactiver l'offre",
+      actor: "Vous",
+      tone: "bg-amber-50 border-amber-200 text-amber-700",
+    };
+  }
+  return {
+    action: "Attendre une contrepartie",
+    actor: offer.side === "SELL" ? "Acheteur tiers" : "Vendeur tiers",
+    tone: "bg-slate-50 border-slate-200 text-slate-700",
+  };
+};
+
 export default function P2PMyOffers() {
   const navigate = useNavigate();
   const [offers, setOffers] = useState([]);
@@ -102,6 +117,19 @@ export default function P2PMyOffers() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {offers.map((offer) => (
           <div key={offer.offer_id} className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-sm">
+            {(() => {
+              const next = myOfferNextAction(offer);
+              return (
+                <div className={`rounded-lg border px-3 py-2 text-xs ${next.tone}`}>
+                  <div>
+                    <span className="font-semibold">Action suivante:</span> {next.action}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Qui doit agir:</span> {next.actor}
+                  </div>
+                </div>
+              );
+            })()}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${sideBadgeClass(offer.side)}`}>

@@ -22,6 +22,21 @@ const actionButtonClass = (side, disabled) => {
     : "w-full px-4 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-400 hover:to-rose-400 shadow-sm";
 };
 
+const marketNextAction = (offer, isOwner) => {
+  if (isOwner) {
+    return {
+      action: "Attendre une contrepartie",
+      actor: offer.side === "SELL" ? "Acheteur tiers" : "Vendeur tiers",
+      tone: "bg-slate-50 border-slate-200 text-slate-700",
+    };
+  }
+  return {
+    action: offer.side === "SELL" ? "Creer un trade (acheter)" : "Creer un trade (vendre)",
+    actor: "Vous",
+    tone: "bg-indigo-50 border-indigo-200 text-indigo-700",
+  };
+};
+
 export default function P2PMarket() {
   const navigate = useNavigate();
   const [offers, setOffers] = useState([]);
@@ -236,8 +251,18 @@ export default function P2PMarket() {
 
       {offers.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {offers.map((offer) => (
+          {offers.map((offer) => {
+            const next = marketNextAction(offer, offer.user_id === meId);
+            return (
             <div key={offer.offer_id} className="bg-white border border-slate-200 shadow-sm rounded-xl p-4 space-y-3">
+              <div className={`rounded-lg border px-3 py-2 text-xs ${next.tone}`}>
+                <div>
+                  <span className="font-semibold">Action suivante:</span> {next.action}
+                </div>
+                <div>
+                  <span className="font-semibold">Qui doit agir:</span> {next.actor}
+                </div>
+              </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${sideBadgeClass(offer.side)}`}>
@@ -275,7 +300,8 @@ export default function P2PMarket() {
                     : "Vendre"}
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
