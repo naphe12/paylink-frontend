@@ -1,19 +1,59 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "@/services/api";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 
 const ESCROW_ACTIONS = ["FUND", "SWAP", "PAYOUT_PENDING", "PAYOUT", "FIAT_IN", "CRYPTO_RELEASE"];
+const ESCROW_STATUSES = ["CREATED", "FUNDED", "SWAPPED", "PAYOUT_PENDING", "PAID_OUT", "FAILED", "CANCELLED"];
+const P2P_CANDIDATE_STATUSES = new Set(["AWAITING_CRYPTO", "EXPIRED"]);
+const ESCROW_ACTION_TO_STATUS = {
+  FUND: "CREATED",
+  SWAP: "FUNDED",
+  PAYOUT_PENDING: "SWAPPED",
+  PAYOUT: "PAYOUT_PENDING",
+  FIAT_IN: "SWAPPED",
+  CRYPTO_RELEASE: "PAYOUT_PENDING",
+};
+
+const fmtDate = (value) => {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString();
+};
+
+const fmtAmount = (value, code = "") => {
+  if (value === null || value === undefined || value === "") return "-";
+  const n = Number(value);
+  if (Number.isNaN(n)) return String(value);
+  return `${n.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 6,
+  })}${code ? ` ${code}` : ""}`;
+};
+
+const isSandboxOrder = (order) => {
+  if (!order || typeof order !== "object") return false;
+  if (order.is_sandbox === true) return true;
+  const flags = Array.isArray(order.flags) ? order.flags : [];
+  return flags.some((f) => String(f || "").toUpperCase() === "SANDBOX");
+};
 
 export default function OnChainSimulatorPage() {
   const [tradeId, setTradeId] = useState("");
   const [escrowTxHash, setEscrowTxHash] = useState("");
   const [orderId, setOrderId] = useState("");
   const [escrowAction, setEscrowAction] = useState("FUND");
+  const [escrowStatusFilter, setEscrowStatusFilter] = useState("CREATED");
   const [webhookOrderId, setWebhookOrderId] = useState("");
   const [webhookAmount, setWebhookAmount] = useState("10");
   const [webhookConfirmations, setWebhookConfirmations] = useState("3");
   const [webhookTxHash, setWebhookTxHash] = useState("");
   const [webhookFromAddress, setWebhookFromAddress] = useState("");
+  const [p2pCandidates, setP2pCandidates] = useState([]);
+  const [escrowCandidates, setEscrowCandidates] = useState([]);
+  const [selectedEscrowDetail, setSelectedEscrowDetail] = useState(null);
+  const [loadingCandidates, setLoadingCandidates] = useState(false);
+  const [loadingOrderDetail, setLoadingOrderDetail] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
@@ -24,6 +64,111 @@ export default function OnChainSimulatorPage() {
     () => webhookOrderId.trim().length > 0 && Number(webhookAmount) > 0,
     [webhookAmount, webhookOrderId]
   );
+  const escrowStatusHint = ESCROW_ACTION_TO_STATUS[escrowAction];
+
+  useEffect(() => {
+    const mapped = ESCROW_ACTION_TO_STATUS[escrowAction];
+    if (mapped && mapped !== escrowStatusFilter) {
+      setEscrowStatusFilter(mapped);
+    }
+  }, [escrowAction, escrowStatusFilter]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadP2PCandidates = async () => {
+      setLoadingCandidates(true);
+      try {
+        const rows = await api.get("/admin/p2p/trades");
+        const list = (Array.isArray(rows) ? rows : []).filter((item) =>
+          P2P_CANDIDATE_STATUSES.has(String(item?.status || "").toUpperCase())
+        );
+        if (!cancelled) {
+          setP2pCandidates(list);
+          if (list[0]?.trade_id) {
+            setTradeId((prev) => (prev.trim() ? prev : String(list[0].trade_id)));
+          }
+        }
+      } catch {
+        if (!cancelled) setP2pCandidates([]);
+      } finally {
+        if (!cancelled) setLoadingCandidates(false);
+      }
+    };
+
+    loadP2PCandidates();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadEscrowCandidates = async () => {
+      setLoadingCandidates(true);
+      try {
+        const status = escrowStatusFilter ? `?status=${encodeURIComponent(escrowStatusFilter)}` : "";
+        const rows = await api.get(`/backoffice/escrow/orders${status}`);
+        const list = (Array.isArray(rows) ? rows : []).filter(isSandboxOrder);
+        if (cancelled) return;
+
+        setEscrowCandidates(list);
+        if (list.length === 0) {
+          setSelectedEscrowDetail(null);
+          return;
+        }
+        setOrderId((prev) => {
+          const current = prev.trim();
+          if (current && list.some((item) => String(item.id) === current)) {
+            return prev;
+          }
+          return String(list[0].id);
+        });
+      } catch {
+        if (!cancelled) {
+          setEscrowCandidates([]);
+          setSelectedEscrowDetail(null);
+        }
+      } finally {
+        if (!cancelled) setLoadingCandidates(false);
+      }
+    };
+
+    loadEscrowCandidates();
+    return () => {
+      cancelled = true;
+    };
+  }, [escrowStatusFilter]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const currentOrderId = orderId.trim();
+    if (!currentOrderId) {
+      setSelectedEscrowDetail(null);
+      return undefined;
+    }
+
+    const loadOrderDetail = async () => {
+      setLoadingOrderDetail(true);
+      try {
+        let detail = null;
+        try {
+          detail = await api.get(`/backoffice/escrow/orders/${currentOrderId}`);
+        } catch {
+          detail = await api.get(`/escrow/orders/${currentOrderId}`);
+        }
+        if (!cancelled) setSelectedEscrowDetail(detail);
+      } catch {
+        if (!cancelled) setSelectedEscrowDetail(null);
+      } finally {
+        if (!cancelled) setLoadingOrderDetail(false);
+      }
+    };
+
+    loadOrderDetail();
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId]);
 
   const simulateP2P = async () => {
     if (!canSimulateP2P) return;
@@ -107,6 +252,18 @@ export default function OnChainSimulatorPage() {
           <p className="text-xs text-slate-500">
             Endpoint: <span className="font-mono">POST /api/p2p/trades/{`{trade_id}`}/sandbox/crypto-locked</span>
           </p>
+          <select
+            value={tradeId}
+            onChange={(e) => setTradeId(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            <option value="">Selectionner un trade candidat...</option>
+            {p2pCandidates.map((t) => (
+              <option key={t.trade_id} value={t.trade_id}>
+                {t.trade_id} - {t.status} - {t.token_amount} {t.token || ""}
+              </option>
+            ))}
+          </select>
           <input
             value={tradeId}
             onChange={(e) => setTradeId(e.target.value)}
@@ -134,23 +291,53 @@ export default function OnChainSimulatorPage() {
           <p className="text-xs text-slate-500">
             Endpoint: <span className="font-mono">POST /escrow/orders/{`{order_id}`}/sandbox/{`{action}`}</span>
           </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <select
+              value={escrowAction}
+              onChange={(e) => setEscrowAction(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            >
+              {ESCROW_ACTIONS.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+            <select
+              value={escrowStatusFilter}
+              onChange={(e) => setEscrowStatusFilter(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            >
+              {ESCROW_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Statut attendu pour l'action {escrowAction}: <span className="font-semibold">{escrowStatusHint || "-"}</span>
+          </p>
+          <select
+            value={orderId}
+            onChange={(e) => setOrderId(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            <option value="">
+              {loadingCandidates ? "Chargement des orders..." : "Selectionner un order sandbox candidat..."}
+            </option>
+            {escrowCandidates.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.id} - {o.status}
+              </option>
+            ))}
+          </select>
           <input
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
             placeholder="order_id"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
-          <select
-            value={escrowAction}
-            onChange={(e) => setEscrowAction(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          >
-            {ESCROW_ACTIONS.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
           <button
             type="button"
             disabled={loading || !canSimulateEscrow}
@@ -159,6 +346,31 @@ export default function OnChainSimulatorPage() {
           >
             {loading ? "Execution..." : "Simuler Escrow"}
           </button>
+
+          {orderId.trim() && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1">
+              <p className="font-semibold text-slate-900">Detail order selectionne</p>
+              {loadingOrderDetail && <p>Chargement detail...</p>}
+              {!loadingOrderDetail && selectedEscrowDetail && (
+                <>
+                  <p><b>ID:</b> <span className="font-mono">{selectedEscrowDetail.id || orderId}</span></p>
+                  <p><b>Status:</b> {selectedEscrowDetail.status || "-"}</p>
+                  <p><b>Sandbox:</b> {isSandboxOrder(selectedEscrowDetail) ? "Oui" : "Non"}</p>
+                  <p><b>User:</b> <span className="font-mono">{selectedEscrowDetail.user_id || "-"}</span></p>
+                  <p><b>Trader:</b> <span className="font-mono">{selectedEscrowDetail.trader_id || "-"}</span></p>
+                  <p><b>USDC attendu/recu:</b> {fmtAmount(selectedEscrowDetail.usdc_expected, "USDC")} / {fmtAmount(selectedEscrowDetail.usdc_received, "USDC")}</p>
+                  <p><b>USDT cible/recu:</b> {fmtAmount(selectedEscrowDetail.usdt_target, "USDT")} / {fmtAmount(selectedEscrowDetail.usdt_received, "USDT")}</p>
+                  <p><b>BIF cible/paye:</b> {fmtAmount(selectedEscrowDetail.bif_target, "BIF")} / {fmtAmount(selectedEscrowDetail.bif_paid, "BIF")}</p>
+                  <p><b>Created:</b> {fmtDate(selectedEscrowDetail.created_at)}</p>
+                  <p><b>Updated:</b> {fmtDate(selectedEscrowDetail.updated_at)}</p>
+                  <p><b>Flags:</b> {Array.isArray(selectedEscrowDetail.flags) && selectedEscrowDetail.flags.length ? selectedEscrowDetail.flags.join(", ") : "-"}</p>
+                </>
+              )}
+              {!loadingOrderDetail && !selectedEscrowDetail && (
+                <p>Detail indisponible pour cet order_id.</p>
+              )}
+            </div>
+          )}
         </section>
 
         <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
