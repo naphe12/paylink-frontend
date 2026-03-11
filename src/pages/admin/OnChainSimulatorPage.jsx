@@ -31,10 +31,26 @@ const fmtAmount = (value, code = "") => {
   })}${code ? ` ${code}` : ""}`;
 };
 
+const extractOrderFlags = (order) => {
+  const raw = order?.flags;
+  if (Array.isArray(raw)) return raw.map((v) => String(v || "").trim()).filter(Boolean);
+  if (typeof raw === "string") {
+    return raw
+      .replace(/^\{/, "")
+      .replace(/\}$/, "")
+      .split(",")
+      .map((v) => String(v || "").trim().replace(/^"+|"+$/g, ""))
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const getOrderId = (order) => String(order?.id || order?.order_id || "");
+
 const isSandboxOrder = (order) => {
   if (!order || typeof order !== "object") return false;
   if (order.is_sandbox === true) return true;
-  const flags = Array.isArray(order.flags) ? order.flags : [];
+  const flags = extractOrderFlags(order);
   return flags.some((f) => String(f || "").toUpperCase() === "SANDBOX");
 };
 
@@ -52,9 +68,11 @@ export default function OnChainSimulatorPage() {
   const [p2pCandidates, setP2pCandidates] = useState([]);
   const [escrowCandidates, setEscrowCandidates] = useState([]);
   const [escrowCandidatesFallbackAll, setEscrowCandidatesFallbackAll] = useState(false);
+  const [escrowReloadTick, setEscrowReloadTick] = useState(0);
   const [selectedEscrowDetail, setSelectedEscrowDetail] = useState(null);
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [loadingOrderDetail, setLoadingOrderDetail] = useState(false);
+  const [candidateLoadError, setCandidateLoadError] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
@@ -106,6 +124,7 @@ export default function OnChainSimulatorPage() {
     let cancelled = false;
     const loadEscrowCandidates = async () => {
       setLoadingCandidates(true);
+      setCandidateLoadError("");
       try {
         const normalizeRows = (payload) => {
           if (Array.isArray(payload)) return payload;
@@ -137,16 +156,17 @@ export default function OnChainSimulatorPage() {
         }
         setOrderId((prev) => {
           const current = prev.trim();
-          if (current && list.some((item) => String(item.id) === current)) {
+          if (current && list.some((item) => getOrderId(item) === current)) {
             return prev;
           }
-          return String(list[0].id);
+          return getOrderId(list[0]);
         });
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           setEscrowCandidates([]);
           setEscrowCandidatesFallbackAll(false);
           setSelectedEscrowDetail(null);
+          setCandidateLoadError(err?.message || "Chargement des orders impossible.");
         }
       } finally {
         if (!cancelled) setLoadingCandidates(false);
@@ -157,7 +177,7 @@ export default function OnChainSimulatorPage() {
     return () => {
       cancelled = true;
     };
-  }, [escrowStatusFilter]);
+  }, [escrowStatusFilter, escrowReloadTick]);
 
   useEffect(() => {
     let cancelled = false;
@@ -217,6 +237,15 @@ export default function OnChainSimulatorPage() {
     setResult(null);
     try {
       const res = await api.escrowSandboxAction(orderId.trim(), escrowAction);
+      const nextStatus = String(res?.escrow_status || "").toUpperCase();
+      if (nextStatus && ESCROW_STATUSES.includes(nextStatus)) {
+        setEscrowStatusFilter(nextStatus);
+      }
+      if (res?.id) {
+        setOrderId(String(res.id));
+      }
+      // Force reload candidates even when status is unchanged.
+      setEscrowReloadTick((v) => v + 1);
       setResult({
         scope: "Escrow",
         action: escrowAction,
@@ -343,6 +372,9 @@ export default function OnChainSimulatorPage() {
               Aucun order sandbox sur le statut {escrowStatusFilter}; affichage de tous les statuts.
             </p>
           )}
+          {candidateLoadError && (
+            <p className="text-[11px] text-rose-600">{candidateLoadError}</p>
+          )}
           <select
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
@@ -351,11 +383,14 @@ export default function OnChainSimulatorPage() {
             <option value="">
               {loadingCandidates ? "Chargement des orders..." : "Selectionner un order sandbox candidat..."}
             </option>
-            {escrowCandidates.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.id} - {o.status}
+            {escrowCandidates.map((o) => {
+              const oid = getOrderId(o);
+              return (
+              <option key={oid} value={oid}>
+                {oid} - {o.status}
               </option>
-            ))}
+            );
+            })}
           </select>
           <input
             value={orderId}
