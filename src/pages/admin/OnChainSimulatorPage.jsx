@@ -33,7 +33,21 @@ const fmtAmount = (value, code = "") => {
 
 const extractOrderFlags = (order) => {
   const raw = order?.flags;
-  if (Array.isArray(raw)) return raw.map((v) => String(v || "").trim()).filter(Boolean);
+  if (Array.isArray(raw)) {
+    const normalized = raw.map((v) => String(v || "").trim()).filter(Boolean);
+    // Some backends accidentally serialize postgres text[] as list(string),
+    // producing an array of chars like ["{","S","A",...].
+    if (normalized.length > 2 && normalized.every((v) => v.length <= 1)) {
+      const joined = normalized.join("");
+      return joined
+        .replace(/^\{/, "")
+        .replace(/\}$/, "")
+        .split(",")
+        .map((v) => String(v || "").trim().replace(/^"+|"+$/g, ""))
+        .filter(Boolean);
+    }
+    return normalized.map((v) => v.replace(/^"+|"+$/g, ""));
+  }
   if (typeof raw === "string") {
     return raw
       .replace(/^\{/, "")
