@@ -82,6 +82,7 @@ export default function OnChainSimulatorPage() {
   const [p2pCandidates, setP2pCandidates] = useState([]);
   const [escrowCandidates, setEscrowCandidates] = useState([]);
   const [escrowCandidatesFallbackAll, setEscrowCandidatesFallbackAll] = useState(false);
+  const [escrowCandidatesUsingRawFallback, setEscrowCandidatesUsingRawFallback] = useState(false);
   const [escrowReloadTick, setEscrowReloadTick] = useState(0);
   const [selectedEscrowDetail, setSelectedEscrowDetail] = useState(null);
   const [loadingCandidates, setLoadingCandidates] = useState(false);
@@ -143,6 +144,9 @@ export default function OnChainSimulatorPage() {
         const normalizeRows = (payload) => {
           if (Array.isArray(payload)) return payload;
           if (Array.isArray(payload?.items)) return payload.items;
+          if (Array.isArray(payload?.orders)) return payload.orders;
+          if (Array.isArray(payload?.results)) return payload.results;
+          if (Array.isArray(payload?.data)) return payload.data;
           return [];
         };
         const buildStatusQuery = (statusValue) => {
@@ -151,19 +155,30 @@ export default function OnChainSimulatorPage() {
         };
         const loadByStatus = async (statusValue) => {
           const rows = await api.get(`/backoffice/escrow/orders${buildStatusQuery(statusValue)}`);
-          return normalizeRows(rows).filter(isSandboxOrder);
+          const normalized = normalizeRows(rows);
+          const sandboxOnly = normalized.filter(isSandboxOrder);
+          const usedRawFallback = sandboxOnly.length === 0 && normalized.length > 0;
+          return {
+            rows: usedRawFallback ? normalized : sandboxOnly,
+            usedRawFallback,
+          };
         };
 
-        let list = await loadByStatus(escrowStatusFilter);
+        let loaded = await loadByStatus(escrowStatusFilter);
+        let list = loaded.rows;
         let usedFallbackAll = false;
+        let usedRawFallback = loaded.usedRawFallback;
         if (list.length === 0 && escrowStatusFilter !== "ALL") {
-          list = await loadByStatus("ALL");
+          loaded = await loadByStatus("ALL");
+          list = loaded.rows;
           usedFallbackAll = true;
+          usedRawFallback = loaded.usedRawFallback;
         }
         if (cancelled) return;
 
         setEscrowCandidates(list);
         setEscrowCandidatesFallbackAll(usedFallbackAll);
+        setEscrowCandidatesUsingRawFallback(usedRawFallback);
         if (list.length === 0) {
           setSelectedEscrowDetail(null);
           return;
@@ -179,6 +194,7 @@ export default function OnChainSimulatorPage() {
         if (!cancelled) {
           setEscrowCandidates([]);
           setEscrowCandidatesFallbackAll(false);
+          setEscrowCandidatesUsingRawFallback(false);
           setSelectedEscrowDetail(null);
           setCandidateLoadError(err?.message || "Chargement des orders impossible.");
         }
@@ -386,6 +402,11 @@ export default function OnChainSimulatorPage() {
               Aucun order sandbox sur le statut {escrowStatusFilter}; affichage de tous les statuts.
             </p>
           )}
+          {escrowCandidatesUsingRawFallback && (
+            <p className="text-[11px] text-amber-600">
+              Aucun flag sandbox detecte dans la reponse; affichage brut des orders.
+            </p>
+          )}
           {candidateLoadError && (
             <p className="text-[11px] text-rose-600">{candidateLoadError}</p>
           )}
@@ -401,7 +422,7 @@ export default function OnChainSimulatorPage() {
               const oid = getOrderId(o);
               return (
               <option key={oid} value={oid}>
-                {oid} - {o.status}
+                {oid} - {o.status}{isSandboxOrder(o) ? "" : " - non sandbox"}
               </option>
             );
             })}
