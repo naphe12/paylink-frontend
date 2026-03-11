@@ -17,6 +17,7 @@ export default function AgentExternalTransferPage() {
   const [amount, setAmount] = useState("");
   const [rate, setRate] = useState(0);
   const [feesPercent, setFeesPercent] = useState(0);
+  const [feesAmountEur, setFeesAmountEur] = useState(0);
   const [recipientAmount, setRecipientAmount] = useState(0);
   const [loadingRate, setLoadingRate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -83,12 +84,13 @@ export default function AgentExternalTransferPage() {
   useEffect(() => {
     if (!amount || isNaN(amount) || rate === 0) {
       setRecipientAmount(0);
+      setFeesAmountEur(0);
       return;
     }
     const eur = parseFloat(amount);
     const fees = eur * (feesPercent / 100);
-    const converted = (eur - fees) * rate;
-    setRecipientAmount(converted);
+    setFeesAmountEur(fees);
+    setRecipientAmount(eur * rate);
   }, [amount, rate, feesPercent]);
 
   useEffect(() => {
@@ -100,7 +102,9 @@ export default function AgentExternalTransferPage() {
         const target = dest === "Burundi" ? "BIF" : dest;
         const res = await api.getExchangeRate("EUR", target);
         if (res?.rate) setRate(Number(res.rate));
-        if (res?.fees_percent) setFeesPercent(Number(res.fees_percent));
+        if (res?.fees_percent !== undefined && res?.fees_percent !== null) {
+          setFeesPercent(Number(res.fees_percent));
+        }
       } catch (err) {
         console.error("Impossible de charger le taux FX", err);
         setError("Impossible de charger le taux FX pour cette destination.");
@@ -211,7 +215,7 @@ export default function AgentExternalTransferPage() {
               placeholder="100.00"
             />
             <p className="text-xs text-slate-500 mt-1">
-              Frais estimes : {(parseFloat(amount || 0) * (feesPercent / 100)).toFixed(2)} EUR
+              Frais estimes : {feesAmountEur.toFixed(2)} EUR ({feesPercent || 0}%)
             </p>
           </div>
 
@@ -222,7 +226,7 @@ export default function AgentExternalTransferPage() {
             </div>
             <div className="flex justify-between">
               <span>Frais</span>
-              <span className="font-semibold">{feesPercent || 0}%</span>
+              <span className="font-semibold">{feesAmountEur.toFixed(2)} EUR ({feesPercent || 0}%)</span>
             </div>
             <div className="flex justify-between">
               <span>Montant recu estime</span>

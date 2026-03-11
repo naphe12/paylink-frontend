@@ -15,7 +15,8 @@ export default function ExternalTransferPage() {
     amount: "",
   });
   const [rate, setRate] = useState(0);
-  const [feesEur, setFeesEur] = useState(0);
+  const [feesPercent, setFeesPercent] = useState(0);
+  const [feesAmountEur, setFeesAmountEur] = useState(0);
   const [recipientAmount, setRecipientAmount] = useState(0);
   const [availableBalance, setAvailableBalance] = useState(100);
   const [creditLimit, setCreditLimit] = useState(150);
@@ -31,11 +32,14 @@ export default function ExternalTransferPage() {
   useEffect(() => {
     if (!form.amount || isNaN(form.amount) || rate === 0) {
       setRecipientAmount(0);
+      setFeesAmountEur(0);
       return;
     }
     const eur = parseFloat(form.amount);
+    const fee = eur * (feesPercent / 100);
+    setFeesAmountEur(fee);
     setRecipientAmount(eur * rate);
-  }, [form.amount, rate]);
+  }, [form.amount, rate, feesPercent]);
 
   const loadRate = async () => {
     try {
@@ -43,7 +47,9 @@ export default function ExternalTransferPage() {
       const dest = form.country_destination === "Burundi" ? "BIF" : form.country_destination;
       const res = await api.getExchangeRate("EUR", dest);
       if (res?.rate) setRate(Number(res.rate));
-      if (res?.fees_percent) setFeesEur(Number(res.fees_percent));
+      if (res?.fees_percent !== undefined && res?.fees_percent !== null) {
+        setFeesPercent(Number(res.fees_percent));
+      }
     } catch (err) {
       setLoadError(err?.message || "Impossible de charger le taux de change.");
     }
@@ -153,7 +159,7 @@ export default function ExternalTransferPage() {
           </p>
           <p className="text-[13px] text-blue-700 mt-1">
             Taux FX applique: <span className="font-semibold">{rate || "-"}</span> | Frais:{" "}
-            <span className="font-semibold">{feesEur || 0} EUR</span>
+            <span className="font-semibold">{feesPercent || 0}% ({feesAmountEur.toFixed(2)} EUR)</span>
           </p>
           <p className="text-[13px] text-blue-700">
             Montant recu estime: <span className="font-semibold">{recipientAmount.toFixed(2)} </span>
@@ -259,7 +265,7 @@ export default function ExternalTransferPage() {
             className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
             placeholder="100.00"
           />
-          <p className="text-xs text-slate-500 mt-1">Frais estimes : {(feesEur || 0).toFixed(2)} EUR</p>
+          <p className="text-xs text-slate-500 mt-1">Frais estimes : {feesAmountEur.toFixed(2)} EUR ({feesPercent || 0}%)</p>
         </div>
 
         <div className="rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700 space-y-1">
@@ -269,7 +275,7 @@ export default function ExternalTransferPage() {
           </div>
           <div className="flex justify-between">
             <span>Frais</span>
-            <span className="font-semibold">{feesEur || 0} EUR</span>
+            <span className="font-semibold">{feesAmountEur.toFixed(2)} EUR ({feesPercent || 0}%)</span>
           </div>
           <div className="flex justify-between">
             <span>Montant recu estime</span>
