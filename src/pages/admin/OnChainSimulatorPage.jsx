@@ -3,7 +3,7 @@ import api from "@/services/api";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 
 const ESCROW_ACTIONS = ["FUND", "SWAP", "PAYOUT_PENDING", "PAYOUT", "FIAT_IN", "CRYPTO_RELEASE"];
-const ESCROW_STATUSES = ["CREATED", "FUNDED", "SWAPPED", "PAYOUT_PENDING", "PAID_OUT", "FAILED", "CANCELLED"];
+const ESCROW_STATUSES = ["ALL", "CREATED", "FUNDED", "SWAPPED", "PAYOUT_PENDING", "PAID_OUT", "FAILED", "CANCELLED"];
 const P2P_CANDIDATE_STATUSES = new Set(["AWAITING_CRYPTO", "EXPIRED"]);
 const ESCROW_ACTION_TO_STATUS = {
   FUND: "CREATED",
@@ -43,7 +43,7 @@ export default function OnChainSimulatorPage() {
   const [escrowTxHash, setEscrowTxHash] = useState("");
   const [orderId, setOrderId] = useState("");
   const [escrowAction, setEscrowAction] = useState("FUND");
-  const [escrowStatusFilter, setEscrowStatusFilter] = useState("CREATED");
+  const [escrowStatusFilter, setEscrowStatusFilter] = useState("ALL");
   const [webhookOrderId, setWebhookOrderId] = useState("");
   const [webhookAmount, setWebhookAmount] = useState("10");
   const [webhookConfirmations, setWebhookConfirmations] = useState("3");
@@ -51,6 +51,7 @@ export default function OnChainSimulatorPage() {
   const [webhookFromAddress, setWebhookFromAddress] = useState("");
   const [p2pCandidates, setP2pCandidates] = useState([]);
   const [escrowCandidates, setEscrowCandidates] = useState([]);
+  const [escrowCandidatesFallbackAll, setEscrowCandidatesFallbackAll] = useState(false);
   const [selectedEscrowDetail, setSelectedEscrowDetail] = useState(null);
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [loadingOrderDetail, setLoadingOrderDetail] = useState(false);
@@ -68,7 +69,7 @@ export default function OnChainSimulatorPage() {
 
   useEffect(() => {
     const mapped = ESCROW_ACTION_TO_STATUS[escrowAction];
-    if (mapped && mapped !== escrowStatusFilter) {
+    if (mapped && escrowStatusFilter === "ALL") {
       setEscrowStatusFilter(mapped);
     }
   }, [escrowAction, escrowStatusFilter]);
@@ -106,12 +107,30 @@ export default function OnChainSimulatorPage() {
     const loadEscrowCandidates = async () => {
       setLoadingCandidates(true);
       try {
-        const status = escrowStatusFilter ? `?status=${encodeURIComponent(escrowStatusFilter)}` : "";
-        const rows = await api.get(`/backoffice/escrow/orders${status}`);
-        const list = (Array.isArray(rows) ? rows : []).filter(isSandboxOrder);
+        const normalizeRows = (payload) => {
+          if (Array.isArray(payload)) return payload;
+          if (Array.isArray(payload?.items)) return payload.items;
+          return [];
+        };
+        const buildStatusQuery = (statusValue) => {
+          if (!statusValue || statusValue === "ALL") return "";
+          return `?status=${encodeURIComponent(statusValue)}`;
+        };
+        const loadByStatus = async (statusValue) => {
+          const rows = await api.get(`/backoffice/escrow/orders${buildStatusQuery(statusValue)}`);
+          return normalizeRows(rows).filter(isSandboxOrder);
+        };
+
+        let list = await loadByStatus(escrowStatusFilter);
+        let usedFallbackAll = false;
+        if (list.length === 0 && escrowStatusFilter !== "ALL") {
+          list = await loadByStatus("ALL");
+          usedFallbackAll = true;
+        }
         if (cancelled) return;
 
         setEscrowCandidates(list);
+        setEscrowCandidatesFallbackAll(usedFallbackAll);
         if (list.length === 0) {
           setSelectedEscrowDetail(null);
           return;
@@ -126,6 +145,7 @@ export default function OnChainSimulatorPage() {
       } catch {
         if (!cancelled) {
           setEscrowCandidates([]);
+          setEscrowCandidatesFallbackAll(false);
           setSelectedEscrowDetail(null);
         }
       } finally {
@@ -318,6 +338,11 @@ export default function OnChainSimulatorPage() {
           <p className="text-[11px] text-slate-500">
             Statut attendu pour l'action {escrowAction}: <span className="font-semibold">{escrowStatusHint || "-"}</span>
           </p>
+          {escrowCandidatesFallbackAll && (
+            <p className="text-[11px] text-amber-600">
+              Aucun order sandbox sur le statut {escrowStatusFilter}; affichage de tous les statuts.
+            </p>
+          )}
           <select
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
