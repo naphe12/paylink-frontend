@@ -1,5 +1,38 @@
 // src/services/api.js
-const API_URL = import.meta.env.VITE_API_URL || "";
+const API_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
+const API_FALLBACK_URL = (import.meta.env.VITE_API_FALLBACK_URL || "").trim().replace(/\/+$/, "");
+
+function getApiBases() {
+  const bases = [API_URL, API_FALLBACK_URL];
+  if (typeof window !== "undefined" && window.location?.origin) {
+    bases.push(window.location.origin.replace(/\/+$/, ""));
+  }
+  bases.push("");
+  return [...new Set(bases)];
+}
+
+function buildTarget(base, path) {
+  if (!base) return path;
+  return `${base}${path}`;
+}
+
+async function fetchWithFallback(path, options) {
+  const tried = [];
+  let lastErr = null;
+  for (const base of getApiBases()) {
+    const target = buildTarget(base, path);
+    tried.push(target);
+    try {
+      const response = await fetch(target, options);
+      return response;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  const error = lastErr || new Error("Failed to fetch");
+  error.__triedTargets = tried;
+  throw error;
+}
 
 function getAuthToken() {
   const raw = localStorage.getItem("token") || localStorage.getItem("access_token");
@@ -58,9 +91,9 @@ async function readErrorMessage(res, path, method = "GET") {
 }
 
 function formatNetworkError(path, method = "GET", err) {
-  const target = `${API_URL}${path}`;
+  const tried = Array.isArray(err?.__triedTargets) ? err.__triedTargets.join(" | ") : buildTarget(API_URL, path);
   const reason = err?.message ? ` (${err.message})` : "";
-  return `${method} ${path} -> impossible de joindre l'API: ${target}${reason}. Verifiez l'URL backend, le CORS et la connectivite reseau.`;
+  return `${method} ${path} -> impossible de joindre l'API: ${tried}${reason}. Verifiez l'URL backend, le CORS et la connectivite reseau.`;
 }
 
 const api = {
@@ -76,7 +109,7 @@ const api = {
     const token = getAuthToken();
     let res;
     try {
-      res = await fetch(`${API_URL}${path}`, {
+      res = await fetchWithFallback(path, {
         headers: {
           Accept: "application/json",
           ...(token && { Authorization: `Bearer ${token}` }),
@@ -93,7 +126,7 @@ const api = {
     const token = getAuthToken();
     let res;
     try {
-      res = await fetch(`${API_URL}${path}`, {
+      res = await fetchWithFallback(path, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -113,7 +146,7 @@ const api = {
     const token = getAuthToken();
     let res;
     try {
-      res = await fetch(`${API_URL}${path}`, {
+      res = await fetchWithFallback(path, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -139,7 +172,7 @@ const api = {
     const token = getAuthToken();
     let res;
     try {
-      res = await fetch(`${API_URL}${path}`, {
+      res = await fetchWithFallback(path, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -159,7 +192,7 @@ const api = {
     const token = getAuthToken();
     let res;
     try {
-      res = await fetch(`${API_URL}${path}`, {
+      res = await fetchWithFallback(path, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -178,7 +211,7 @@ const api = {
     const token = getAuthToken();
     let res;
     try {
-      res = await fetch(`${API_URL}${path}`, {
+      res = await fetchWithFallback(path, {
         method: "DELETE",
         headers: {
           Accept: "application/json",
@@ -291,7 +324,12 @@ const api = {
   async getCashRequests(params = {}) {
     const search = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") search.append(key, value);
+      if (value === undefined || value === null || value === "") return;
+      if (key === "type") {
+        search.append("request_type", value);
+        return;
+      }
+      search.append(key, value);
     });
     const query = search.toString();
     return this.get(`/wallet/cash/requests${query ? `?${query}` : ""}`);
