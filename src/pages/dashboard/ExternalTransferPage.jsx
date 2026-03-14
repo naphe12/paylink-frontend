@@ -6,6 +6,15 @@ import api from "@/services/api";
 
 const PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
 
+function beneficiaryOptionValue(beneficiary) {
+  return [
+    beneficiary.recipient_name || "",
+    beneficiary.recipient_phone || "",
+    beneficiary.partner_name || "",
+    beneficiary.country_destination || "",
+  ].join("|");
+}
+
 export default function ExternalTransferPage() {
   const [form, setForm] = useState({
     recipient_name: "",
@@ -83,12 +92,10 @@ export default function ExternalTransferPage() {
   };
 
   const handleBeneficiaryChange = (e) => {
-    const id = e.target.value;
-    setSelectedBeneficiary(id);
+    const value = e.target.value;
+    setSelectedBeneficiary(value);
     setSubmitIdempotencyKey("");
-    const chosen = beneficiaries.find(
-      (b) => String(b.recipient_phone) === String(id) || String(b.id || b.recipient_phone) === String(id)
-    );
+    const chosen = beneficiaries.find((b) => beneficiaryOptionValue(b) === value);
     if (!chosen) return;
     setForm((prev) => ({
       ...prev,
@@ -135,6 +142,7 @@ export default function ExternalTransferPage() {
         partner_name: PARTNERS[0],
         amount: "",
       });
+      setSelectedBeneficiary("");
     } catch (err) {
       setError(err?.message || "Erreur lors de l'envoi du transfert.");
     } finally {
@@ -185,7 +193,7 @@ export default function ExternalTransferPage() {
           >
             <option value="">-- Selectionner --</option>
             {beneficiaries.map((b) => {
-              const value = b.recipient_phone;
+              const value = beneficiaryOptionValue(b);
               return (
                 <option key={value} value={value}>
                   {b.recipient_name} - {b.partner_name} - {b.recipient_phone}

@@ -3,6 +3,15 @@ import api from "@/services/api";
 import { Send, Info } from "lucide-react";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 
+function beneficiaryOptionValue(beneficiary) {
+  return [
+    beneficiary.recipient_name || "",
+    beneficiary.recipient_phone || "",
+    beneficiary.partner_name || "",
+    beneficiary.country_destination || "",
+  ].join("|");
+}
+
 export default function AgentExternalTransferPage() {
   const [users, setUsers] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
@@ -69,7 +78,7 @@ export default function AgentExternalTransferPage() {
 
   const handleBeneficiaryChange = (value) => {
     setSelectedBeneficiary(value);
-    const found = beneficiaries.find((b) => b.recipient_phone === value);
+    const found = beneficiaries.find((b) => beneficiaryOptionValue(b) === value);
     if (found) {
       setPrefill({
         recipient_name: found.recipient_name,
@@ -195,7 +204,7 @@ export default function AgentExternalTransferPage() {
             >
               <option value="">-- Selectionner --</option>
               {beneficiaries.map((b) => (
-                <option key={b.recipient_phone} value={b.recipient_phone}>
+                <option key={beneficiaryOptionValue(b)} value={beneficiaryOptionValue(b)}>
                   {b.recipient_name} - {b.partner_name} - {b.recipient_phone}
                 </option>
               ))}
