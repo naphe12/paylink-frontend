@@ -5,11 +5,12 @@ import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api from "@/services/api";
 
 const FEE_RATE = 0.0625;
+const PROVIDERS = ["Lumicash", "Ecocash", "eNoti", "Eban(virement)"];
 
 export default function WithdrawPage() {
   const [amount, setAmount] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
-  const [providerName, setProviderName] = useState("");
+  const [providerName, setProviderName] = useState(PROVIDERS[0]);
   const [note, setNote] = useState("");
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -57,7 +58,7 @@ export default function WithdrawPage() {
       idemKeyRef.current = null;
       setAmount("");
       setMobileNumber("");
-      setProviderName("");
+      setProviderName(PROVIDERS[0]);
       setNote("");
       await fetchRequests();
       alert("Demande de retrait enregistrée.");
@@ -121,13 +122,17 @@ export default function WithdrawPage() {
             <label className="block text-sm font-medium text-slate-600 mb-1">
               Plateforme / Fournisseur
             </label>
-            <input
-              type="text"
+            <select
               value={providerName}
               onChange={(e) => setProviderName(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-200"
-              placeholder="Ex: Lumicash, EcoCash..."
-            />
+            >
+              {PROVIDERS.map((provider) => (
+                <option key={provider} value={provider}>
+                  {provider}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
