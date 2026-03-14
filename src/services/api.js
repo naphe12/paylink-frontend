@@ -2,6 +2,14 @@
 const API_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
 const API_FALLBACK_URL = (import.meta.env.VITE_API_FALLBACK_URL || "").trim().replace(/\/+$/, "");
 
+export function getConfiguredApiUrl() {
+  return API_URL;
+}
+
+export function getConfiguredApiFallbackUrl() {
+  return API_FALLBACK_URL;
+}
+
 function getApiBases() {
   const bases = [API_URL, API_FALLBACK_URL].filter(Boolean);
   if (bases.length > 0) {
