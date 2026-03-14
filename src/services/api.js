@@ -326,7 +326,11 @@ const api = {
     Object.entries(params).forEach(([key, value]) => {
       if (value === undefined || value === null || value === "") return;
       if (key === "type") {
-        search.append("request_type", value);
+        search.append("request_type", String(value).toUpperCase());
+        return;
+      }
+      if (key === "request_type") {
+        search.append("request_type", String(value).toUpperCase());
         return;
       }
       search.append(key, value);
