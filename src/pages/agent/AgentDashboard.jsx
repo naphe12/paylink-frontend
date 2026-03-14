@@ -133,7 +133,7 @@ export default function AgentDashboard() {
                 Scanner un QR
               </h3>
               <p className="text-sm text-slate-500 mt-2">
-                Encaisse un client via PayLink QR et confirme la transaction.
+                Encaisse un client via PesaPaid QR et confirme la transaction.
               </p>
             </button>
           </section>

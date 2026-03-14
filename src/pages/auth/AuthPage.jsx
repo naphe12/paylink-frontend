@@ -169,7 +169,7 @@ export default function AuthPage() {
         >
           💫
         </motion.div>
-        <h1 className="text-4xl font-extrabold tracking-tight mb-8">PayLink</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight mb-8">PesaPaid</h1>
 
         <AnimatePresence mode="wait">
           {isLogin ? (

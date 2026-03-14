@@ -273,7 +273,7 @@ export default function AdminSidebar() {
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-500 text-base">
             PL
           </span>
-          PayLink Admin
+          PesaPaid Admin
         </h1>
         {env !== "prod" && (
           <div className="mt-2 inline-block rounded-md bg-amber-400 px-2 py-1 text-[11px] font-semibold text-black">
@@ -589,7 +589,7 @@ export default function AdminSidebar() {
           </span>
           <div className="leading-tight">
             <p className="text-[11px] uppercase tracking-[0.35em] text-white/60">Console</p>
-            <p className="font-semibold text-lg">PayLink Admin</p>
+            <p className="font-semibold text-lg">PesaPaid Admin</p>
           </div>
         </div>
         <button aria-label="Ouvrir le menu" onClick={() => setDrawerOpen(true)}>

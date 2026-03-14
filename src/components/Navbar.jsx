@@ -3,7 +3,7 @@ export default function Navbar() {
     <nav className="flex justify-between items-center px-8 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
       <div className="flex items-center gap-2 text-2xl font-bold text-indigo-600">
         <span className="text-3xl">♾️</span>
-        <span>PayLink</span>
+        <span>PesaPaid</span>
       </div>
 
       <ul className="hidden md:flex items-center gap-8 font-medium text-gray-700">

@@ -24,7 +24,7 @@ export default function Sidebar() {
   return (
     <div className="w-64 h-screen bg-[#0b3b64] text-white flex flex-col justify-between shadow-lg">
       <div>
-        <div className="text-2xl font-bold p-6 border-b border-white/10">💳 PayLink</div>
+        <div className="text-2xl font-bold p-6 border-b border-white/10">💳 PesaPaid</div>
         <nav className="mt-4">
           {menuItems.map((item) => (
             <NavLink

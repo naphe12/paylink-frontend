@@ -126,7 +126,7 @@ export default function LoansPage() {
         </h2>
         <p className="text-slate-500">
           Suivez vos demandes de crédit, l&apos;échéancier et remboursez directement
-          depuis votre solde PayLink.
+          depuis votre solde PesaPaid.
         </p>
       </div>
 

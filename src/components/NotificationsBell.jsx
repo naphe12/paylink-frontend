@@ -17,7 +17,7 @@ export default function NotificationBell() {
     const ws = new WebSocket(`ws://127.0.0.1:8000/ws/notifications?token=${token}`);
     wsRef.current = ws;
 
-    ws.onopen = () => console.log("✅ Connecté au WebSocket PayLink");
+    ws.onopen = () => console.log("✅ Connecté au WebSocket PesaPaid");
 
     ws.onmessage = (event) => {
       try {
@@ -29,7 +29,7 @@ export default function NotificationBell() {
       }
     };
 
-    ws.onclose = () => console.log("❌ Déconnecté du WebSocket PayLink");
+    ws.onclose = () => console.log("❌ Déconnecté du WebSocket PesaPaid");
     ws.onerror = (err) => console.error("⚠️ Erreur WS :", err);
 
     return () => ws.close();

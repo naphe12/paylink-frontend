@@ -23,7 +23,7 @@ export default function Hero() {
           PL
         </motion.span>
         <h1 className="text-[2.5rem] sm:text-[3rem] md:text-[3.5rem] font-extrabold tracking-tight">
-          PayLink
+          PesaPaid
         </h1>
       </motion.div>
 
@@ -45,7 +45,7 @@ export default function Hero() {
         transition={{ delay: 0.6, duration: 0.8 }}
       >
         Envoyez, recevez et gérez votre argent en toute transparence grâce à{" "}
-        <span className="font-semibold text-yellow-300">PayLink</span>, la passerelle financière infinie.
+        <span className="font-semibold text-yellow-300">PesaPaid</span>, la passerelle financière infinie.
       </motion.p>
 
       {/* Boutons d’action */}

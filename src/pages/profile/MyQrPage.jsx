@@ -18,7 +18,7 @@ export default function MyQrPage() {
 
   return (
     <div className="p-6 flex flex-col items-center text-center">
-      <h1 className="text-2xl font-bold text-[#0b3b64]">Mon QR PayLink</h1>
+      <h1 className="text-2xl font-bold text-[#0b3b64]">Mon QR PesaPaid</h1>
       <p className="text-gray-600 mt-1">Présentez ce QR à un agent.</p>
 
       <div className="bg-white shadow-md p-5 rounded-xl mt-6">

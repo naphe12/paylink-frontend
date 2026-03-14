@@ -100,7 +100,7 @@ export default function DepositPage() {
         <div>
           <h2 className="text-2xl font-semibold text-slate-800">Demande de depot cash</h2>
           <p className="text-slate-500 text-sm">
-            Encodez un depot qui sera valide par un administrateur PayLink.
+            Encodez un depot qui sera valide par un administrateur PesaPaid.
           </p>
         </div>
       </div>
@@ -166,7 +166,7 @@ export default function DepositPage() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
-            placeholder="Ex: Depot effectue via PayLink"
+            placeholder="Ex: Depot effectue via PesaPaid"
           />
         </div>
 
@@ -211,7 +211,7 @@ export default function DepositPage() {
                 </p>
               )}
               <p className="text-xs text-slate-500 mt-2">
-                Effectuez le depot puis attendez la validation PayLink.
+                Effectuez le depot puis attendez la validation PesaPaid.
               </p>
             </div>
             <button onClick={() => setConfirmation(null)} className="text-xs text-blue-700 hover:underline">

@@ -18,7 +18,7 @@ export default function DashboardSidebar() {
     <aside className="w-64 bg-[#0b3b64] text-white h-screen p-6 flex flex-col justify-between">
       <div>
         <h1 className="text-2xl font-bold mb-8 flex items-center gap-2">
-          <span className="text-[#ff9f1c] text-4xl">PL</span> PayLink
+          <span className="text-[#ff9f1c] text-4xl">PL</span> PesaPaid
         </h1>
 
         <nav className="space-y-2">

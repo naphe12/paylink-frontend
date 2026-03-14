@@ -39,7 +39,7 @@ export default function AgentSidebar() {
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white/20 text-lg">
             AG
           </span>
-          PayLink OPS
+          PesaPaid OPS
         </h1>
         <p className="text-white/70 text-xs mt-2">Cash-in/out & opérations assistées.</p>
       </div>
@@ -105,7 +105,7 @@ export default function AgentSidebar() {
           </span>
           <div className="leading-tight">
             <p className="text-[11px] uppercase tracking-[0.35em] text-white/60">Agent</p>
-            <p className="font-semibold text-lg">PayLink OPS</p>
+            <p className="font-semibold text-lg">PesaPaid OPS</p>
           </div>
         </div>
         <button aria-label="Ouvrir le menu" onClick={() => setDrawerOpen(true)}>

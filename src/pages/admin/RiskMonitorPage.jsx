@@ -110,7 +110,7 @@ export default function RiskMonitorPage() {
           Dashboard Admin Premium
         </h1>
         <p className="text-sm text-slate-500">
-          Vue consolidée des volumes PayLink, canaux mobiles et risques AML.
+          Vue consolidée des volumes PesaPaid, canaux mobiles et risques AML.
         </p>
       </div>
 

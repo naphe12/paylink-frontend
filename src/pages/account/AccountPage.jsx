@@ -15,7 +15,7 @@ export default function AccountPage() {
         to="/me/qr"
         className="flex items-center justify-between p-4 bg-white border rounded-xl hover:bg-gray-50 shadow-sm"
       >
-        <span className="text-lg">📱 Mon QR PayLink</span>
+        <span className="text-lg">📱 Mon QR PesaPaid</span>
         <span className="text-gray-400">→</span>
       </Link>
     </div>

@@ -171,7 +171,7 @@ export default function DashboardLayout() {
   const SidebarInner = ({ onNavigate }) => (
     <div className="flex flex-col h-full">
       <div className="px-6 py-8 border-b border-white/10">
-        <p className="text-xs uppercase tracking-[0.35em] text-white/60">PayLink</p>
+        <p className="text-xs uppercase tracking-[0.35em] text-white/60">PesaPaid</p>
         <h1 className="text-2xl font-semibold mt-3 flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-indigo-900 font-bold">
             PL
@@ -237,7 +237,7 @@ export default function DashboardLayout() {
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-indigo-900 font-bold shadow-md">
             PL
           </span>
-          <h1 className="text-lg font-semibold drop-shadow">PayLink</h1>
+          <h1 className="text-lg font-semibold drop-shadow">PesaPaid</h1>
         </div>
         <button aria-label="Ouvrir le menu" onClick={() => setDrawerOpen(true)}>
           <Menu size={26} />

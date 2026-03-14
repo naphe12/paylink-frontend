@@ -185,7 +185,7 @@ export default function WalletPage() {
                 <span className={`border px-2 py-1 rounded-full text-xs ${theme.chip}`}>Polygon</span>
               </div>
               <p className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 break-all">
-                {activeInstruction?.paylink_deposit_address || "Adresse PayLink non configuree"}
+                {activeInstruction?.PesaPaid_deposit_address || "Adresse PesaPaid non configuree"}
               </p>
 
               <div className="flex items-center gap-3">
