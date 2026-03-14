@@ -1,41 +1,45 @@
-// src/pages/TransactionsPage.jsx
 import { useEffect, useState } from "react";
+import { RefreshCcw } from "lucide-react";
+
+import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api from "@/services/api";
 
-import { RefreshCcw } from "lucide-react";
+function normalizeTransactions(rows = []) {
+  return rows.map((tx) => {
+    const rawAmount = Number(tx.amount || 0);
+    const amount =
+      tx.direction === "out" && rawAmount > 0
+        ? -rawAmount
+        : tx.direction === "in" && rawAmount < 0
+        ? Math.abs(rawAmount)
+        : rawAmount;
+
+    return {
+      transaction_id:
+        tx.tx_id || tx.transaction_id || crypto.randomUUID?.() || Math.random().toString(36).slice(2),
+      created_at: tx.created_at,
+      type: tx.direction === "in" ? "entrante" : tx.direction === "out" ? "sortante" : (tx.type || ""),
+      amount,
+      status: tx.status || "",
+      description: tx.description || "",
+    };
+  });
+}
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const fetchTransactions = async () => {
+    setLoading(true);
+    setError("");
     try {
       const data = await api.get("/wallet/transactions");
-      // Adapter au shape renvoyé par l'API /wallet/transactions
-      const normalized = data.map((t) => ({
-        transaction_id: t.tx_id || t.transaction_id || crypto.randomUUID?.() || Math.random().toString(36).slice(2),
-        created_at: t.created_at,
-        type: t.direction === "in" ? "entrante" : "sortante",
-        amount: t.direction === "in" ? t.amount : -t.amount,
-        status: t.status || "",
-      }));
-      setTransactions(normalized);
+      setTransactions(normalizeTransactions(Array.isArray(data) ? data : []));
     } catch (err) {
-      console.warn("API /wallet/transactions indisponible, tentative /transactions/ :", err);
-      try {
-        const fallback = await api.get("/transactions/");
-        setTransactions(
-          fallback.map((t) => ({
-            transaction_id: t.transaction_id || crypto.randomUUID?.() || Math.random().toString(36).slice(2),
-            created_at: t.created_at,
-            type: t.type || "",
-            amount: t.amount,
-            status: t.status || "",
-          }))
-        );
-      } catch (err2) {
-        console.error("Erreur chargement transactions (fallback) :", err2);
-      }
+      setTransactions([]);
+      setError(err?.message || "Impossible de charger l'historique des transactions.");
     } finally {
       setLoading(false);
     }
@@ -47,11 +51,17 @@ export default function TransactionsPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-[#0b3b64] mb-6 flex items-center gap-2">
+      <h2 className="mb-6 flex items-center gap-2 text-2xl font-bold text-[#0b3b64]">
         <RefreshCcw /> Historique des transactions
       </h2>
 
-      <div className="bg-white p-5 rounded-2xl shadow">
+      <div className="rounded-2xl bg-white p-5 shadow">
+        <ApiErrorAlert
+          message={error}
+          onRetry={fetchTransactions}
+          retryLabel="Recharger l'historique"
+          className="mb-4"
+        />
         {loading ? (
           <p>Chargement...</p>
         ) : transactions.length === 0 ? (
@@ -64,22 +74,20 @@ export default function TransactionsPage() {
                 <th className="p-2">Type</th>
                 <th className="p-2">Montant</th>
                 <th className="p-2">Statut</th>
+                <th className="p-2">Operation</th>
               </tr>
             </thead>
             <tbody>
-              {transactions.map((t) => (
-                <tr key={t.transaction_id} className="border-t">
-                  <td className="p-2">{new Date(t.created_at).toLocaleString()}</td>
-                  <td className="p-2 capitalize">{t.type}</td>
-                  <td
-                    className={`p-2 font-semibold ${
-                      t.amount < 0 ? "text-red-600" : "text-green-600"
-                    }`}
-                  >
-                    {t.amount > 0 ? "+" : ""}
-                    {Number(t.amount).toFixed(2)} €
+              {transactions.map((tx) => (
+                <tr key={tx.transaction_id} className="border-t">
+                  <td className="p-2">{new Date(tx.created_at).toLocaleString()}</td>
+                  <td className="p-2 capitalize">{tx.type}</td>
+                  <td className={`p-2 font-semibold ${tx.amount < 0 ? "text-red-600" : "text-green-600"}`}>
+                    {tx.amount > 0 ? "+" : ""}
+                    {Number(tx.amount).toFixed(2)} EUR
                   </td>
-                  <td className="p-2">{t.status}</td>
+                  <td className="p-2">{tx.status || "-"}</td>
+                  <td className="p-2">{tx.description || "-"}</td>
                 </tr>
               ))}
             </tbody>
@@ -89,4 +97,3 @@ export default function TransactionsPage() {
     </div>
   );
 }
-
