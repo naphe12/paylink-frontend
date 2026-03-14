@@ -3,12 +3,11 @@ const API_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
 const API_FALLBACK_URL = (import.meta.env.VITE_API_FALLBACK_URL || "").trim().replace(/\/+$/, "");
 
 function getApiBases() {
-  const bases = [API_URL, API_FALLBACK_URL];
-  if (typeof window !== "undefined" && window.location?.origin) {
-    bases.push(window.location.origin.replace(/\/+$/, ""));
+  const bases = [API_URL, API_FALLBACK_URL].filter(Boolean);
+  if (bases.length > 0) {
+    return [...new Set(bases)];
   }
-  bases.push("");
-  return [...new Set(bases)];
+  return [""];
 }
 
 function buildTarget(base, path) {
@@ -32,6 +31,11 @@ async function fetchWithFallback(path, options) {
   const error = lastErr || new Error("Failed to fetch");
   error.__triedTargets = tried;
   throw error;
+}
+
+function isHtmlResponse(res) {
+  const contentType = (res.headers.get("content-type") || "").toLowerCase();
+  return contentType.includes("text/html");
 }
 
 function getAuthToken() {
@@ -107,16 +111,43 @@ const api = {
 
   async get(path) {
     const token = getAuthToken();
-    let res;
+    let res = null;
+    let lastHtmlResponse = null;
+    const requestOptions = {
+      headers: {
+        Accept: "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    };
     try {
-      res = await fetchWithFallback(path, {
-        headers: {
-          Accept: "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      });
+      for (const base of getApiBases()) {
+        const target = buildTarget(base, path);
+        try {
+          const candidate = await fetch(target, requestOptions);
+          if (isHtmlResponse(candidate)) {
+            lastHtmlResponse = { res: candidate, target };
+            continue;
+          }
+          res = candidate;
+          break;
+        } catch {
+          continue;
+        }
+      }
     } catch (err) {
       throw new Error(formatNetworkError(path, "GET", err));
+    }
+    if (!res && lastHtmlResponse) {
+      throw new Error(
+        `GET ${path} -> reponse HTML recue depuis ${lastHtmlResponse.target}. Verifiez que VITE_API_URL pointe vers le backend et non le frontend.`
+      );
+    }
+    if (!res) {
+      try {
+        res = await fetchWithFallback(path, requestOptions);
+      } catch (err) {
+        throw new Error(formatNetworkError(path, "GET", err));
+      }
     }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "GET"));
     return parseJsonOrThrow(res, path, "GET");
