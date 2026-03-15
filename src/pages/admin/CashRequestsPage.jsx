@@ -10,11 +10,6 @@ const statusOptions = [
   { value: "rejected", label: "Rejetees" },
 ];
 
-const typeOptions = [
-  { value: "withdraw", label: "Retraits" },
-  { value: "deposit", label: "Depots" },
-];
-
 export default function CashRequestsPage() {
   const [requests, setRequests] = useState([]);
   const [status, setStatus] = useState("pending");
@@ -37,7 +32,13 @@ export default function CashRequestsPage() {
         status,
         type: requestType,
       });
-      setRequests(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      list.sort(
+        (a, b) =>
+          new Date(b.created_at || b.processed_at || 0).getTime() -
+          new Date(a.created_at || a.processed_at || 0).getTime()
+      );
+      setRequests(list);
     } catch (err) {
       setError(err?.message || "Erreur chargement demandes.");
     } finally {
@@ -130,6 +131,33 @@ export default function CashRequestsPage() {
       <ApiErrorAlert message={error} onRetry={fetchRequests} retryLabel="Recharger les demandes" />
 
       <div className="flex flex-wrap gap-4 bg-white rounded-2xl shadow p-4">
+        <div className="w-full">
+          <label className="text-xs uppercase tracking-wide text-slate-500">Type de demande</label>
+          <div className="mt-2 inline-flex rounded-xl bg-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => setRequestType("deposit")}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                requestType === "deposit"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Depots
+            </button>
+            <button
+              type="button"
+              onClick={() => setRequestType("withdraw")}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                requestType === "withdraw"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Retraits
+            </button>
+          </div>
+        </div>
         <div className="w-full lg:w-auto lg:min-w-[340px]">
           <label className="text-xs uppercase tracking-wide text-slate-500">Depot direct user</label>
           <input
@@ -176,20 +204,6 @@ export default function CashRequestsPage() {
             className="mt-1 border rounded-lg px-3 py-2 text-sm"
           >
             {statusOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="text-xs uppercase tracking-wide text-slate-500">Type</label>
-          <select
-            value={requestType}
-            onChange={(e) => setRequestType(e.target.value)}
-            className="mt-1 border rounded-lg px-3 py-2 text-sm"
-          >
-            {typeOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
