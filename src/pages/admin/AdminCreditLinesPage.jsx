@@ -4,11 +4,14 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "@/services/api";
 
 export default function AdminCreditLinesPage() {
+  const [users, setUsers] = useState([]);
+  const [userSearch, setUserSearch] = useState("");
   const [lines, setLines] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [detail, setDetail] = useState(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState("");
   const [increaseAmount, setIncreaseAmount] = useState("");
   const [decreaseAmount, setDecreaseAmount] = useState("");
@@ -17,7 +20,44 @@ export default function AdminCreditLinesPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const filterUserId = searchParams.get("user_id") || "";
+  const initialUserId = searchParams.get("user_id") || "";
+  const [targetUserId, setTargetUserId] = useState(initialUserId);
+
+  const loadUsers = async (query = "") => {
+    setLoadingUsers(true);
+    try {
+      const data = await api.getUsers(query);
+      const list = Array.isArray(data) ? data : [];
+      setUsers((prev) => {
+        const merged = [...list];
+        prev.forEach((user) => {
+          if (!merged.some((item) => item.user_id === user.user_id)) {
+            merged.push(user);
+          }
+        });
+        return merged;
+      });
+    } catch (err) {
+      setError(err.message || "Erreur chargement utilisateurs");
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const ensureSelectedUserLoaded = async (userId) => {
+    if (!userId) return;
+    if (users.some((user) => user.user_id === userId)) return;
+    try {
+      const user = await api.getUser(userId);
+      if (user?.user_id) {
+        setUsers((prev) =>
+          prev.some((item) => item.user_id === user.user_id) ? prev : [user, ...prev]
+        );
+      }
+    } catch {
+      // Keep the page usable even if the specific user fetch fails.
+    }
+  };
 
   const loadLines = async () => {
     setLoading(true);
@@ -26,7 +66,7 @@ export default function AdminCreditLinesPage() {
     try {
       const params = {};
       if (search) params.q = search;
-      if (filterUserId) params.user_id = filterUserId;
+      if (targetUserId) params.user_id = targetUserId;
       const data = await api.listAdminCreditLines(params);
       const list = Array.isArray(data) ? data : [];
       setLines(list);
@@ -62,8 +102,16 @@ export default function AdminCreditLinesPage() {
   };
 
   useEffect(() => {
+    loadUsers();
+  }, []);
+
+  useEffect(() => {
+    ensureSelectedUserLoaded(targetUserId);
+  }, [targetUserId, users]);
+
+  useEffect(() => {
     loadLines();
-  }, [filterUserId]);
+  }, [targetUserId]);
 
   useEffect(() => {
     if (selectedId) {
@@ -76,6 +124,10 @@ export default function AdminCreditLinesPage() {
   const selectedLine = useMemo(
     () => lines.find((line) => line.credit_line_id === selectedId),
     [lines, selectedId]
+  );
+  const selectedUser = useMemo(
+    () => users.find((user) => user.user_id === targetUserId) || null,
+    [users, targetUserId]
   );
 
   const increaseLimit = async (e) => {
@@ -118,13 +170,13 @@ export default function AdminCreditLinesPage() {
 
   const createLine = async (e) => {
     e.preventDefault();
-    if (!filterUserId || !createAmount) return;
+    if (!targetUserId || !createAmount) return;
     setError("");
     setActionMsg("");
     setLoading(true);
     try {
       const data = await api.createAdminCreditLine({
-        user_id: filterUserId,
+        user_id: targetUserId,
         amount: Number(createAmount),
         currency_code: "EUR",
       });
@@ -148,14 +200,40 @@ export default function AdminCreditLinesPage() {
             Augmentez ou diminuez la ligne de credit d&apos;un utilisateur.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <input
+            type="text"
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            placeholder="Chercher un utilisateur"
+            className="rounded-lg border px-3 py-2 text-sm"
+          />
+          <button
+            onClick={() => loadUsers(userSearch)}
+            className="rounded-lg border px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            disabled={loadingUsers}
+          >
+            {loadingUsers ? "..." : "Rechercher user"}
+          </button>
+          <select
+            value={targetUserId}
+            onChange={(e) => setTargetUserId(e.target.value)}
+            className="min-w-[280px] rounded-lg border px-3 py-2 text-sm"
+          >
+            <option value="">Choisir un utilisateur</option>
+            {users.map((user) => (
+              <option key={user.user_id} value={user.user_id}>
+                {user.full_name || user.email || user.user_id}
+              </option>
+            ))}
+          </select>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filtrer nom/email"
             className="rounded-lg border px-3 py-2 text-sm"
-            disabled={Boolean(filterUserId)}
+            disabled={Boolean(targetUserId)}
           />
           <button
             onClick={loadLines}
@@ -177,16 +255,18 @@ export default function AdminCreditLinesPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="rounded-2xl border bg-white shadow-sm lg:col-span-1">
-          <div className="border-b bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">Utilisateurs</div>
+          <div className="border-b bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+            {selectedUser ? `Utilisateur: ${selectedUser.full_name || selectedUser.email || selectedUser.user_id}` : "Utilisateurs"}
+          </div>
           <div className="max-h-[520px] divide-y overflow-y-auto">
             {lines.length === 0 ? (
               <div className="space-y-3 p-4">
                 <p className="text-sm text-slate-500">
-                  {filterUserId
+                  {targetUserId
                     ? "Aucune ligne de credit pour cet utilisateur."
                     : "Aucune ligne trouvee."}
                 </p>
-                {filterUserId ? (
+                {targetUserId ? (
                   <form onSubmit={createLine} className="space-y-2">
                     <input
                       type="number"
@@ -343,7 +423,7 @@ export default function AdminCreditLinesPage() {
             </div>
           ) : (
             <div className="rounded-2xl border bg-white p-6 text-slate-600 shadow-sm">
-              {filterUserId && lines.length === 0
+              {targetUserId && lines.length === 0
                 ? "Creez d'abord une ligne de credit pour cet utilisateur."
                 : "Selectionnez un utilisateur dans la liste pour voir le detail."}
             </div>
