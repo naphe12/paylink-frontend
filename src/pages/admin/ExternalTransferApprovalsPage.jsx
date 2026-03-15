@@ -2,6 +2,13 @@ import { useEffect, useState } from "react";
 import api from "@/services/api";
 import { CheckCircle, RefreshCcw, AlertTriangle } from "lucide-react";
 
+function getAgeHours(value) {
+  if (!value) return 0;
+  const ms = new Date(value).getTime();
+  if (Number.isNaN(ms)) return 0;
+  return (Date.now() - ms) / (60 * 60 * 1000);
+}
+
 function normalizeTransfer(transfer) {
   const id = transfer.transfer_id || transfer.id;
   const rawLocalAmount =
@@ -37,6 +44,8 @@ export default function ExternalTransferApprovalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [approving, setApproving] = useState({});
+  const staleTransfersCount = transfers.filter((item) => getAgeHours(item.createdAt) >= 2).length;
+  const criticalTransfersCount = transfers.filter((item) => getAgeHours(item.createdAt) >= 6).length;
 
   const fetchTransfers = async () => {
     setLoading(true);
@@ -96,6 +105,19 @@ export default function ExternalTransferApprovalsPage() {
         </div>
       )}
 
+      {(staleTransfersCount > 0 || criticalTransfersCount > 0) && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="flex flex-wrap items-center gap-4">
+            <span>{staleTransfersCount} transfert(s) en attente depuis plus de 2h</span>
+            {criticalTransfersCount > 0 ? (
+              <span className="font-semibold text-red-700">
+                {criticalTransfersCount} transfert(s) en attente depuis plus de 6h
+              </span>
+            ) : null}
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="rounded-2xl border bg-white p-6 text-center text-slate-500">
           Chargement des transferts en attente...
@@ -123,7 +145,18 @@ export default function ExternalTransferApprovalsPage() {
               {transfers.map((transfer) => (
                 <tr key={transfer.id} className="text-slate-700">
                   <td className="px-4 py-3 font-semibold">
-                    {transfer.reference}
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono">{transfer.reference}</span>
+                      {getAgeHours(transfer.createdAt) >= 6 ? (
+                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-red-700">
+                          Urgent
+                        </span>
+                      ) : getAgeHours(transfer.createdAt) >= 2 ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
+                          Alerte
+                        </span>
+                      ) : null}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-col">

@@ -10,10 +10,34 @@ const statusOptions = [
   { value: "rejected", label: "Rejetees" },
 ];
 
+function isRecentRequest(createdAt) {
+  if (!createdAt) return false;
+  const createdMs = new Date(createdAt).getTime();
+  if (Number.isNaN(createdMs)) return false;
+  return Date.now() - createdMs <= 60 * 60 * 1000;
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return "-";
+  return dt.toLocaleString();
+}
+
+function getAgeHours(value) {
+  if (!value) return 0;
+  const ms = new Date(value).getTime();
+  if (Number.isNaN(ms)) return 0;
+  return (Date.now() - ms) / (60 * 60 * 1000);
+}
+
 export default function CashRequestsPage() {
   const [requests, setRequests] = useState([]);
   const [status, setStatus] = useState("pending");
-  const [requestType, setRequestType] = useState("withdraw");
+  const [requestType, setRequestType] = useState("deposit");
+  const [recentOnly, setRecentOnly] = useState(false);
+  const [createdFrom, setCreatedFrom] = useState("");
+  const [createdTo, setCreatedTo] = useState("");
   const [loading, setLoading] = useState(false);
   const [userQuery, setUserQuery] = useState("");
   const [users, setUsers] = useState([]);
@@ -23,6 +47,12 @@ export default function CashRequestsPage() {
   const directDepositIdemRef = useRef(null);
   const decisionIdemRef = useRef({});
   const [decisionLoading, setDecisionLoading] = useState({});
+  const stalePendingCount = requests.filter(
+    (item) => item.status === "pending" && getAgeHours(item.created_at) >= 2
+  ).length;
+  const criticalPendingCount = requests.filter(
+    (item) => item.status === "pending" && getAgeHours(item.created_at) >= 6
+  ).length;
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -31,6 +61,8 @@ export default function CashRequestsPage() {
       const data = await api.getAdminCashRequests({
         status,
         type: requestType,
+        created_from: createdFrom ? `${createdFrom}T00:00:00` : "",
+        created_to: createdTo ? `${createdTo}T23:59:59` : "",
       });
       const list = Array.isArray(data) ? data : [];
       list.sort(
@@ -38,7 +70,7 @@ export default function CashRequestsPage() {
           new Date(b.created_at || b.processed_at || 0).getTime() -
           new Date(a.created_at || a.processed_at || 0).getTime()
       );
-      setRequests(list);
+      setRequests(recentOnly ? list.filter((item) => isRecentRequest(item.created_at)) : list);
     } catch (err) {
       setError(err?.message || "Erreur chargement demandes.");
     } finally {
@@ -48,7 +80,7 @@ export default function CashRequestsPage() {
 
   useEffect(() => {
     fetchRequests();
-  }, [status, requestType]);
+  }, [status, requestType, recentOnly, createdFrom, createdTo]);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -68,6 +100,11 @@ export default function CashRequestsPage() {
       alert("Selectionnez un user et un montant valide.");
       return;
     }
+    const note = (window.prompt("Ajouter une note admin (obligatoire)") || "").trim();
+    if (!note) {
+      setError("Une note admin est obligatoire pour effectuer un depot direct.");
+      return;
+    }
     try {
       if (!directDepositIdemRef.current) {
         directDepositIdemRef.current = api.newIdempotencyKey("admin-cash-deposit");
@@ -76,6 +113,7 @@ export default function CashRequestsPage() {
         {
           user_id: selectedUserId,
           amount: Number(depositAmount),
+          note,
         },
         directDepositIdemRef.current
       );
@@ -90,7 +128,14 @@ export default function CashRequestsPage() {
 
   const handleDecision = async (requestId, action) => {
     setError("");
-    const note = window.prompt("Ajouter une note (optionnel)") || undefined;
+    const rawNote = window.prompt(
+      action === "reject" ? "Ajouter une note (obligatoire pour le rejet)" : "Ajouter une note (optionnel)"
+    );
+    const note = rawNote?.trim() || undefined;
+    if (action === "reject" && !note) {
+      setError("Une note admin est obligatoire pour rejeter une demande.");
+      return;
+    }
     const decisionScope = `${action}:${requestId}`;
     try {
       if (!decisionIdemRef.current[decisionScope]) {
@@ -129,6 +174,19 @@ export default function CashRequestsPage() {
       </header>
 
       <ApiErrorAlert message={error} onRetry={fetchRequests} retryLabel="Recharger les demandes" />
+
+      {(stalePendingCount > 0 || criticalPendingCount > 0) && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="flex flex-wrap items-center gap-4">
+            <span>{stalePendingCount} demande(s) pending depuis plus de 2h</span>
+            {criticalPendingCount > 0 ? (
+              <span className="font-semibold text-red-700">
+                {criticalPendingCount} demande(s) pending depuis plus de 6h
+              </span>
+            ) : null}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-4 bg-white rounded-2xl shadow p-4">
         <div className="w-full">
@@ -210,6 +268,33 @@ export default function CashRequestsPage() {
             ))}
           </select>
         </div>
+        <div>
+          <label className="text-xs uppercase tracking-wide text-slate-500">Du</label>
+          <input
+            type="date"
+            value={createdFrom}
+            onChange={(e) => setCreatedFrom(e.target.value)}
+            className="mt-1 border rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-wide text-slate-500">Au</label>
+          <input
+            type="date"
+            value={createdTo}
+            onChange={(e) => setCreatedTo(e.target.value)}
+            className="mt-1 border rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
+        <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={recentOnly}
+            onChange={(e) => setRecentOnly(e.target.checked)}
+            className="rounded border-slate-300"
+          />
+          Recent uniquement
+        </label>
       </div>
 
       <div className="bg-white rounded-2xl shadow overflow-hidden">
@@ -218,10 +303,12 @@ export default function CashRequestsPage() {
             <tr>
               <th className="text-left py-3 px-4">Client</th>
               <th className="text-left py-3 px-4">Type</th>
+              <th className="text-left py-3 px-4">Reference</th>
               <th className="text-left py-3 px-4">Montant</th>
               <th className="text-left py-3 px-4">Frais</th>
               <th className="text-left py-3 px-4">Total</th>
-              <th className="text-left py-3 px-4">Reference</th>
+              <th className="text-left py-3 px-4">Canal / compte</th>
+              <th className="text-left py-3 px-4">Note admin</th>
               <th className="text-left py-3 px-4">Statut</th>
               <th className="text-left py-3 px-4">Actions</th>
             </tr>
@@ -234,16 +321,26 @@ export default function CashRequestsPage() {
               return (
                 <tr key={req.request_id} className="border-t">
                 <td className="py-3 px-4">
-                  <p className="font-semibold text-slate-800">{req.user?.full_name || "-"}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-slate-800">{req.user?.full_name || "-"}</p>
+                    {isRecentRequest(req.created_at) ? (
+                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-blue-700">
+                        Recent
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="text-xs text-slate-500">{req.user?.email}</p>
+                  <p className="text-xs text-slate-400">Cree le {formatDateTime(req.created_at)}</p>
                 </td>
                 <td className="py-3 px-4 capitalize">{req.type}</td>
+                <td className="py-3 px-4 text-slate-600 font-mono">{req.reference_code || "-"}</td>
                 <td className="py-3 px-4">EUR {Number(req.amount).toFixed(2)}</td>
                 <td className="py-3 px-4">EUR {Number(req.fee_amount).toFixed(2)}</td>
                 <td className="py-3 px-4">EUR {Number(req.total_amount).toFixed(2)}</td>
                 <td className="py-3 px-4 text-slate-600">
                   {req.provider_name || "-"} {req.mobile_number ? `- ${req.mobile_number}` : ""}
                 </td>
+                <td className="py-3 px-4 text-slate-600">{req.admin_note || "-"}</td>
                 <td className="py-3 px-4">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -276,9 +373,14 @@ export default function CashRequestsPage() {
                       </button>
                     </div>
                   ) : (
-                    <span className="text-xs text-slate-400">
-                      Traite le {new Date(req.processed_at || req.created_at).toLocaleDateString()}
-                    </span>
+                    <div className="text-xs text-slate-400">
+                      <div>Traite le {formatDateTime(req.processed_at || req.created_at)}</div>
+                      {req.processed_by_admin?.full_name || req.processed_by_admin?.email ? (
+                        <div>
+                          Par {req.processed_by_admin?.full_name || req.processed_by_admin?.email}
+                        </div>
+                      ) : null}
+                    </div>
                   )}
                 </td>
                 </tr>
@@ -286,7 +388,7 @@ export default function CashRequestsPage() {
             })}
             {requests.length === 0 && (
               <tr>
-                <td className="py-6 text-center text-slate-500" colSpan={8}>
+                <td className="py-6 text-center text-slate-500" colSpan={10}>
                   {loading ? "Chargement..." : "Aucune demande pour ce filtre."}
                 </td>
               </tr>

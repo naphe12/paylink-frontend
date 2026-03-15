@@ -461,6 +461,10 @@ const api = {
         search.append("request_type", String(value).toUpperCase());
         return;
       }
+      if (key === "created_from" || key === "created_to") {
+        search.append(key, value);
+        return;
+      }
       search.append(key, value);
     });
     const query = search.toString();

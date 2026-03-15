@@ -21,6 +21,13 @@ const statusBadge = (status) => {
 
 const STATUS_FILTERS = ["", "pending", "cancelled", "completed"];
 
+function getAgeHours(value) {
+  if (!value) return 0;
+  const ms = new Date(value).getTime();
+  if (Number.isNaN(ms)) return 0;
+  return (Date.now() - ms) / (60 * 60 * 1000);
+}
+
 export default function AdminTransfersPage() {
   const [transfers, setTransfers] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -50,7 +57,7 @@ export default function AdminTransfersPage() {
         api.get(`/admin/transfers${queryString ? `?${queryString}` : ""}`),
       ]);
       setSummary(summaryData);
-      setTransfers(transfersData);
+      setTransfers(Array.isArray(transfersData) ? transfersData : []);
     } catch (err) {
       console.error("Erreur chargement transferts:", err);
     } finally {
@@ -67,11 +74,18 @@ export default function AdminTransfersPage() {
     return Array.from(set);
   }, [transfers]);
 
+  const staleTransfersCount = transfers.filter(
+    (item) => ["pending", "initiated"].includes(String(item.status || "").toLowerCase()) && getAgeHours(item.created_at) >= 2
+  ).length;
+  const criticalTransfersCount = transfers.filter(
+    (item) => ["pending", "initiated"].includes(String(item.status || "").toLowerCase()) && getAgeHours(item.created_at) >= 6
+  ).length;
+
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900">
             Transferts externes
           </h1>
           <p className="text-sm text-slate-500">
@@ -81,7 +95,7 @@ export default function AdminTransfersPage() {
 
         <div className="flex flex-wrap gap-3">
           <select
-            className="border rounded-lg px-3 py-2 text-sm"
+            className="rounded-lg border px-3 py-2 text-sm"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
@@ -93,7 +107,7 @@ export default function AdminTransfersPage() {
           </select>
 
           <select
-            className="border rounded-lg px-3 py-2 text-sm"
+            className="rounded-lg border px-3 py-2 text-sm"
             value={channel}
             onChange={(e) => setChannel(e.target.value)}
           >
@@ -107,45 +121,59 @@ export default function AdminTransfersPage() {
 
           <button
             onClick={loadData}
-            className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm"
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white"
           >
-            Rafraîchir
+            Rafraichir
           </button>
         </div>
       </div>
 
       {summary && (
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <StatCard label="Total" value={summary.total} accent="bg-slate-900 text-white" />
           <StatCard label="En attente" value={summary.pending} accent="bg-yellow-100 text-yellow-700" />
-          <StatCard label="Réussis" value={summary.succeeded} accent="bg-emerald-100 text-emerald-700" />
-          <StatCard label="Échecs" value={summary.failed} accent="bg-red-100 text-red-700" />
+          <StatCard label="Reussis" value={summary.succeeded} accent="bg-emerald-100 text-emerald-700" />
+          <StatCard label="Echecs" value={summary.failed} accent="bg-red-100 text-red-700" />
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow border overflow-hidden">
+      {(staleTransfersCount > 0 || criticalTransfersCount > 0) && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="flex flex-wrap items-center gap-4">
+            <span>{staleTransfersCount} transfert(s) pending depuis plus de 2h</span>
+            {criticalTransfersCount > 0 ? (
+              <span className="font-semibold text-red-700">
+                {criticalTransfersCount} transfert(s) pending depuis plus de 6h
+              </span>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-xl border bg-white shadow">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-slate-600">
             <tr>
               <th className="p-3 text-left">Initiateur</th>
+              <th className="p-3 text-left">Reference</th>
               <th className="p-3 text-left">Transaction</th>
               <th className="p-3 text-left">Montant</th>
               <th className="p-3 text-left">Montant local</th>
               <th className="p-3 text-left">Canal</th>
               <th className="p-3 text-left">Statut</th>
-              <th className="p-3 text-left">Créée</th>
+              <th className="p-3 text-left">Creee</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="p-6 text-center text-slate-500">
+                <td colSpan={8} className="p-6 text-center text-slate-500">
                   Chargement...
                 </td>
               </tr>
             ) : transfers.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-6 text-center text-slate-500">
+                <td colSpan={8} className="p-6 text-center text-slate-500">
                   Aucun transfert avec ces filtres.
                 </td>
               </tr>
@@ -153,12 +181,11 @@ export default function AdminTransfersPage() {
               transfers.map((tx) => (
                 <tr key={tx.tx_id} className="border-t hover:bg-slate-50">
                   <td className="p-3">
-                    <div className="font-medium text-slate-900">
-                      {tx.initiator_name || "Inconnu"}
-                    </div>
+                    <div className="font-medium text-slate-900">{tx.initiator_name || "Inconnu"}</div>
                     <div className="text-xs text-slate-500">{tx.initiator_email}</div>
                   </td>
-                  <td className="p-3 font-mono text-slate-700">{tx.tx_id.slice(0, 10)}…</td>
+                  <td className="p-3 font-mono text-slate-700">{tx.reference_code || "-"}</td>
+                  <td className="p-3 font-mono text-slate-700">{tx.tx_id.slice(0, 10)}...</td>
                   <td className="p-3 font-semibold text-slate-900">
                     {Number(tx.amount || 0).toLocaleString()} {tx.currency}
                   </td>
@@ -169,9 +196,20 @@ export default function AdminTransfersPage() {
                   </td>
                   <td className="p-3 text-slate-600">{tx.channel}</td>
                   <td className="p-3">
-                    <span className={statusBadge(tx.status)}>{tx.status}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={statusBadge(tx.status)}>{tx.status}</span>
+                      {["pending", "initiated"].includes(String(tx.status || "").toLowerCase()) && getAgeHours(tx.created_at) >= 6 ? (
+                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-red-700">
+                          Urgent
+                        </span>
+                      ) : ["pending", "initiated"].includes(String(tx.status || "").toLowerCase()) && getAgeHours(tx.created_at) >= 2 ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
+                          Alerte
+                        </span>
+                      ) : null}
+                    </div>
                   </td>
-                  <td className="p-3 text-slate-500 text-xs">
+                  <td className="p-3 text-xs text-slate-500">
                     {tx.created_at ? new Date(tx.created_at).toLocaleString() : "-"}
                   </td>
                 </tr>

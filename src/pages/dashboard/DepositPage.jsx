@@ -79,6 +79,7 @@ export default function DepositPage() {
       setConfirmation({
         amount: Number.isFinite(confirmedAmount) ? confirmedAmount : Number(amount),
         currency,
+        referenceCode: res?.reference_code || null,
         depositChannel,
         bankIban: bankTransferIban,
         agentAccount: selectedAccount?.account_service || agentMobileAccount,
@@ -196,6 +197,11 @@ export default function DepositPage() {
                   {confirmation.depositChannel === "bank_transfer" ? "Transfert bancaire" : "Mobile money"}
                 </span>
               </p>
+              {confirmation.referenceCode && (
+                <p className="text-slate-800">
+                  Reference: <span className="font-semibold font-mono">{confirmation.referenceCode}</span>
+                </p>
+              )}
               {confirmation.depositChannel === "bank_transfer" ? (
                 <p className="text-slate-800">
                   IBAN: <span className="font-semibold font-mono">{confirmation.bankIban}</span>
@@ -233,6 +239,7 @@ export default function DepositPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-slate-500">
               <tr>
+                <th className="text-left py-2 px-3">Reference</th>
                 <th className="text-left py-2 px-3">Montant</th>
                 <th className="text-left py-2 px-3">Statut</th>
                 <th className="text-left py-2 px-3">Note</th>
@@ -242,6 +249,7 @@ export default function DepositPage() {
             <tbody>
               {requests.map((req) => (
                 <tr key={req.request_id} className="border-t">
+                  <td className="py-2 px-3 text-slate-600 font-mono">{req.reference_code || "-"}</td>
                   <td className="py-2 px-3 font-medium text-slate-700">EUR {Number(req.amount).toFixed(2)}</td>
                   <td className="py-2 px-3">
                     <span
@@ -262,7 +270,7 @@ export default function DepositPage() {
               ))}
               {requests.length === 0 && (
                 <tr>
-                  <td className="py-6 text-center text-slate-500" colSpan={4}>
+                  <td className="py-6 text-center text-slate-500" colSpan={5}>
                     Aucune demande pour l'instant.
                   </td>
                 </tr>
