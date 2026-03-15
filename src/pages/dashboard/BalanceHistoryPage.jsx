@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import api from "@/services/api";
 
 export default function BalanceHistoryPage() {
@@ -34,47 +35,47 @@ export default function BalanceHistoryPage() {
         </div>
       </header>
 
-      {loading && <div className="text-slate-600">Chargement…</div>}
-      {error && <div className="text-red-600 text-sm">{error}</div>}
+      {loading && <div className="text-slate-600">Chargement...</div>}
+      {error && <div className="text-sm text-red-600">{error}</div>}
 
       {!loading && !error && (
-        <div className="overflow-x-auto bg-white rounded-xl shadow border border-slate-100">
+        <div className="overflow-x-auto rounded-xl border border-slate-100 bg-white shadow">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
                 <th className="px-4 py-3 text-left">Date</th>
                 <th className="px-4 py-3 text-right">Balance avant</th>
-                <th className="px-4 py-3 text-right">Δ</th>
-                <th className="px-4 py-3 text-right">Balance après</th>
+                <th className="px-4 py-3 text-right">Delta</th>
+                <th className="px-4 py-3 text-right">Balance apres</th>
                 <th className="px-4 py-3 text-left">Source</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.event_id} className="border-t border-slate-100 hover:bg-slate-50/70">
+              {rows.map((row) => (
+                <tr key={row.event_id} className="border-t border-slate-100 hover:bg-slate-50/70">
                   <td className="px-4 py-3 text-slate-800">
-                    {r.occurred_at ? new Date(r.occurred_at).toLocaleString() : "–"}
+                    {row.occurred_at ? new Date(row.occurred_at).toLocaleString() : "-"}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {r.balance_before !== null && r.balance_before !== undefined
-                      ? `${r.balance_before} ${r.currency || ""}`.trim()
-                      : "–"}
+                    {row.balance_before !== null && row.balance_before !== undefined
+                      ? `${row.balance_before} ${row.currency || ""}`.trim()
+                      : "-"}
                   </td>
                   <td
                     className={`px-4 py-3 text-right tabular-nums ${
-                      (r.amount_delta || 0) >= 0 ? "text-green-600" : "text-red-600"
+                      (row.amount_delta || 0) >= 0 ? "text-green-600" : "text-red-600"
                     }`}
                   >
-                    {r.amount_delta !== null && r.amount_delta !== undefined
-                      ? `${r.amount_delta} ${r.currency || ""}`.trim()
-                      : "–"}
+                    {row.amount_delta !== null && row.amount_delta !== undefined
+                      ? `${row.amount_delta} ${row.currency || ""}`.trim()
+                      : "-"}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {r.balance_after !== null && r.balance_after !== undefined
-                      ? `${r.balance_after} ${r.currency || ""}`.trim()
-                      : "–"}
+                    {row.balance_after !== null && row.balance_after !== undefined
+                      ? `${row.balance_after} ${row.currency || ""}`.trim()
+                      : "-"}
                   </td>
-                  <td className="px-4 py-3 text-slate-700">{r.source || "—"}</td>
+                  <td className="px-4 py-3 text-slate-700">{row.source || "-"}</td>
                 </tr>
               ))}
               {rows.length === 0 && (

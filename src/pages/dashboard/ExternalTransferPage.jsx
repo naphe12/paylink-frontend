@@ -27,8 +27,8 @@ export default function ExternalTransferPage() {
   const [feesPercent, setFeesPercent] = useState(0);
   const [feesAmountEur, setFeesAmountEur] = useState(0);
   const [recipientAmount, setRecipientAmount] = useState(0);
-  const [availableBalance, setAvailableBalance] = useState(100);
-  const [creditLimit, setCreditLimit] = useState(150);
+  const [availableBalance, setAvailableBalance] = useState(0);
+  const [creditAvailable, setCreditAvailable] = useState(0);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState("");
@@ -36,7 +36,7 @@ export default function ExternalTransferPage() {
   const [selectedBeneficiary, setSelectedBeneficiary] = useState("");
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [submitIdempotencyKey, setSubmitIdempotencyKey] = useState("");
-  const totalAvailable = availableBalance + creditLimit;
+  const totalAvailable = availableBalance + creditAvailable;
 
   useEffect(() => {
     if (!form.amount || isNaN(form.amount) || rate === 0) {
@@ -74,16 +74,27 @@ export default function ExternalTransferPage() {
     }
   };
 
+  const loadFinancialCapacity = async () => {
+    try {
+      const data = await api.getFinancialSummary();
+      setAvailableBalance(Number(data?.wallet_available || 0));
+      setCreditAvailable(Number(data?.credit_available || 0));
+    } catch (err) {
+      setLoadError(err?.message || "Impossible de charger la capacite de transfert.");
+    }
+  };
+
   useEffect(() => {
     loadRate();
   }, [form.country_destination]);
 
   useEffect(() => {
     loadBeneficiaries();
+    loadFinancialCapacity();
   }, []);
 
   const retryLoad = async () => {
-    await Promise.allSettled([loadRate(), loadBeneficiaries()]);
+    await Promise.allSettled([loadRate(), loadBeneficiaries(), loadFinancialCapacity()]);
   };
 
   const handleChange = (e) => {
@@ -112,8 +123,9 @@ export default function ExternalTransferPage() {
     setError("");
     setSuccess(null);
 
-    if (parseFloat(form.amount) > totalAvailable) {
-      setError("Montant superieur a votre limite disponible.");
+    const requestedAmount = Number(form.amount || 0);
+    if (requestedAmount + feesAmountEur > totalAvailable) {
+      setError("Montant superieur a votre capacite disponible (wallet + credit disponible).");
       setLoading(false);
       return;
     }
@@ -143,6 +155,7 @@ export default function ExternalTransferPage() {
         amount: "",
       });
       setSelectedBeneficiary("");
+      await loadFinancialCapacity();
     } catch (err) {
       setError(err?.message || "Erreur lors de l'envoi du transfert.");
     } finally {
@@ -160,10 +173,10 @@ export default function ExternalTransferPage() {
         <Info size={18} className="mt-0.5" />
         <div className="space-y-1">
           <p>
-            Vous pouvez envoyer jusqu'a <span className="font-semibold">{totalAvailable} EUR</span>
+            Vous pouvez envoyer jusqu'a <span className="font-semibold">{totalAvailable.toFixed(2)} EUR</span>
           </p>
           <p className="text-[13px] text-blue-700">
-            ({availableBalance} EUR solde + {creditLimit} EUR credit)
+            ({availableBalance.toFixed(2)} EUR solde + {creditAvailable.toFixed(2)} EUR credit disponible)
           </p>
           <p className="text-[13px] text-blue-700 mt-1">
             Taux FX applique: <span className="font-semibold">{rate || "-"}</span> | Frais:{" "}
