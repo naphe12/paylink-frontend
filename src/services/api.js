@@ -762,6 +762,9 @@ const api = {
   async increaseAdminCreditLine(creditLineId, amount) {
     return this.post(`/admin/credit-lines/${creditLineId}/increase`, { amount });
   },
+  async decreaseAdminCreditLine(creditLineId, amount) {
+    return this.post(`/admin/credit-lines/${creditLineId}/decrease`, { amount });
+  },
   async repayAdminCreditLine(creditLineId, amount) {
     return this.post(`/admin/credit-lines/${creditLineId}/repay`, { amount });
   },

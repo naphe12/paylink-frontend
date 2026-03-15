@@ -129,6 +129,18 @@ export default function AdminUsersList() {
                     Transferts
                   </Link>
                   <Link
+                    to={`/dashboard/admin/credit-lines?user_id=${u.user_id}`}
+                    className="hover:underline"
+                  >
+                    Ligne de credit
+                  </Link>
+                  <Link
+                    to={`/dashboard/admin/credit-history?user_id=${u.user_id}`}
+                    className="hover:underline"
+                  >
+                    Historique credit
+                  </Link>
+                  <Link
                     to={`/dashboard/admin/financial-summary?user_id=${u.user_id}`}
                     className="hover:underline"
                   >
