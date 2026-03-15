@@ -12,6 +12,7 @@ export default function AdminCreditLinesPage() {
   const [error, setError] = useState("");
   const [increaseAmount, setIncreaseAmount] = useState("");
   const [decreaseAmount, setDecreaseAmount] = useState("");
+  const [createAmount, setCreateAmount] = useState("");
   const [actionMsg, setActionMsg] = useState("");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -115,6 +116,29 @@ export default function AdminCreditLinesPage() {
     }
   };
 
+  const createLine = async (e) => {
+    e.preventDefault();
+    if (!filterUserId || !createAmount) return;
+    setError("");
+    setActionMsg("");
+    setLoading(true);
+    try {
+      const data = await api.createAdminCreditLine({
+        user_id: filterUserId,
+        amount: Number(createAmount),
+        currency_code: "EUR",
+      });
+      setActionMsg("Ligne de credit creee.");
+      setCreateAmount("");
+      await loadLines();
+      setSelectedId(data?.credit_line?.credit_line_id || "");
+    } catch (err) {
+      setError(err.message || "Echec de creation de la ligne");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -156,7 +180,33 @@ export default function AdminCreditLinesPage() {
           <div className="border-b bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">Utilisateurs</div>
           <div className="max-h-[520px] divide-y overflow-y-auto">
             {lines.length === 0 ? (
-              <p className="p-4 text-sm text-slate-500">Aucune ligne trouvee.</p>
+              <div className="space-y-3 p-4">
+                <p className="text-sm text-slate-500">
+                  {filterUserId
+                    ? "Aucune ligne de credit pour cet utilisateur."
+                    : "Aucune ligne trouvee."}
+                </p>
+                {filterUserId ? (
+                  <form onSubmit={createLine} className="space-y-2">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={createAmount}
+                      onChange={(e) => setCreateAmount(e.target.value)}
+                      className="w-full rounded-lg border px-3 py-2 text-sm"
+                      placeholder="Montant initial EUR"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
+                    >
+                      {loading ? "..." : "Creer la ligne"}
+                    </button>
+                  </form>
+                ) : null}
+              </div>
             ) : (
               lines.map((line) => {
                 const active = line.credit_line_id === selectedId;
@@ -293,7 +343,9 @@ export default function AdminCreditLinesPage() {
             </div>
           ) : (
             <div className="rounded-2xl border bg-white p-6 text-slate-600 shadow-sm">
-              Selectionnez un utilisateur dans la liste pour voir le detail.
+              {filterUserId && lines.length === 0
+                ? "Creez d'abord une ligne de credit pour cet utilisateur."
+                : "Selectionnez un utilisateur dans la liste pour voir le detail."}
             </div>
           )}
         </div>

@@ -756,6 +756,9 @@ const api = {
     ).toString();
     return this.get(`/admin/credit-lines${query ? `?${query}` : ""}`);
   },
+  async createAdminCreditLine(payload) {
+    return this.post("/admin/credit-lines", payload);
+  },
   async getAdminCreditLineDetail(creditLineId) {
     return this.get(`/admin/credit-lines/${creditLineId}`);
   },
