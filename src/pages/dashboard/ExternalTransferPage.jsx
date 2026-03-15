@@ -6,6 +6,10 @@ import api from "@/services/api";
 
 const PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
 
+function normalizeRecipientPhone(value) {
+  return String(value || "").replace(/[^\d+]/g, "");
+}
+
 function beneficiaryOptionValue(beneficiary) {
   return [
     beneficiary.recipient_name || "",
@@ -99,7 +103,11 @@ export default function ExternalTransferPage() {
 
   const handleChange = (e) => {
     setSubmitIdempotencyKey("");
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({
+      ...form,
+      [name]: name === "recipient_phone" ? normalizeRecipientPhone(value) : value,
+    });
   };
 
   const handleBeneficiaryChange = (e) => {
@@ -124,6 +132,20 @@ export default function ExternalTransferPage() {
     setSuccess(null);
 
     const requestedAmount = Number(form.amount || 0);
+    const normalizedPhone = normalizeRecipientPhone(form.recipient_phone);
+
+    if (normalizedPhone.length < 8) {
+      setError("Le numero du beneficiaire doit contenir au moins 8 chiffres.");
+      setLoading(false);
+      return;
+    }
+
+    if (!/^\+?[0-9]{8,15}$/.test(normalizedPhone)) {
+      setError("Le numero du beneficiaire doit etre au format international ou numerique simple.");
+      setLoading(false);
+      return;
+    }
+
     if (requestedAmount + feesAmountEur > totalAvailable) {
       setError("Montant superieur a votre capacite disponible (wallet + credit disponible).");
       setLoading(false);
@@ -139,7 +161,7 @@ export default function ExternalTransferPage() {
           partner_name: form.partner_name,
           country_destination: form.country_destination,
           recipient_name: form.recipient_name,
-          recipient_phone: form.recipient_phone,
+          recipient_phone: normalizedPhone,
           amount: form.amount,
         },
         idemKey,
@@ -237,6 +259,7 @@ export default function ExternalTransferPage() {
               value={form.recipient_phone}
               onChange={handleChange}
               required
+              minLength={8}
               className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
               placeholder="+257 xx xx xx xx"
             />
