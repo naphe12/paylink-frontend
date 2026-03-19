@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, ArrowUp, CreditCard, Globe, RefreshCcw, Send } from "lucide-react";
+import { ArrowDown, ArrowUp, CreditCard, Globe, RefreshCcw, Send, Shield, Store } from "lucide-react";
 import WalletCard from "@/components/WalletCard";
 import QuickActions from "@/components/QuickActions";
 import WalletHistoryTable from "@/components/wallet/WalletHistoryTable";
@@ -155,6 +155,20 @@ export default function WalletPage() {
             to: "/dashboard/client/transactions",
             icon: RefreshCcw,
             className: "border-slate-200 bg-slate-50 hover:bg-white",
+          },
+          {
+            label: "Escrow crypto",
+            description: "Paiement crypto securise",
+            to: "/dashboard/client/crypto-pay",
+            icon: Shield,
+            className: "border-violet-200 bg-violet-50 hover:bg-violet-100/60",
+          },
+          {
+            label: "P2P market",
+            description: "Acheter ou vendre via P2P",
+            to: "/app/p2p",
+            icon: Store,
+            className: "border-indigo-200 bg-indigo-50 hover:bg-indigo-100/60",
           },
           {
             label: "Ligne de credit",

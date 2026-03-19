@@ -1,7 +1,7 @@
 // src/pages/admin/AdminUsersList.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, CreditCard, LineChart, Send, ShieldCheck, Wallet } from "lucide-react";
+import { Bell, CreditCard, LineChart, Scale, Send, ShieldCheck, Shield, Wallet } from "lucide-react";
 import api from "@/services/api";
 import QuickActions from "@/components/QuickActions";
 
@@ -89,6 +89,27 @@ export default function AdminUsersList() {
             to: "/dashboard/admin/credit-lines",
             icon: CreditCard,
             className: "border-orange-200 bg-orange-50 hover:bg-orange-100/60",
+          },
+          {
+            label: "Escrow",
+            description: "Suivi des dossiers escrow",
+            to: "/dashboard/admin/escrow",
+            icon: Shield,
+            className: "border-violet-200 bg-violet-50 hover:bg-violet-100/60",
+          },
+          {
+            label: "P2P trades",
+            description: "Supervision des trades P2P",
+            to: "/dashboard/admin/p2p/trades",
+            icon: Send,
+            className: "border-indigo-200 bg-indigo-50 hover:bg-indigo-100/60",
+          },
+          {
+            label: "P2P disputes",
+            description: "Gestion des litiges P2P",
+            to: "/dashboard/admin/p2p/disputes",
+            icon: Scale,
+            className: "border-red-200 bg-red-50 hover:bg-red-100/60",
           },
           {
             label: "Balance events",
