@@ -278,34 +278,54 @@ export default function AdminGlobalDashboard() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          title="Utilisateurs"
-          value={formatNumber(analytics?.total_users)}
-          subtitle={`${formatNumber(analytics?.active_today)} actifs sur 24h`}
-          icon={Users}
-          tone="slate"
-        />
-        <KpiCard
-          title="Transactions 24h"
-          value={formatNumber(analytics?.transactions_24h)}
-          subtitle={`${formatNumber(analytics?.transactions_7d)} sur 7 jours`}
-          icon={ArrowLeftRight}
-          tone="blue"
-        />
-        <KpiCard
-          title="Cas AML ouverts"
-          value={formatNumber(summary?.aml_open_cases)}
-          subtitle={`${formatNumber(summary?.aml_hits_24h)} hit(s) AML sur 24h`}
-          icon={ShieldAlert}
-          tone="amber"
-        />
-        <KpiCard
-          title="Wallets negatifs"
-          value={formatNumber(analytics?.negative_wallets)}
-          subtitle={`${formatNumber(summary?.high_risk_trades)} trade(s) risque >= 80`}
-          icon={AlertTriangle}
-          tone="red"
-        />
+        <div className="space-y-2">
+          <KpiCard
+            title="Utilisateurs"
+            value={formatNumber(analytics?.total_users)}
+            subtitle={`${formatNumber(analytics?.active_today)} actifs sur 24h`}
+            icon={Users}
+            tone="slate"
+          />
+          <Link to="/dashboard/admin/users" className="inline-flex text-sm font-medium text-blue-700 hover:text-blue-800">
+            Details
+          </Link>
+        </div>
+        <div className="space-y-2">
+          <KpiCard
+            title="Transactions 24h"
+            value={formatNumber(analytics?.transactions_24h)}
+            subtitle={`${formatNumber(analytics?.transactions_7d)} sur 7 jours`}
+            icon={ArrowLeftRight}
+            tone="blue"
+          />
+          <Link to="/dashboard/admin/transfers" className="inline-flex text-sm font-medium text-blue-700 hover:text-blue-800">
+            Details
+          </Link>
+        </div>
+        <div className="space-y-2">
+          <KpiCard
+            title="Cas AML ouverts"
+            value={formatNumber(summary?.aml_open_cases)}
+            subtitle={`${formatNumber(summary?.aml_hits_24h)} hit(s) AML sur 24h`}
+            icon={ShieldAlert}
+            tone="amber"
+          />
+          <Link to="/dashboard/admin/aml-cases" className="inline-flex text-sm font-medium text-blue-700 hover:text-blue-800">
+            Details
+          </Link>
+        </div>
+        <div className="space-y-2">
+          <KpiCard
+            title="Wallets negatifs"
+            value={formatNumber(analytics?.negative_wallets)}
+            subtitle={`${formatNumber(summary?.high_risk_trades)} trade(s) risque >= 80`}
+            icon={AlertTriangle}
+            tone="red"
+          />
+          <Link to="/dashboard/admin/wallets" className="inline-flex text-sm font-medium text-blue-700 hover:text-blue-800">
+            Details
+          </Link>
+        </div>
       </section>
 
       <QuickActions
@@ -393,46 +413,73 @@ export default function AdminGlobalDashboard() {
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          title="Trades P2P 24h"
-          value={formatNumber(summary?.total_trades_24h)}
-          subtitle="Activite recente P2P"
-          icon={ArrowLeftRight}
-          tone="emerald"
-        />
-        <KpiCard
-          title="Arbitrages 24h"
-          value={formatNumber(summary?.arbitrage_executions_24h)}
-          subtitle="Executions journalieres"
-          icon={Wallet}
-          tone="slate"
-        />
-        <KpiCard
-          title="Tresorerie BIF"
-          value={String(summary?.liquidity?.TREASURY_BIF ?? "N/A")}
-          subtitle="Compte de tresorerie BIF"
-          icon={Wallet}
-          tone="blue"
-        />
-        <KpiCard
-          title="Tresorerie USDC"
-          value={String(summary?.liquidity?.TREASURY_USDC ?? "N/A")}
-          subtitle={`USDT: ${String(summary?.liquidity?.TREASURY_USDT ?? "N/A")}`}
-          icon={Wallet}
-          tone="emerald"
-        />
+        <div className="space-y-2">
+          <KpiCard
+            title="Trades P2P 24h"
+            value={formatNumber(summary?.total_trades_24h)}
+            subtitle="Activite recente P2P"
+            icon={ArrowLeftRight}
+            tone="emerald"
+          />
+          <Link to="/dashboard/admin/p2p/trades" className="inline-flex text-sm font-medium text-blue-700 hover:text-blue-800">
+            Details
+          </Link>
+        </div>
+        <div className="space-y-2">
+          <KpiCard
+            title="Arbitrages 24h"
+            value={formatNumber(summary?.arbitrage_executions_24h)}
+            subtitle="Executions journalieres"
+            icon={Wallet}
+            tone="slate"
+          />
+          <Link to="/dashboard/admin/arbitrage" className="inline-flex text-sm font-medium text-blue-700 hover:text-blue-800">
+            Details
+          </Link>
+        </div>
+        <div className="space-y-2">
+          <KpiCard
+            title="Tresorerie BIF"
+            value={String(summary?.liquidity?.TREASURY_BIF ?? "N/A")}
+            subtitle="Compte de tresorerie BIF"
+            icon={Wallet}
+            tone="blue"
+          />
+          <Link to="/dashboard/admin/liquidity" className="inline-flex text-sm font-medium text-blue-700 hover:text-blue-800">
+            Details
+          </Link>
+        </div>
+        <div className="space-y-2">
+          <KpiCard
+            title="Tresorerie USDC"
+            value={String(summary?.liquidity?.TREASURY_USDC ?? "N/A")}
+            subtitle={`USDT: ${String(summary?.liquidity?.TREASURY_USDT ?? "N/A")}`}
+            icon={Wallet}
+            tone="emerald"
+          />
+          <Link to="/dashboard/admin/liquidity" className="inline-flex text-sm font-medium text-blue-700 hover:text-blue-800">
+            Details
+          </Link>
+        </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
         {pendingRows.map((row, index) => (
-          <KpiCard
-            key={row.label}
-            title={row.label}
-            value={formatNumber(row.value)}
-            subtitle="Elements en attente de traitement"
-            icon={Wallet}
-            tone={index === 2 ? "amber" : "slate"}
-          />
+          <div key={row.label} className="space-y-2">
+            <KpiCard
+              title={row.label}
+              value={formatNumber(row.value)}
+              subtitle="Elements en attente de traitement"
+              icon={Wallet}
+              tone={index === 2 ? "amber" : "slate"}
+            />
+            <Link
+              to={index === 2 ? "/dashboard/admin/transfer-approvals" : "/dashboard/admin/cash-requests"}
+              className="inline-flex text-sm font-medium text-blue-700 hover:text-blue-800"
+            >
+              Details
+            </Link>
+          </div>
         ))}
       </section>
 
