@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
+  LayoutDashboard,
   Wallet,
   Send,
   RefreshCcw,
@@ -30,6 +31,7 @@ const menuGroups = [
     key: "wallet",
     title: "Portefeuille",
     items: [
+      { name: "Vue generale", path: "/dashboard/client/overview", icon: <LayoutDashboard size={18} /> },
       { name: "Portefeuille", path: "/dashboard/client/wallet", icon: <Wallet size={18} /> },
       { name: "Transactions", path: "/dashboard/client/transactions", icon: <RefreshCcw size={18} /> },
       { name: "Historique balance", path: "/dashboard/client/balance-history", icon: <LineChart size={18} /> },
@@ -94,6 +96,7 @@ const DEFAULT_COLLAPSED_GROUPS = {
 };
 
 function getGroupForPath(pathname = "") {
+  if (pathname.includes("/overview")) return "wallet";
   if (pathname.includes("/p2p") || pathname.includes("/crypto-pay")) return "escrowP2p";
   if (
     pathname.includes("/credit") ||

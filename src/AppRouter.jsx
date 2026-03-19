@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "@/pages/dashboard/DashboardLayout";
+import ClientOverviewPage from "@/pages/dashboard/ClientOverviewPage";
 import WalletPage from "@/pages/dashboard/WalletPage";
 import PaymentPage from "@/pages/dashboard/PaymentPage";
 import TransferPage from "@/pages/dashboard/TransferPage";
@@ -135,7 +136,8 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="wallet" replace />} />
+        <Route index element={<Navigate to="overview" replace />} />
+        <Route path="overview" element={<ClientOverviewPage />} />
         <Route path="wallet" element={<WalletPage />} />
         <Route path="payments" element={<PaymentPage />} />
         <Route path="transfer" element={<TransferPage />} />
@@ -176,7 +178,7 @@ export default function AppRouter() {
         }
       >
         <Route index element={<Navigate to="users" replace />} />
-        <Route path="overview" element={<RiskMonitorPage />} />
+        <Route path="overview" element={<AdminGlobalDashboard />} />
         <Route path="overview-lite" element={<AdminGlobalDashboard />} />
         <Route path="aml-cases" element={<AdminAMLPage />} />
         <Route path="liquidity" element={<AdminLiquidityPage />} />

@@ -435,8 +435,23 @@ const api = {
   async getFinancialSummary() {
     return this.get("/wallet/financial-summary");
   },
+  async getClientDashboardOverview() {
+    return this.get("/wallet/overview");
+  },
   async getAdminFinancialSummary(userId) {
     return this.get(`/wallet/admin/financial-summary/${userId}`);
+  },
+  async getAdminDashboardSummary() {
+    return this.get("/api/admin/dashboard/summary");
+  },
+  async getAdminDashboardTimeseries(days = 14) {
+    return this.get(`/api/admin/dashboard/timeseries?days=${days}`);
+  },
+  async getAdminDashboardTimeseries30d() {
+    return this.get("/api/admin/dashboard/timeseries?days=30");
+  },
+  async getAdminAnalyticsOverview() {
+    return this.get("/admin/analytics/overview");
   },
   async deleteAdminUser(userId) {
     return this.del(`/admin/users/${userId}`);
