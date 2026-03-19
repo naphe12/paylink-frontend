@@ -1,7 +1,9 @@
 // src/pages/admin/AdminUsersList.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Bell, CreditCard, LineChart, Send, ShieldCheck, Wallet } from "lucide-react";
 import api from "@/services/api";
+import QuickActions from "@/components/QuickActions";
 
 export default function AdminUsersList() {
   const [users, setUsers] = useState([]);
@@ -56,6 +58,55 @@ export default function AdminUsersList() {
 
   return (
     <div className="p-6">
+      <QuickActions
+        title="Actions rapides"
+        subtitle="Raccourcis vers les operations admin les plus frequentes."
+        actions={[
+          {
+            label: "Validation cash",
+            description: "Depots et retraits a traiter",
+            to: "/dashboard/admin/cash-requests",
+            icon: Wallet,
+            className: "border-cyan-200 bg-cyan-50 hover:bg-cyan-100/60",
+          },
+          {
+            label: "Transferts",
+            description: "Vue generale des flux externes",
+            to: "/dashboard/admin/transfers",
+            icon: Send,
+            className: "border-emerald-200 bg-emerald-50 hover:bg-emerald-100/60",
+          },
+          {
+            label: "Approvals",
+            description: "Transferts en attente de validation",
+            to: "/dashboard/admin/transfer-approvals",
+            icon: ShieldCheck,
+            className: "border-amber-200 bg-amber-50 hover:bg-amber-100/60",
+          },
+          {
+            label: "Lignes de credit",
+            description: "Ajuster les capacites client",
+            to: "/dashboard/admin/credit-lines",
+            icon: CreditCard,
+            className: "border-orange-200 bg-orange-50 hover:bg-orange-100/60",
+          },
+          {
+            label: "Balance events",
+            description: "Historique des balances",
+            to: "/dashboard/admin/balance-events",
+            icon: LineChart,
+            className: "border-blue-200 bg-blue-50 hover:bg-blue-100/60",
+          },
+          {
+            label: "Notifications",
+            description: "Centre d'alertes admin",
+            to: "/dashboard/admin/notifications",
+            icon: Bell,
+            className: "border-slate-200 bg-slate-50 hover:bg-white",
+          },
+        ]}
+      />
+
       <h1 className="text-xl font-bold mb-4">Utilisateurs</h1>
 
       <div className="flex items-center gap-3 mb-4">

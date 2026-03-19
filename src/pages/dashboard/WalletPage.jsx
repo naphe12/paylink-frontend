@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowDown, ArrowUp, CreditCard, Globe, RefreshCcw, Send } from "lucide-react";
 import WalletCard from "@/components/WalletCard";
+import QuickActions from "@/components/QuickActions";
 import WalletHistoryTable from "@/components/wallet/WalletHistoryTable";
 import api from "@/services/api";
 
@@ -115,6 +117,55 @@ export default function WalletPage() {
 
   return (
     <div className="space-y-6">
+      <QuickActions
+        title="Actions rapides"
+        subtitle="Accedez directement aux operations les plus frequentes."
+        actions={[
+          {
+            label: "Transfert externe",
+            description: "Envoyer vers un partenaire",
+            to: "/dashboard/client/external-transfer",
+            icon: Globe,
+            className: "border-emerald-200 bg-emerald-50 hover:bg-emerald-100/60",
+          },
+          {
+            label: "Transfert interne",
+            description: "Envoyer a un autre utilisateur",
+            to: "/dashboard/client/transfer",
+            icon: Send,
+            className: "border-blue-200 bg-blue-50 hover:bg-blue-100/60",
+          },
+          {
+            label: "Depot cash",
+            description: "Soumettre une demande de depot",
+            to: "/dashboard/client/deposit",
+            icon: ArrowDown,
+            className: "border-cyan-200 bg-cyan-50 hover:bg-cyan-100/60",
+          },
+          {
+            label: "Retrait cash",
+            description: "Demander un retrait BIF",
+            to: "/dashboard/client/withdraw/bif",
+            icon: ArrowUp,
+            className: "border-rose-200 bg-rose-50 hover:bg-rose-100/60",
+          },
+          {
+            label: "Transactions",
+            description: "Voir les mouvements applicatifs",
+            to: "/dashboard/client/transactions",
+            icon: RefreshCcw,
+            className: "border-slate-200 bg-slate-50 hover:bg-white",
+          },
+          {
+            label: "Ligne de credit",
+            description: "Consulter votre capacite",
+            to: "/dashboard/client/credit-line",
+            icon: CreditCard,
+            className: "border-amber-200 bg-amber-50 hover:bg-amber-100/60",
+          },
+        ]}
+      />
+
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">
         <div className="flex items-start justify-between gap-4">
           <div>
