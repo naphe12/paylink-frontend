@@ -15,13 +15,13 @@ export default function Hero() {
         transition={{ duration: 0.8 }}
         onClick={() => navigate("/")} // Retour à l’accueil
       >
-        <motion.span
+        <motion.img
+          src="/logo.png"
+          alt="PesaPaid"
           animate={{ rotate: [0, 360] }}
           transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-          className="inline-flex h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem] items-center justify-center rounded-2xl bg-white text-indigo-800 text-2xl sm:text-3xl font-extrabold shadow-lg"
-        >
-          PL
-        </motion.span>
+          className="h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem] object-contain drop-shadow-lg"
+        />
         <h1 className="text-[2.5rem] sm:text-[3rem] md:text-[3.5rem] font-extrabold tracking-tight">
           PesaPaid
         </h1>

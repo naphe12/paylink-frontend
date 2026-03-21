@@ -38,8 +38,8 @@ export default function AgentSidebar() {
       <div className="px-6 py-8 border-b border-white/10">
         <p className="text-xs uppercase tracking-[0.4em] text-white/60">Mode Agent</p>
         <h1 className="text-2xl font-semibold mt-3 flex items-center gap-3">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white/20 text-lg">
-            AG
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white p-1 shadow-md">
+            <img src="/logo.png" alt="PesaPaid" className="h-full w-full object-contain" />
           </span>
           PesaPaid OPS
         </h1>
@@ -102,8 +102,8 @@ export default function AgentSidebar() {
     <div className="min-h-screen flex bg-slate-100">
       <div className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 bg-gradient-to-r from-teal-900 to-slate-900 text-white shadow-lg">
         <div className="flex items-center gap-2">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white/20 text-lg">
-            AG
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white p-1 shadow-md">
+            <img src="/logo.png" alt="PesaPaid" className="h-full w-full object-contain" />
           </span>
           <div className="leading-tight">
             <p className="text-[11px] uppercase tracking-[0.35em] text-white/60">Agent</p>

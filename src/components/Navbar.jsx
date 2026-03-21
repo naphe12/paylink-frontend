@@ -2,7 +2,7 @@ export default function Navbar() {
   return (
     <nav className="flex justify-between items-center px-8 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
       <div className="flex items-center gap-2 text-2xl font-bold text-indigo-600">
-        <span className="text-3xl">♾️</span>
+        <img src="/logo.png" alt="PesaPaid" className="h-10 w-10 object-contain" />
         <span>PesaPaid</span>
       </div>
 
@@ -19,7 +19,7 @@ export default function Navbar() {
           Connexion
         </button>
         <button className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
-          Créer un compte
+          Creer un compte
         </button>
       </div>
     </nav>

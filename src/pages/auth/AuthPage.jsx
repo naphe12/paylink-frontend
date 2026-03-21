@@ -175,6 +175,11 @@ export default function AuthPage() {
         >
           💫
         </motion.div>
+        <img
+          src="/logo.png"
+          alt="PesaPaid"
+          className="mx-auto mb-4 h-16 w-16 object-contain"
+        />
         <h1 className="text-4xl font-extrabold tracking-tight mb-8">PesaPaid</h1>
 
         <AnimatePresence mode="wait">
