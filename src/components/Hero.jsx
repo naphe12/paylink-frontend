@@ -20,7 +20,7 @@ export default function Hero() {
           alt="PesaPaid"
           animate={{ rotate: [0, 360] }}
           transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-          className="h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem] object-contain drop-shadow-lg"
+          className="h-16 w-16 rounded-[1.5rem] object-cover scale-125 drop-shadow-lg sm:h-[4.5rem] sm:w-[4.5rem]"
         />
         <h1 className="text-[2.5rem] sm:text-[3rem] md:text-[3.5rem] font-extrabold tracking-tight">
           PesaPaid

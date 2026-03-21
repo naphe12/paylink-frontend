@@ -178,7 +178,7 @@ export default function AuthPage() {
         <img
           src="/logo.png"
           alt="PesaPaid"
-          className="mx-auto mb-4 h-16 w-16 object-contain"
+          className="mx-auto mb-4 h-16 w-16 rounded-2xl object-cover scale-125"
         />
         <h1 className="text-4xl font-extrabold tracking-tight mb-8">PesaPaid</h1>
 

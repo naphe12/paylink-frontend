@@ -19,7 +19,7 @@ export default function DashboardSidebar() {
       <div>
         <h1 className="text-2xl font-bold mb-8 flex items-center gap-2">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white p-1 shadow-md">
-            <img src="/logo.png" alt="PesaPaid" className="h-full w-full object-contain" />
+            <img src="/logo.png" alt="PesaPaid" className="h-full w-full rounded-[1rem] object-cover scale-125" />
           </span>
           PesaPaid
         </h1>

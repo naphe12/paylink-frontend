@@ -266,8 +266,8 @@ export default function AdminSidebar() {
       <div className="px-6 py-8 border-b border-white/10">
         <p className="text-xs tracking-[0.4em] uppercase text-slate-400">Console</p>
         <h1 className="text-2xl font-semibold mt-2 flex items-center gap-3">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white p-1 shadow-md">
-            <img src="/logo.png" alt="PesaPaid" className="h-full w-full object-contain" />
+          <span className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-md">
+            <img src="/logo.png" alt="PesaPaid" className="h-full w-full rounded-[1rem] object-cover scale-125" />
           </span>
           PesaPaid Admin
         </h1>
@@ -580,8 +580,8 @@ export default function AdminSidebar() {
     <div className="min-h-screen flex bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-950 to-slate-800 text-white shadow-lg">
         <div className="flex items-center gap-2">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white p-1 shadow-md">
-            <img src="/logo.png" alt="PesaPaid" className="h-full w-full object-contain" />
+          <span className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-md">
+            <img src="/logo.png" alt="PesaPaid" className="h-full w-full rounded-[1rem] object-cover scale-125" />
           </span>
           <div className="leading-tight">
             <p className="text-[11px] uppercase tracking-[0.35em] text-white/60">Console</p>

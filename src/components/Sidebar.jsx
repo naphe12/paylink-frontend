@@ -22,7 +22,7 @@ export default function Sidebar() {
     <div className="w-64 h-screen bg-[#0b3b64] text-white flex flex-col justify-between shadow-lg">
       <div>
         <div className="flex items-center gap-3 text-2xl font-bold p-6 border-b border-white/10">
-          <img src="/logo.png" alt="PesaPaid" className="h-10 w-10 object-contain" />
+          <img src="/logo.png" alt="PesaPaid" className="h-10 w-10 rounded-2xl object-cover scale-125" />
           <span>PesaPaid</span>
         </div>
         <nav className="mt-4">
