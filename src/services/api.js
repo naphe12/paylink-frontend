@@ -1,4 +1,6 @@
 // src/services/api.js
+import { getAccessToken, refreshAccessToken } from "@/services/authStore";
+
 const RAW_API_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
 const RAW_API_FALLBACK_URL = (import.meta.env.VITE_API_FALLBACK_URL || "").trim().replace(/\/+$/, "");
 const PROD_API_URL = "https://api.pesapaid.com";
@@ -169,16 +171,6 @@ function isHtmlResponse(res) {
   return contentType.includes("text/html");
 }
 
-function getAuthToken() {
-  const raw = localStorage.getItem("token") || localStorage.getItem("access_token");
-  if (!raw || raw === "null" || raw === "undefined") return null;
-  let token = String(raw).trim();
-  token = token.replace(/^"+|"+$/g, "");
-  token = token.replace(/^Bearer\s+/i, "");
-  token = token.replace(/\s+/g, "");
-  return token || null;
-}
-
 async function parseJsonOrThrow(res, path, method = "GET") {
   const contentType = res.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
@@ -240,8 +232,8 @@ const api = {
     return `${scope}-${rand}`;
   },
 
-  async get(path) {
-    const token = getAuthToken();
+  async get(path, allowRefresh = true) {
+    const token = getAccessToken();
     let res = null;
     let lastHtmlResponse = null;
     const requestOptions = {
@@ -280,12 +272,18 @@ const api = {
         throw new Error(formatNetworkError(path, "GET", err));
       }
     }
+    if (res.status === 401 && allowRefresh) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return this.get(path, false);
+      }
+    }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "GET"));
     return parseJsonOrThrow(res, path, "GET");
   },
 
-  async post(path, data) {
-    const token = getAuthToken();
+  async post(path, data, allowRefresh = true) {
+    const token = getAccessToken();
     let res;
     try {
       res = await fetchWithFallback(path, {
@@ -300,12 +298,18 @@ const api = {
     } catch (err) {
       throw new Error(formatNetworkError(path, "POST", err));
     }
+    if (res.status === 401 && allowRefresh) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return this.post(path, data, false);
+      }
+    }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "POST"));
     return parseJsonOrThrow(res, path, "POST");
   },
 
-  async postWithHeaders(path, data, extraHeaders = {}) {
-    const token = getAuthToken();
+  async postWithHeaders(path, data, extraHeaders = {}, allowRefresh = true) {
+    const token = getAccessToken();
     let res;
     try {
       res = await fetchWithFallback(path, {
@@ -321,6 +325,12 @@ const api = {
     } catch (err) {
       throw new Error(formatNetworkError(path, "POST", err));
     }
+    if (res.status === 401 && allowRefresh) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return this.postWithHeaders(path, data, extraHeaders, false);
+      }
+    }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "POST"));
     return parseJsonOrThrow(res, path, "POST");
   },
@@ -330,8 +340,8 @@ const api = {
     return this.postWithHeaders(path, data, { "Idempotency-Key": key });
   },
 
-  async patch(path, data) {
-    const token = getAuthToken();
+  async patch(path, data, allowRefresh = true) {
+    const token = getAccessToken();
     let res;
     try {
       res = await fetchWithFallback(path, {
@@ -346,12 +356,18 @@ const api = {
     } catch (err) {
       throw new Error(formatNetworkError(path, "PATCH", err));
     }
+    if (res.status === 401 && allowRefresh) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return this.patch(path, data, false);
+      }
+    }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "PATCH"));
     return parseJsonOrThrow(res, path, "PATCH");
   },
 
-  async put(path, data) {
-    const token = getAuthToken();
+  async put(path, data, allowRefresh = true) {
+    const token = getAccessToken();
     let res;
     try {
       res = await fetchWithFallback(path, {
@@ -366,11 +382,17 @@ const api = {
     } catch (err) {
       throw new Error(formatNetworkError(path, "PUT", err));
     }
+    if (res.status === 401 && allowRefresh) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return this.put(path, data, false);
+      }
+    }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "PUT"));
     return parseJsonOrThrow(res, path, "PUT");
   },
-  async del(path) {
-    const token = getAuthToken();
+  async del(path, allowRefresh = true) {
+    const token = getAccessToken();
     let res;
     try {
       res = await fetchWithFallback(path, {
@@ -382,6 +404,12 @@ const api = {
       });
     } catch (err) {
       throw new Error(formatNetworkError(path, "DELETE", err));
+    }
+    if (res.status === 401 && allowRefresh) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return this.del(path, false);
+      }
     }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "DELETE"));
     return parseJsonOrThrow(res, path, "DELETE");

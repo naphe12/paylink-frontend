@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
+import { getAccessToken } from "@/services/authStore";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 const USDC_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
@@ -71,9 +72,7 @@ export default function CryptoPayPage() {
     setError(null);
 
     try {
-      const rawToken = localStorage.getItem("token") || localStorage.getItem("access_token");
-      const token =
-        rawToken && rawToken !== "null" && rawToken !== "undefined" ? rawToken : null;
+      const token = getAccessToken();
       if (!token) {
         navigate("/auth");
         return;

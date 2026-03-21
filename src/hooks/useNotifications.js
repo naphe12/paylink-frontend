@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useToast } from "@/components/Toast";
 import { resolveWsUrl } from "@/services/ws";
+import { getAccessToken } from "@/services/authStore";
 
 const WS_URL = resolveWsUrl("/ws/notifications");
 
@@ -21,7 +22,7 @@ export default function useNotifications() {
     stoppedRef.current = false;
 
     const connect = () => {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const url = token
         ? `${WS_URL}?token=${encodeURIComponent(token)}`
         : WS_URL;

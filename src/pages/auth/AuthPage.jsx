@@ -13,6 +13,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { fetchPublicApi } from "@/services/api";
 import { getRoleDashboardPath } from "@/utils/roleRoutes";
+import useAuth from "@/hooks/useAuth";
+import { setSessionFromPayload } from "@/services/authStore";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,18 +23,17 @@ export default function AuthPage() {
   const [countries, setCountries] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState("");
   const navigate = useNavigate();
+  const { isAuthenticated, loading: authLoading, role } = useAuth();
 
   const getCountryCode = (c) =>
     (c?.alpha2 || c?.code || c?.iso2 || "").toUpperCase();
 
   // Redirige si un token existe déjà
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      const storedRole = localStorage.getItem("role") || "client";
-      navigate(getRoleDashboardPath(storedRole));
+    if (!authLoading && isAuthenticated) {
+      navigate(getRoleDashboardPath(role));
     }
-  }, [navigate]);
+  }, [authLoading, isAuthenticated, navigate, role]);
 
   // Charge la liste des pays pour l'inscription
   useEffect(() => {
@@ -80,6 +81,7 @@ export default function AuthPage() {
 
       const res = await fetchPublicApi("/auth/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formData.toString(),
       });
@@ -87,19 +89,18 @@ export default function AuthPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Erreur de connexion");
 
-      localStorage.setItem("token", data.token || data.access_token);
-
       const userRole = data.role || data.user?.role || "client";
-      localStorage.setItem("role", userRole);
-
       const userPayload =
-        data.user ||
-        {
+        data.user || {
           user_id: data.user_id,
           full_name: data.full_name,
           role: userRole,
         };
-      localStorage.setItem("user", JSON.stringify(userPayload));
+      setSessionFromPayload({
+        ...data,
+        role: userRole,
+        user: userPayload,
+      });
 
       toast.success(`Bienvenue ${userPayload.full_name || ""}`);
       navigate(getRoleDashboardPath(userRole));
@@ -124,6 +125,7 @@ export default function AuthPage() {
     try {
       const res = await fetchPublicApi("/auth/register", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           full_name,
@@ -137,10 +139,12 @@ export default function AuthPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Erreur d'inscription");
 
-      localStorage.setItem("token", data.token || data.access_token);
       const userRole = data.role || data.user?.role || "client";
-      localStorage.setItem("role", userRole);
-      localStorage.setItem("user", JSON.stringify(data.user || {}));
+      setSessionFromPayload({
+        ...data,
+        role: userRole,
+        user: data.user || {},
+      });
 
       toast.success(`Bienvenue ${data.user?.full_name || full_name}`);
       navigate(getRoleDashboardPath(userRole));

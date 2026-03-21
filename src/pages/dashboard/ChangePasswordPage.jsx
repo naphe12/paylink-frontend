@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { fetchPublicApi } from "@/services/api";
+import { getAccessToken } from "@/services/authStore";
 
 export default function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -16,7 +17,7 @@ export default function ChangePasswordPage() {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const res = await fetchPublicApi("/auth/change-password", {
         method: "POST",
         headers: {

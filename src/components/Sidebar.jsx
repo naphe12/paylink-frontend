@@ -1,6 +1,7 @@
 // src/components/Sidebar.jsx
 import { Wallet, Send, RefreshCcw, LogOut, Gift } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { logout as logoutSession } from "@/services/authStore";
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -17,8 +18,7 @@ export default function Sidebar() {
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/");
+    logoutSession().finally(() => navigate("/"));
   };
 
   return (

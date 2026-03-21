@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { getAccessToken } from "@/services/authStore";
 
 async function api(url) {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken();
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new Error(await res.text());
   return res.json();

@@ -7,6 +7,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import api from "@/services/api";
+import { getAccessToken } from "@/services/authStore";
 
 const TOPICS = [
   { id: "all", label: "Tout" },
@@ -74,7 +75,7 @@ export default function SecurityDashboard() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+    const token = getAccessToken();
     if (!token) {
       setConnectionStatus("unauthorized");
       return;

@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Bell } from "lucide-react";
 import { resolveWsUrl } from "@/services/ws";
+import { getAccessToken } from "@/services/authStore";
 
 export default function NotificationBell() {
   const [messages, setMessages] = useState([]);
@@ -11,7 +12,7 @@ export default function NotificationBell() {
 
   useEffect(() => {
     // ✅ Récupère le token JWT depuis localStorage
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     if (!token) return;
 
     // ✅ Connexion WebSocket

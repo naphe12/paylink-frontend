@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import AppRouter from "./AppRouter";
 import { Toaster } from "react-hot-toast";
+import { bootstrapAuth } from "@/services/authStore";
 
 export default function App() {
   useEffect(() => {
@@ -10,6 +11,7 @@ export default function App() {
         console.log("🔔 Notification permission:", permission);
       });
     }
+    bootstrapAuth();
   }, []);
 
   return (

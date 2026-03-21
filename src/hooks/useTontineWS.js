@@ -1,11 +1,12 @@
 import { useEffect } from "react";
 import { resolveWsUrl } from "@/services/ws";
+import { getAccessToken } from "@/services/authStore";
 
 export default function useTontineWS(tontineId, onMessage) {
   useEffect(() => {
     if (!tontineId) return;
 
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     if (!token) return;
 
     const ws = new WebSocket(

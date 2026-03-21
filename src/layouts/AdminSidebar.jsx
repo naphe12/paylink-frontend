@@ -32,6 +32,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
+import { getAccessToken, logout as logoutSession } from "@/services/authStore";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 const OPS_ALERT_MUTE_KEY = "ops_alert_muted_until";
@@ -103,13 +104,7 @@ function getGroupForPath(pathname = "") {
 }
 
 function getAuthToken() {
-  const raw = localStorage.getItem("token") || localStorage.getItem("access_token");
-  if (!raw || raw === "null" || raw === "undefined") return null;
-  let token = String(raw).trim();
-  token = token.replace(/^"+|"+$/g, "");
-  token = token.replace(/^Bearer\s+/i, "");
-  token = token.replace(/\s+/g, "");
-  return token || null;
+  return getAccessToken();
 }
 
 async function api(url) {
@@ -206,9 +201,10 @@ export default function AdminSidebar() {
   }, [location.pathname]);
 
   const logout = () => {
-    localStorage.clear();
-    navigate("/auth", { replace: true });
-    setDrawerOpen(false);
+    logoutSession().finally(() => {
+      navigate("/auth", { replace: true });
+      setDrawerOpen(false);
+    });
   };
 
   const playCriticalBeep = () => {

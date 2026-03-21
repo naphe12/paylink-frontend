@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function AccountPage() {
   const user = JSON.parse(localStorage.getItem("user"));
 

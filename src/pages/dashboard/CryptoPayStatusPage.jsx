@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
+import { getAccessToken } from "@/services/authStore";
 
 const ORDER_STEPS = ["CREATED", "FUNDED", "SWAPPED", "PAYOUT_PENDING", "PAID_OUT"];
 const API_URL = import.meta.env.VITE_API_URL || "";
@@ -19,9 +20,7 @@ export default function CryptoPayStatusPage() {
 
     async function fetchOrder() {
       try {
-        const rawToken = localStorage.getItem("token") || localStorage.getItem("access_token");
-        const token =
-          rawToken && rawToken !== "null" && rawToken !== "undefined" ? rawToken : null;
+        const token = getAccessToken();
         if (!token) {
           setError("Session expiree. Reconnectez-vous.");
           return;
@@ -126,9 +125,7 @@ export default function CryptoPayStatusPage() {
   async function retryPayment() {
     try {
       setRetrying(true);
-      const rawToken = localStorage.getItem("token") || localStorage.getItem("access_token");
-      const token =
-        rawToken && rawToken !== "null" && rawToken !== "undefined" ? rawToken : null;
+      const token = getAccessToken();
       if (!token) {
         throw new Error("Session expiree. Reconnectez-vous.");
       }
@@ -174,9 +171,7 @@ export default function CryptoPayStatusPage() {
   async function runSandboxAction(action) {
     try {
       setSandboxActionLoading(true);
-      const rawToken = localStorage.getItem("token") || localStorage.getItem("access_token");
-      const token =
-        rawToken && rawToken !== "null" && rawToken !== "undefined" ? rawToken : null;
+      const token = getAccessToken();
       if (!token) {
         throw new Error("Session expiree. Reconnectez-vous.");
       }

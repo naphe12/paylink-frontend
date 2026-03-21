@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "@/services/api";
+import { logout as logoutSession } from "@/services/authStore";
 
 export default function AdminLiquidityPage() {
   const [summary, setSummary] = useState(null);
@@ -28,8 +29,9 @@ export default function AdminLiquidityPage() {
           <button
             style={{ marginTop: 12, padding: "8px 12px" }}
             onClick={() => {
-              localStorage.removeItem("access_token");
-              window.location.href = "/auth";
+              logoutSession().finally(() => {
+                window.location.href = "/auth";
+              });
             }}
           >
             Se reconnecter

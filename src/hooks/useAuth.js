@@ -1,33 +1,25 @@
-// src/hooks/useAuth.js
 import { useEffect, useState } from "react";
+import {
+  bootstrapAuth,
+  getAuthSnapshot,
+  logout as logoutSession,
+  subscribeAuth,
+} from "@/services/authStore";
 
 export default function useAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [auth, setAuth] = useState(getAuthSnapshot());
 
   useEffect(() => {
-    // 🔹 Vérifie au démarrage
-    const token = localStorage.getItem("token");
-    setIsAuthenticated(!!token);
-    setLoading(false);
-
-    // 🔹 Surveille les changements de localStorage
-    const handleStorageChange = () => {
-      setIsAuthenticated(!!localStorage.getItem("token"));
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    const unsubscribe = subscribeAuth(setAuth);
+    bootstrapAuth();
+    return unsubscribe;
   }, []);
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setIsAuthenticated(false);
-
-    // 🔙 Retour vers HomePage après déconnexion
-    window.location.href = "/";
+  return {
+    user: auth.user,
+    role: auth.user?.role || "client",
+    isAuthenticated: Boolean(auth.accessToken && auth.user),
+    loading: !auth.bootstrapped,
+    logout: logoutSession,
   };
-
-  return { isAuthenticated, logout, loading };
 }
-

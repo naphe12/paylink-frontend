@@ -13,17 +13,19 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { getCurrentRole, logout as logoutSession } from "@/services/authStore";
 
 export default function AgentSidebar() {
   const navigate = useNavigate();
-  const isAdmin = (localStorage.getItem("role") || "client").toLowerCase() === "admin";
+  const isAdmin = String(getCurrentRole() || "client").toLowerCase() === "admin";
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
 
   const logout = () => {
-    localStorage.clear();
-    navigate("/auth", { replace: true });
-    setDrawerOpen(false);
+    logoutSession().finally(() => {
+      navigate("/auth", { replace: true });
+      setDrawerOpen(false);
+    });
   };
 
   const linkClass = ({ isActive }) =>

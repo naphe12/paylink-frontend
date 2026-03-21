@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/services/api";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
+import { getAccessToken } from "@/services/authStore";
 
 function metricTone(value, warn, danger, invert = false) {
   const n = Number(value || 0);
@@ -82,7 +83,7 @@ export default function OpsDashboardPage() {
     setExporting(true);
     setError("");
     try {
-      const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+      const token = getAccessToken();
       const q = new URLSearchParams({ window_hours: "24" });
       if (pathPrefix.trim()) q.append("path_prefix", pathPrefix.trim());
       const base = import.meta.env.VITE_API_URL || "";

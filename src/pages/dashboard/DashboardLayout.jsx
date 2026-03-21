@@ -25,6 +25,7 @@ import NotificationsBell from "@/components/NotificationsBell";
 import useNotifications from "@/hooks/useNotifications";
 import ToastStream from "@/components/Toast";
 import api from "@/services/api";
+import { logout as logoutSession } from "@/services/authStore";
 
 const menuGroups = [
   {
@@ -152,9 +153,7 @@ export default function DashboardLayout() {
   }, [location.pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    navigate("/");
+    logoutSession().finally(() => navigate("/"));
   };
 
   const toggleGroup = (groupKey) => {

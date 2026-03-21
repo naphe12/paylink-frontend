@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/services/api";
+import { getAccessToken } from "@/services/authStore";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
 function getAuthToken() {
-  const raw = localStorage.getItem("token") || localStorage.getItem("access_token");
-  return raw && raw !== "null" && raw !== "undefined" ? raw : null;
+  return getAccessToken();
 }
 
 const SCORE_PRESETS = [
