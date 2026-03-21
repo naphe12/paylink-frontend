@@ -11,9 +11,8 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import { fetchPublicApi } from "@/services/api";
 import { getRoleDashboardPath } from "@/utils/roleRoutes";
-
-const API_URL = import.meta.env.VITE_API_URL;
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -39,7 +38,10 @@ export default function AuthPage() {
   useEffect(() => {
     const fetchCountries = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/countries/`);
+        const res = await fetchPublicApi("/api/countries/", {
+          method: "GET",
+          headers: { Accept: "application/json" },
+        });
         if (!res.ok) throw new Error("Erreur de chargement des pays");
         const data = await res.json();
         const list = data.countries || data;
@@ -76,7 +78,7 @@ export default function AuthPage() {
       formData.append("username", identifier);
       formData.append("password", password);
 
-      const res = await fetch(`${API_URL}/auth/login`, {
+      const res = await fetchPublicApi("/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formData.toString(),
@@ -120,7 +122,7 @@ export default function AuthPage() {
     const phone = e.target.phone.value;
 
     try {
-      const res = await fetch(`${API_URL}/auth/register`, {
+      const res = await fetchPublicApi("/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

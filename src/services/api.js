@@ -78,12 +78,16 @@ export function getConfiguredApiFallbackUrl() {
   return API_FALLBACK_URL;
 }
 
-function getApiBases() {
+export function getConfiguredApiBases() {
   const bases = [API_URL, API_FALLBACK_URL].filter(Boolean);
   if (bases.length > 0) {
     return [...new Set(bases)];
   }
   return [""];
+}
+
+function getApiBases() {
+  return getConfiguredApiBases();
 }
 
 function buildTarget(base, path) {
@@ -107,6 +111,10 @@ async function fetchWithFallback(path, options) {
   const error = lastErr || new Error("Failed to fetch");
   error.__triedTargets = tried;
   throw error;
+}
+
+export async function fetchPublicApi(path, options = {}) {
+  return fetchWithFallback(path, options);
 }
 
 function isHtmlResponse(res) {

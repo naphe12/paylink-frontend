@@ -2,8 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { fetchPublicApi } from "@/services/api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -19,7 +18,7 @@ export default function ForgotPassword() {
     setError("");
 
     try {
-      const res = await fetch(`${API_URL}/auth/forgot-password`, {
+      const res = await fetchPublicApi("/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
