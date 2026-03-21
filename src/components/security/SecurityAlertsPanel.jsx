@@ -1,12 +1,13 @@
 // src/components/security/SecurityAlertsPanel.jsx
 import { useEffect, useState, useRef } from "react";
+import { resolveWsUrl } from "@/services/ws";
 
 export default function SecurityAlertsPanel() {
   const [events, setEvents] = useState([]);
   const wsRef = useRef(null);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://127.0.0.1:8000/ws/security");
+    const ws = new WebSocket(resolveWsUrl("/ws/security"));
     wsRef.current = ws;
 
     ws.onmessage = (e) => {

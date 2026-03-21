@@ -1,6 +1,7 @@
 // src/components/NotificationBell.jsx
 import { useEffect, useState, useRef } from "react";
 import { Bell } from "lucide-react";
+import { resolveWsUrl } from "@/services/ws";
 
 export default function NotificationBell() {
   const [messages, setMessages] = useState([]);
@@ -14,7 +15,7 @@ export default function NotificationBell() {
     if (!token) return;
 
     // ✅ Connexion WebSocket
-    const ws = new WebSocket(`ws://127.0.0.1:8000/ws/notifications?token=${token}`);
+    const ws = new WebSocket(`${resolveWsUrl("/ws/notifications")}?token=${token}`);
     wsRef.current = ws;
 
     ws.onopen = () => console.log("✅ Connecté au WebSocket PesaPaid");

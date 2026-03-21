@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useToast } from "@/components/Toast";
+import { resolveWsUrl } from "@/services/ws";
 
-const WS_URL =
-  import.meta.env.VITE_WS_URL || "ws://127.0.0.1:8000/ws/notifications";
+const WS_URL = resolveWsUrl("/ws/notifications");
 
 /**
  * Se connecte au WS, réessaie avec backoff, affiche des toasts en fonction des événements.

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { resolveWsUrl } from "@/services/ws";
 
 export default function useTontineWS(tontineId, onMessage) {
   useEffect(() => {
@@ -8,7 +9,7 @@ export default function useTontineWS(tontineId, onMessage) {
     if (!token) return;
 
     const ws = new WebSocket(
-      `ws://127.0.0.1:8000/ws/tontine/${tontineId}?token=${token}`
+      `${resolveWsUrl(`/ws/tontine/${tontineId}`)}?token=${token}`
     );
 
     ws.onmessage = (event) => {
