@@ -1,6 +1,59 @@
 // src/services/api.js
-const API_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
-const API_FALLBACK_URL = (import.meta.env.VITE_API_FALLBACK_URL || "").trim().replace(/\/+$/, "");
+const RAW_API_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
+const RAW_API_FALLBACK_URL = (import.meta.env.VITE_API_FALLBACK_URL || "").trim().replace(/\/+$/, "");
+const PROD_API_URL = "https://api.pesapaid.com";
+const LEGACY_RAILWAY_API_URL = "https://web-production-448ce.up.railway.app";
+
+function getRuntimePreferredApiUrl() {
+  if (typeof window === "undefined") return "";
+  const host = String(window.location.hostname || "").toLowerCase();
+  if (
+    host === "pesapaid.com" ||
+    host === "www.pesapaid.com" ||
+    host === "app.pesapaid.com"
+  ) {
+    return PROD_API_URL;
+  }
+  return "";
+}
+
+function resolveApiConfig() {
+  const preferred = getRuntimePreferredApiUrl();
+  if (!preferred) {
+    return {
+      apiUrl: RAW_API_URL,
+      fallbackApiUrl: RAW_API_FALLBACK_URL,
+    };
+  }
+
+  if (!RAW_API_URL) {
+    return {
+      apiUrl: preferred,
+      fallbackApiUrl: RAW_API_FALLBACK_URL || LEGACY_RAILWAY_API_URL,
+    };
+  }
+
+  if (RAW_API_URL === preferred) {
+    return {
+      apiUrl: RAW_API_URL,
+      fallbackApiUrl: RAW_API_FALLBACK_URL || LEGACY_RAILWAY_API_URL,
+    };
+  }
+
+  if (RAW_API_URL === LEGACY_RAILWAY_API_URL) {
+    return {
+      apiUrl: preferred,
+      fallbackApiUrl: RAW_API_FALLBACK_URL || RAW_API_URL,
+    };
+  }
+
+  return {
+    apiUrl: RAW_API_URL,
+    fallbackApiUrl: RAW_API_FALLBACK_URL,
+  };
+}
+
+const { apiUrl: API_URL, fallbackApiUrl: API_FALLBACK_URL } = resolveApiConfig();
 
 export function getConfiguredApiUrl() {
   return API_URL;
