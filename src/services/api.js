@@ -3,6 +3,8 @@ const RAW_API_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, 
 const RAW_API_FALLBACK_URL = (import.meta.env.VITE_API_FALLBACK_URL || "").trim().replace(/\/+$/, "");
 const PROD_API_URL = "https://api.pesapaid.com";
 const LEGACY_RAILWAY_API_URL = "https://web-production-448ce.up.railway.app";
+const API_FAILURE_TTL_MS = 5 * 60 * 1000;
+const API_FAILURE_KEY_PREFIX = "api-failure:";
 
 function getRuntimePreferredApiUrl() {
   if (typeof window === "undefined") return "";
@@ -81,7 +83,17 @@ export function getConfiguredApiFallbackUrl() {
 export function getConfiguredApiBases() {
   const bases = [API_URL, API_FALLBACK_URL].filter(Boolean);
   if (bases.length > 0) {
-    return [...new Set(bases)];
+    const uniqueBases = [...new Set(bases)];
+    const healthyBases = [];
+    const unhealthyBases = [];
+    for (const base of uniqueBases) {
+      if (isApiTemporarilyUnhealthy(base)) {
+        unhealthyBases.push(base);
+      } else {
+        healthyBases.push(base);
+      }
+    }
+    return [...healthyBases, ...unhealthyBases];
   }
   return [""];
 }
@@ -95,6 +107,39 @@ function buildTarget(base, path) {
   return `${base}${path}`;
 }
 
+function getFailureStorageKey(base) {
+  return `${API_FAILURE_KEY_PREFIX}${base}`;
+}
+
+function markApiFailure(base) {
+  if (!base || typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(getFailureStorageKey(base), String(Date.now()));
+  } catch {}
+}
+
+function clearApiFailure(base) {
+  if (!base || typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(getFailureStorageKey(base));
+  } catch {}
+}
+
+function isApiTemporarilyUnhealthy(base) {
+  if (!base || typeof window === "undefined") return false;
+  try {
+    const raw = window.sessionStorage.getItem(getFailureStorageKey(base));
+    if (!raw) return false;
+    const failedAt = Number(raw);
+    if (!Number.isFinite(failedAt)) return false;
+    if (Date.now() - failedAt < API_FAILURE_TTL_MS) {
+      return true;
+    }
+    clearApiFailure(base);
+  } catch {}
+  return false;
+}
+
 async function fetchWithFallback(path, options) {
   const tried = [];
   let lastErr = null;
@@ -103,8 +148,10 @@ async function fetchWithFallback(path, options) {
     tried.push(target);
     try {
       const response = await fetch(target, options);
+      clearApiFailure(base);
       return response;
     } catch (err) {
+      markApiFailure(base);
       lastErr = err;
     }
   }
