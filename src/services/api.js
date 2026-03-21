@@ -19,6 +19,21 @@ function getRuntimePreferredApiUrl() {
 
 function resolveApiConfig() {
   const preferred = getRuntimePreferredApiUrl();
+  const shouldForceProdApi =
+    preferred === PROD_API_URL ||
+    RAW_API_URL === LEGACY_RAILWAY_API_URL ||
+    RAW_API_FALLBACK_URL === PROD_API_URL;
+
+  if (shouldForceProdApi) {
+    return {
+      apiUrl: PROD_API_URL,
+      fallbackApiUrl:
+        RAW_API_URL && RAW_API_URL !== PROD_API_URL
+          ? RAW_API_URL
+          : RAW_API_FALLBACK_URL || LEGACY_RAILWAY_API_URL,
+    };
+  }
+
   if (!preferred) {
     return {
       apiUrl: RAW_API_URL,
