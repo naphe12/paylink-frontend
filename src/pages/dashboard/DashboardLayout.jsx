@@ -176,7 +176,7 @@ export default function DashboardLayout() {
         <p className="text-xs uppercase tracking-[0.35em] text-white/60">PesaPaid</p>
         <h1 className="text-2xl font-semibold mt-3 flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-md">
-            <img src="/logo.png" alt="PesaPaid" className="h-full w-full rounded-[1rem] object-cover scale-125" />
+            <img src="/apple-touch-icon.png?v=1" alt="PesaPaid" className="h-full w-full rounded-[1rem] object-cover scale-125" />
           </span>
           Tableau client
         </h1>
@@ -237,7 +237,7 @@ export default function DashboardLayout() {
       <div className="lg:hidden fixed top-0 left-0 w-full bg-gradient-to-r from-indigo-950 to-indigo-800 text-white flex items-center justify-between px-4 py-3 shadow-lg z-30">
         <div className="flex items-center gap-2">
           <span className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-md">
-            <img src="/logo.png" alt="PesaPaid" className="h-full w-full rounded-[1rem] object-cover scale-125" />
+            <img src="/apple-touch-icon.png?v=1" alt="PesaPaid" className="h-full w-full rounded-[1rem] object-cover scale-125" />
           </span>
           <h1 className="text-lg font-semibold drop-shadow">PesaPaid</h1>
         </div>

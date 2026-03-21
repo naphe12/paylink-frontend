@@ -16,7 +16,7 @@ export default function Hero() {
         onClick={() => navigate("/")} // Retour à l’accueil
       >
         <motion.img
-          src="/logo.png"
+          src="/apple-touch-icon.png?v=1"
           alt="PesaPaid"
           animate={{ rotate: [0, 360] }}
           transition={{ repeat: Infinity, duration: 10, ease: "linear" }}

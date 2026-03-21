@@ -2,7 +2,7 @@ export default function Navbar() {
   return (
     <nav className="flex justify-between items-center px-8 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
       <div className="flex items-center gap-2 text-2xl font-bold text-indigo-600">
-        <img src="/logo.png" alt="PesaPaid" className="h-10 w-10 rounded-2xl object-cover scale-125" />
+        <img src="/apple-touch-icon.png?v=1" alt="PesaPaid" className="h-10 w-10 rounded-2xl object-cover scale-125" />
         <span>PesaPaid</span>
       </div>
 

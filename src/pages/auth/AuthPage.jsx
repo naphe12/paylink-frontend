@@ -176,7 +176,7 @@ export default function AuthPage() {
           💫
         </motion.div>
         <img
-          src="/logo.png"
+          src="/apple-touch-icon.png?v=1"
           alt="PesaPaid"
           className="mx-auto mb-4 h-16 w-16 rounded-2xl object-cover scale-125"
         />
