@@ -11,14 +11,20 @@ export default function CashInPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const idemKeyRef = useRef(null);
+  const selectedUser = users.find((u) => u.user_id === selectedUserId) || null;
+  const selectedCurrency = selectedUser?.currency_code || "EUR";
 
   useEffect(() => {
     const loadUsers = async () => {
       try {
         const data = await api.searchAgentCashUsers(userQuery, 30);
         setUsers(Array.isArray(data) ? data : []);
+        setSelectedUserId((prev) =>
+          Array.isArray(data) && data.some((u) => u.user_id === prev) ? prev : ""
+        );
       } catch {
         setUsers([]);
+        setSelectedUserId("");
       }
     };
     loadUsers();
@@ -71,15 +77,21 @@ export default function CashInPage() {
         <option value="">-- selectionner un user --</option>
         {users.map((u) => (
           <option key={u.user_id} value={u.user_id}>
-            {u.full_name || "Sans nom"} - {u.email || "-"} - {u.phone_e164 || "-"}
+            {u.full_name || "Sans nom"}
           </option>
         ))}
       </select>
 
+      {selectedUser ? (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          Devise du client: <span className="font-semibold">{selectedCurrency}</span>
+        </div>
+      ) : null}
+
       <input
         type="number"
         className="input w-full"
-        placeholder="Montant"
+        placeholder={`Montant (${selectedCurrency})`}
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
       />

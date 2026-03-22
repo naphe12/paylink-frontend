@@ -2,12 +2,41 @@ import { useEffect, useState } from "react";
 import { Info, Send } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
-import api from "@/services/api";
+import api, { fetchPublicApi } from "@/services/api";
 
 const PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
 
 function normalizeRecipientPhone(value) {
   return String(value || "").replace(/[^\d+]/g, "");
+}
+
+function getCountryName(country) {
+  return String(country?.name || country?.caption || "").trim();
+}
+
+function getCountryCurrency(country) {
+  return String(country?.currency_code || country?.currency || "EUR").toUpperCase();
+}
+
+function buildDestinationOptions(countries, currentValue = "") {
+  const normalizedCurrent = String(currentValue || "").trim();
+  const options = countries
+    .map((country) => ({
+      value: getCountryName(country),
+      label: getCountryName(country),
+      currency: getCountryCurrency(country),
+    }))
+    .filter((option) => option.value);
+
+  if (normalizedCurrent && !options.some((option) => option.value === normalizedCurrent)) {
+    options.unshift({
+      value: normalizedCurrent,
+      label: normalizedCurrent,
+      currency: "EUR",
+    });
+  }
+
+  return options;
 }
 
 function beneficiaryOptionValue(beneficiary) {
@@ -20,10 +49,11 @@ function beneficiaryOptionValue(beneficiary) {
 }
 
 export default function ExternalTransferPage() {
+  const [countries, setCountries] = useState([]);
   const [form, setForm] = useState({
     recipient_name: "",
     recipient_phone: "",
-    country_destination: "Burundi",
+    country_destination: "",
     partner_name: PARTNERS[0],
     amount: "",
   });
@@ -41,6 +71,10 @@ export default function ExternalTransferPage() {
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [submitIdempotencyKey, setSubmitIdempotencyKey] = useState("");
   const totalAvailable = availableBalance + creditAvailable;
+  const destinationOptions = buildDestinationOptions(countries, form.country_destination);
+
+  const getDestinationCurrency = (countryName) =>
+    destinationOptions.find((option) => option.value === countryName)?.currency || "EUR";
 
   useEffect(() => {
     if (!form.amount || isNaN(form.amount) || rate === 0) {
@@ -57,7 +91,7 @@ export default function ExternalTransferPage() {
   const loadRate = async () => {
     try {
       setLoadError("");
-      const dest = form.country_destination === "Burundi" ? "BIF" : form.country_destination;
+      const dest = getDestinationCurrency(form.country_destination);
       const res = await api.getExchangeRate("EUR", dest);
       if (res?.rate) setRate(Number(res.rate));
       if (res?.fees_percent !== undefined && res?.fees_percent !== null) {
@@ -88,17 +122,44 @@ export default function ExternalTransferPage() {
     }
   };
 
-  useEffect(() => {
-    loadRate();
-  }, [form.country_destination]);
+  const loadCountries = async () => {
+    try {
+      setLoadError("");
+      const res = await fetchPublicApi("/api/countries/", {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) throw new Error("Impossible de charger les pays.");
+      const data = await res.json();
+      const list = Array.isArray(data?.countries) ? data.countries : Array.isArray(data) ? data : [];
+      setCountries(list);
+      setForm((prev) => {
+        if (prev.country_destination) return prev;
+        const firstCountryName = getCountryName(list[0]);
+        return {
+          ...prev,
+          country_destination: firstCountryName || "",
+        };
+      });
+    } catch (err) {
+      setLoadError(err?.message || "Impossible de charger les pays.");
+    }
+  };
 
   useEffect(() => {
+    if (form.country_destination) {
+      loadRate();
+    }
+  }, [form.country_destination, countries.length]);
+
+  useEffect(() => {
+    loadCountries();
     loadBeneficiaries();
     loadFinancialCapacity();
   }, []);
 
   const retryLoad = async () => {
-    await Promise.allSettled([loadRate(), loadBeneficiaries(), loadFinancialCapacity()]);
+    await Promise.allSettled([loadCountries(), loadRate(), loadBeneficiaries(), loadFinancialCapacity()]);
   };
 
   const handleChange = (e) => {
@@ -172,7 +233,7 @@ export default function ExternalTransferPage() {
       setForm({
         recipient_name: "",
         recipient_phone: "",
-        country_destination: "Burundi",
+        country_destination: destinationOptions[0]?.value || "",
         partner_name: PARTNERS[0],
         amount: "",
       });
@@ -206,7 +267,7 @@ export default function ExternalTransferPage() {
           </p>
           <p className="text-[13px] text-blue-700">
             Montant recu estime: <span className="font-semibold">{recipientAmount.toFixed(2)} </span>
-            {form.country_destination === "Burundi" ? "BIF" : form.country_destination}
+            {getDestinationCurrency(form.country_destination)}
           </p>
         </div>
       </div>
@@ -275,9 +336,11 @@ export default function ExternalTransferPage() {
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
             >
-              <option value="Burundi">Burundi</option>
-              <option value="Rwanda">Rwanda</option>
-              <option value="DRC">RD Congo</option>
+              {destinationOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -324,7 +387,7 @@ export default function ExternalTransferPage() {
           <div className="flex justify-between">
             <span>Montant recu estime</span>
             <span className="font-semibold">
-              {recipientAmount.toFixed(2)} {form.country_destination === "Burundi" ? "BIF" : form.country_destination}
+              {recipientAmount.toFixed(2)} {getDestinationCurrency(form.country_destination)}
             </span>
           </div>
         </div>
