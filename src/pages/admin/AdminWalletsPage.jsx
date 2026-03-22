@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "@/services/api";
+import { formatWalletOperationLabel, inferWalletEntryIsCredit } from "@/utils/walletHistory";
 
 const DEFAULT_HISTORY_FILTERS = { limit: 25, search: "" };
 
@@ -401,19 +402,9 @@ export default function AdminWalletsPage() {
                     </tr>
                   ) : (
                     history.map((entry) => {
-                      const direction = (entry.direction || "").toLowerCase();
-                      const operation = (entry.operation_type || "").toLowerCase();
                       const amountNum = Number(entry.amount);
                       const amountAbs = Math.abs(amountNum);
-                      const isDepositOp =
-                        operation.includes("deposit") ||
-                        operation.includes("cash_request") ||
-                        operation.includes("wallet_cash_request");
-                      const isCredit =
-                        direction === "credit" ||
-                        direction === "in" ||
-                        isDepositOp ||
-                        amountNum >= 0;
+                      const isCredit = inferWalletEntryIsCredit(entry);
 
                       return (
                         <tr key={entry.transaction_id} className="border-t">
@@ -421,7 +412,9 @@ export default function AdminWalletsPage() {
                             {new Date(entry.created_at).toLocaleString()}
                           </td>
                           <td className="p-2">
-                            <div className="font-medium">{entry.operation_type}</div>
+                            <div className="font-medium">
+                              {formatWalletOperationLabel(entry.operation_type)}
+                            </div>
                             <div className="text-xs text-slate-500">{entry.description}</div>
                           </td>
                           <td className="p-2">

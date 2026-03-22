@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "@/services/api";
 import { History, RefreshCw } from "lucide-react";
+import { formatWalletOperationLabel, inferWalletEntryIsCredit } from "@/utils/walletHistory";
 
 const DEFAULT_FILTERS = { limit: 20, search: "" };
 
@@ -124,14 +125,14 @@ export default function WalletHistoryTable({
             ) : (
               entries.map((entry) => {
                 const amount = Number(entry.amount || 0);
-                const isCredit = amount > 0;
+                const isCredit = inferWalletEntryIsCredit(entry);
                 return (
                   <tr key={entry.transaction_id || entry.tx_id} className="border-t">
                     <td className="p-2 text-slate-600">
                       {new Date(entry.created_at).toLocaleString()}
                     </td>
                     <td className="p-2 font-medium">
-                      {entry.operation_type || "-"}
+                      {formatWalletOperationLabel(entry.operation_type)}
                       <p className="text-xs text-slate-400">{entry.description}</p>
                     </td>
                     <td className="p-2">

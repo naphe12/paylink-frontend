@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Coins, CreditCard, Search, Users, Wallet } from "lucide-react";
 import api from "@/services/api";
+import { formatWalletOperationLabel, inferWalletEntryIsCredit } from "@/utils/walletHistory";
 
 const DEFAULT_HISTORY_FILTERS = { limit: 25, search: "" };
 
@@ -453,10 +454,8 @@ export default function AdminClientWalletPage() {
                           </tr>
                         ) : (
                           history.map((entry) => {
-                            const direction = String(entry.direction || "").toLowerCase();
                             const amountNum = Number(entry.amount || 0);
-                            const isCredit =
-                              direction === "credit" || direction === "in" || amountNum >= 0;
+                            const isCredit = inferWalletEntryIsCredit(entry);
 
                             return (
                               <tr key={entry.transaction_id} className="border-t border-slate-100">
@@ -465,7 +464,7 @@ export default function AdminClientWalletPage() {
                                 </td>
                                 <td className="p-3">
                                   <p className="font-medium text-slate-900">
-                                    {entry.operation_type || "-"}
+                                    {formatWalletOperationLabel(entry.operation_type)}
                                   </p>
                                   <p className="text-xs text-slate-500">{entry.description || "-"}</p>
                                 </td>
