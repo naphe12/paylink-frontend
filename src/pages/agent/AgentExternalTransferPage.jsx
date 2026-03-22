@@ -399,9 +399,9 @@ export default function AgentExternalTransferPage() {
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <div className="space-y-5">
-              <div>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+            <div className="space-y-5 xl:col-span-6">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <label className="block text-sm font-semibold mb-1">Client</label>
                 <input
                   type="text"
@@ -424,7 +424,7 @@ export default function AgentExternalTransferPage() {
                 </select>
               </div>
 
-              <div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <label className="block text-sm font-semibold mb-1">Beneficiaire enregistre</label>
                 <select
                   value={selectedBeneficiary}
@@ -449,97 +449,124 @@ export default function AgentExternalTransferPage() {
                   </p>
                 ) : null}
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-5 xl:col-span-6">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Nom du beneficiaire</label>
+                    <input
+                      type="text"
+                      name="recipient_name"
+                      value={form.recipient_name}
+                      onChange={handleChange}
+                      readOnly={!isManualBeneficiary}
+                      className={`w-full px-3 py-2 border rounded-md text-base ${isManualBeneficiary ? "focus:ring-2 focus:ring-blue-400 focus:outline-none" : "bg-gray-50"}`}
+                      placeholder="Jean Ndayisenga"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Telephone du beneficiaire</label>
+                    <input
+                      type="text"
+                      name="recipient_phone"
+                      value={form.recipient_phone}
+                      onChange={handleChange}
+                      readOnly={!isManualBeneficiary}
+                      className={`w-full px-3 py-2 border rounded-md text-base ${isManualBeneficiary ? "focus:ring-2 focus:ring-blue-400 focus:outline-none" : "bg-gray-50"}`}
+                      placeholder="+257xxxxxxxx"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Pays de destination</label>
+                    <select
+                      name="country_destination"
+                      value={form.country_destination}
+                      onChange={handleChange}
+                      disabled={!isManualBeneficiary}
+                      className={`w-full px-3 py-2 border rounded-md text-base ${isManualBeneficiary ? "focus:ring-2 focus:ring-blue-400 focus:outline-none" : "bg-gray-50"}`}
+                    >
+                      {destinationOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Partenaire</label>
+                    <select
+                      name="partner_name"
+                      value={form.partner_name}
+                      onChange={handleChange}
+                      disabled={!isManualBeneficiary}
+                      className={`w-full px-3 py-2 border rounded-md text-base ${isManualBeneficiary ? "focus:ring-2 focus:ring-blue-400 focus:outline-none" : "bg-gray-50"}`}
+                    >
+                      {PARTNERS.map((partner) => (
+                        <option key={partner} value={partner}>
+                          {partner}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <label className="block text-sm font-semibold mb-1">Montant (EUR)</label>
+              <input
+                type="number"
+                name="amount"
+                value={form.amount}
+                onChange={handleChange}
+                min="1"
+                className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                placeholder="100.00"
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                Frais estimes : {feesAmountEur.toFixed(2)} EUR ({feesPercent || 0}%)
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-sm font-semibold text-slate-900">Execution</p>
+              <div className="mt-4 space-y-3 text-sm text-slate-700">
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Nom du beneficiaire</label>
-                  <input
-                    type="text"
-                    name="recipient_name"
-                    value={form.recipient_name}
-                    onChange={handleChange}
-                    readOnly={!isManualBeneficiary}
-                    className={`w-full px-3 py-2 border rounded-md text-base ${isManualBeneficiary ? "focus:ring-2 focus:ring-blue-400 focus:outline-none" : "bg-gray-50"}`}
-                    placeholder="Jean Ndayisenga"
-                  />
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Mode</p>
+                  <p className="font-semibold text-slate-900">
+                    {isManualBeneficiary ? "Nouveau beneficiaire" : "Beneficiaire existant"}
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Telephone du beneficiaire</label>
-                  <input
-                    type="text"
-                    name="recipient_phone"
-                    value={form.recipient_phone}
-                    onChange={handleChange}
-                    readOnly={!isManualBeneficiary}
-                    className={`w-full px-3 py-2 border rounded-md text-base ${isManualBeneficiary ? "focus:ring-2 focus:ring-blue-400 focus:outline-none" : "bg-gray-50"}`}
-                    placeholder="+257xxxxxxxx"
-                  />
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Destination</p>
+                  <p className="font-semibold text-slate-900">
+                    {form.country_destination || "-"} / {form.partner_name || "-"}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Pays de destination</label>
-                  <select
-                    name="country_destination"
-                    value={form.country_destination}
-                    onChange={handleChange}
-                    disabled={!isManualBeneficiary}
-                    className={`w-full px-3 py-2 border rounded-md text-base ${isManualBeneficiary ? "focus:ring-2 focus:ring-blue-400 focus:outline-none" : "bg-gray-50"}`}
-                  >
-                    {destinationOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Partenaire</label>
-                  <select
-                    name="partner_name"
-                    value={form.partner_name}
-                    onChange={handleChange}
-                    disabled={!isManualBeneficiary}
-                    className={`w-full px-3 py-2 border rounded-md text-base ${isManualBeneficiary ? "focus:ring-2 focus:ring-blue-400 focus:outline-none" : "bg-gray-50"}`}
-                  >
-                    {PARTNERS.map((partner) => (
-                      <option key={partner} value={partner}>
-                        {partner}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-1">Montant (EUR)</label>
-                <input
-                  type="number"
-                  name="amount"
-                  value={form.amount}
-                  onChange={handleChange}
-                  min="1"
-                  className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                  placeholder="100.00"
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  Frais estimes : {feesAmountEur.toFixed(2)} EUR ({feesPercent || 0}%)
-                </p>
-              </div>
-
-              <div className="rounded-xl border bg-slate-50 px-4 py-3 text-sm text-slate-700 space-y-2">
-                <div className="flex justify-between">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+              <p className="text-sm font-semibold text-slate-900">Resume</p>
+              <div className="mt-4 space-y-3 text-sm text-slate-700">
+                <div className="flex items-center justify-between gap-4">
                   <span>Taux applique</span>
                   <span className="font-semibold">{loadingRate ? "..." : rate || "-"}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex items-center justify-between gap-4">
                   <span>Frais</span>
                   <span className="font-semibold">{feesAmountEur.toFixed(2)} EUR ({feesPercent || 0}%)</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex items-center justify-between gap-4">
                   <span>Montant recu estime</span>
                   <span className="font-semibold">
                     {recipientAmount.toFixed(2)} {getDestinationCurrency(form.country_destination)}
