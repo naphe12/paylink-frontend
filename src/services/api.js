@@ -740,6 +740,12 @@ const api = {
     ).toString();
     return this.get(`/admin/errors${query ? `?${query}` : ""}`);
   },
+  async getAdminWalletAnalysis(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/wallet-analysis${query ? `?${query}` : ""}`);
+  },
   async getUnbalancedJournals(limit = 100) {
     const search = new URLSearchParams();
     if (limit) search.append("limit", String(limit));
