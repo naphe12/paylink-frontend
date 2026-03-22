@@ -375,6 +375,14 @@ export default function AppRouter() {
         }
       />
       <Route
+        path="/backoffice/ops/errors"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Navigate to="/dashboard/admin/ops/errors" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/backoffice/notifications"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>

@@ -46,6 +46,15 @@ export default function AgentSidebar() {
         <p className="text-white/70 text-xs mt-2">Cash-in/out & opérations assistées.</p>
       </div>
 
+      <div className="px-6 pt-4">
+        <button
+          onClick={logout}
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition"
+        >
+          <LogOut size={18} /> Deconnexion
+        </button>
+      </div>
+
       <nav className="flex-1 px-4 py-6 space-y-2">
         <NavLink to="dashboard" className={linkClass} end onClick={onNavigate}>
           <Users size={18} /> Tableau agent
