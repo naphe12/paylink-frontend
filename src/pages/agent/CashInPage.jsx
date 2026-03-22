@@ -17,7 +17,7 @@ export default function CashInPage() {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const data = await api.searchAgentCashUsers(userQuery, 30);
+        const data = await api.searchAgentCashUsers(userQuery, 200);
         setUsers(Array.isArray(data) ? data : []);
         setSelectedUserId((prev) =>
           Array.isArray(data) && data.some((u) => u.user_id === prev) ? prev : ""
