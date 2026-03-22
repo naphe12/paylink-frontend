@@ -42,6 +42,7 @@ import AmlEventsPage from "@/pages/admin/AmlEventsPage";
 import KYCReviewPage from "@/pages/admin/KYCReviewPage";
 import RiskMonitorPage from "@/pages/admin/RiskMonitorPage";
 import AdminWalletsPage from "@/pages/admin/AdminWalletsPage";
+import AdminClientWalletPage from "@/pages/admin/AdminClientWalletPage";
 import AdminTransfersPage from "@/pages/admin/AdminTransfersPage";
 import ExternalTransferApprovalsPage from "@/pages/admin/ExternalTransferApprovalsPage";
 import AdminAgentsPage from "@/pages/admin/AdminAgentsPage";
@@ -193,6 +194,7 @@ export default function AppRouter() {
         <Route path="aml" element={<AmlEventsPage />} />
         <Route path="security" element={<SecurityDashboard />} />
         <Route path="wallets" element={<AdminWalletsPage />} />
+        <Route path="client-wallets" element={<AdminClientWalletPage />} />
         <Route path="mobilemoney" element={<MobileMoneyJournalPage />} />
         <Route path="transfers" element={<AdminTransfersPage />} />
         <Route path="financial-summary" element={<AdminFinancialSummaryPage />} />

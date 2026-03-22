@@ -90,6 +90,7 @@ function getGroupForPath(pathname = "") {
   }
   if (
     pathname.includes("/wallets") ||
+    pathname.includes("/client-wallets") ||
     pathname.includes("/mobilemoney") ||
     pathname.includes("/transfers") ||
     pathname.includes("/transfer-approvals") ||
@@ -455,6 +456,9 @@ export default function AdminSidebar() {
           <div className="space-y-2">
             <NavLink to="wallets" className={linkClass} onClick={onNavigate}>
               <Wallet size={18} /> Portefeuilles
+            </NavLink>
+            <NavLink to="client-wallets" className={linkClass} onClick={onNavigate}>
+              <Users size={18} /> Wallets clients
             </NavLink>
             <NavLink to="mobilemoney" className={linkClass} onClick={onNavigate}>
               <Wallet size={18} /> Mobile Money
