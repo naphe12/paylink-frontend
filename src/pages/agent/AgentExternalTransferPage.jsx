@@ -18,6 +18,13 @@ function getCountryCurrency(country) {
   return String(country?.currency_code || country?.currency || "EUR").toUpperCase();
 }
 
+function getDefaultDestinationCountry(countries = []) {
+  const burundi = countries.find(
+    (country) => getCountryName(country).toLowerCase() === "burundi"
+  );
+  return getCountryName(burundi) || getCountryName(countries[0]) || "";
+}
+
 function buildDestinationOptions(countries, currentValue = "") {
   const normalizedCurrent = String(currentValue || "").trim();
   const options = countries
@@ -139,10 +146,9 @@ export default function AgentExternalTransferPage() {
       setCountries(list);
       setForm((prev) => {
         if (prev.country_destination) return prev;
-        const firstCountryName = getCountryName(list[0]);
         return {
           ...prev,
-          country_destination: firstCountryName || "",
+          country_destination: getDefaultDestinationCountry(list),
         };
       });
     } catch (err) {
@@ -193,7 +199,7 @@ export default function AgentExternalTransferPage() {
       setIsManualBeneficiary(false);
       setForm((prev) => ({
         ...EMPTY_FORM,
-        country_destination: prev.country_destination || destinationOptions[0]?.value || "",
+        country_destination: prev.country_destination || getDefaultDestinationCountry(countries),
       }));
       return;
     }
@@ -205,7 +211,7 @@ export default function AgentExternalTransferPage() {
         const list = Array.isArray(data) ? data : [];
         const preferredCountry = getMostFrequentBeneficiaryCountry(
           list,
-          destinationOptions[0]?.value || ""
+          getDefaultDestinationCountry(countries)
         );
         setBeneficiaries(list);
         setSelectedBeneficiary("");
@@ -242,7 +248,7 @@ export default function AgentExternalTransferPage() {
       setIsManualBeneficiary(beneficiaries.length === 0);
       setForm((prev) => ({
         ...EMPTY_FORM,
-        country_destination: prev.country_destination || destinationOptions[0]?.value || "",
+        country_destination: prev.country_destination || getDefaultDestinationCountry(countries),
       }));
       return;
     }
@@ -252,7 +258,7 @@ export default function AgentExternalTransferPage() {
       setForm((prev) => ({
         ...EMPTY_FORM,
         partner_name: prev.partner_name || PARTNERS[0],
-        country_destination: prev.country_destination || destinationOptions[0]?.value || "",
+        country_destination: prev.country_destination || getDefaultDestinationCountry(countries),
       }));
       return;
     }
@@ -349,7 +355,7 @@ export default function AgentExternalTransferPage() {
       });
       setForm((prev) => ({
         ...EMPTY_FORM,
-        country_destination: prev.country_destination || destinationOptions[0]?.value || "",
+        country_destination: prev.country_destination || getDefaultDestinationCountry(countries),
       }));
     } catch (err) {
       setSubmitError(err?.message || "Erreur lors de l'envoi du transfert.");

@@ -18,6 +18,13 @@ function getCountryCurrency(country) {
   return String(country?.currency_code || country?.currency || "EUR").toUpperCase();
 }
 
+function getDefaultDestinationCountry(countries = []) {
+  const burundi = countries.find(
+    (country) => getCountryName(country).toLowerCase() === "burundi"
+  );
+  return getCountryName(burundi) || getCountryName(countries[0]) || "";
+}
+
 function buildDestinationOptions(countries, currentValue = "") {
   const normalizedCurrent = String(currentValue || "").trim();
   const options = countries
@@ -135,10 +142,9 @@ export default function ExternalTransferPage() {
       setCountries(list);
       setForm((prev) => {
         if (prev.country_destination) return prev;
-        const firstCountryName = getCountryName(list[0]);
         return {
           ...prev,
-          country_destination: firstCountryName || "",
+          country_destination: getDefaultDestinationCountry(list),
         };
       });
     } catch (err) {
@@ -233,7 +239,7 @@ export default function ExternalTransferPage() {
       setForm({
         recipient_name: "",
         recipient_phone: "",
-        country_destination: destinationOptions[0]?.value || "",
+        country_destination: getDefaultDestinationCountry(countries),
         partner_name: PARTNERS[0],
         amount: "",
       });
