@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CreditCard, Search, Users, Wallet } from "lucide-react";
+import { Coins, CreditCard, Search, Users, Wallet } from "lucide-react";
 import api from "@/services/api";
 
 const DEFAULT_HISTORY_FILTERS = { limit: 25, search: "" };
@@ -164,6 +164,10 @@ export default function AdminClientWalletPage() {
   }, [selectedWalletId, historyFilters, historyReload]);
 
   const selectedWallet = wallets.find((wallet) => wallet.wallet_id === selectedWalletId) || null;
+  const usdcWallet =
+    wallets.find((wallet) => String(wallet.currency || "").toUpperCase() === "USDC") || null;
+  const usdtWallet =
+    wallets.find((wallet) => String(wallet.currency || "").toUpperCase() === "USDT") || null;
 
   const handleHistorySubmit = (event) => {
     event.preventDefault();
@@ -261,13 +265,35 @@ export default function AdminClientWalletPage() {
             </div>
 
             {summary ? (
-              <div className="mt-5 grid gap-4 md:grid-cols-3">
+              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                 <SummaryCard
                   title="Solde wallet principal"
                   value={`${Number(summary.wallet_available || 0).toLocaleString()} ${summary.wallet_currency || ""}`.trim()}
                   subvalue={`En attente: ${Number(summary.wallet_pending || 0).toLocaleString()} ${summary.wallet_currency || ""}`.trim()}
                   icon={Wallet}
                   tone="blue"
+                />
+                <SummaryCard
+                  title="Wallet USDC"
+                  value={usdcWallet ? `${Number(usdcWallet.available || 0).toLocaleString()} USDC` : "Non cree"}
+                  subvalue={
+                    usdcWallet
+                      ? `En attente: ${Number(usdcWallet.pending || 0).toLocaleString()} USDC`
+                      : "Aucun wallet USDC pour ce client"
+                  }
+                  icon={Coins}
+                  tone="slate"
+                />
+                <SummaryCard
+                  title="Wallet USDT"
+                  value={usdtWallet ? `${Number(usdtWallet.available || 0).toLocaleString()} USDT` : "Non cree"}
+                  subvalue={
+                    usdtWallet
+                      ? `En attente: ${Number(usdtWallet.pending || 0).toLocaleString()} USDT`
+                      : "Aucun wallet USDT pour ce client"
+                  }
+                  icon={Coins}
+                  tone="slate"
                 />
                 <SummaryCard
                   title="Ligne de credit"
