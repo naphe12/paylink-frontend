@@ -34,6 +34,24 @@ function buildDestinationOptions(countries, currentValue = "") {
   return options;
 }
 
+function getMostFrequentBeneficiaryCountry(beneficiaries = [], fallback = "") {
+  const counts = new Map();
+  for (const beneficiary of beneficiaries) {
+    const country = String(beneficiary?.country_destination || "").trim();
+    if (!country) continue;
+    counts.set(country, (counts.get(country) || 0) + 1);
+  }
+  let bestCountry = "";
+  let bestCount = -1;
+  for (const [country, count] of counts.entries()) {
+    if (count > bestCount) {
+      bestCountry = country;
+      bestCount = count;
+    }
+  }
+  return bestCountry || fallback;
+}
+
 const EMPTY_PREFILL = {
   recipient_name: "",
   recipient_phone: "",
@@ -138,12 +156,16 @@ export default function AgentExternalTransferPage() {
       try {
         const data = await api.getExternalBeneficiariesByUser(selectedUser);
         const list = Array.isArray(data) ? data : [];
+        const preferredCountry = getMostFrequentBeneficiaryCountry(
+          list,
+          destinationOptions[0]?.value || ""
+        );
         setBeneficiaries(list);
         setSelectedBeneficiary("");
         setIsManualBeneficiary(list.length === 0);
         setPrefill({
           ...EMPTY_PREFILL,
-          country_destination: destinationOptions[0]?.value || "",
+          country_destination: preferredCountry,
         });
       } catch (err) {
         setError("Impossible de charger les beneficiaires de cet utilisateur.");
