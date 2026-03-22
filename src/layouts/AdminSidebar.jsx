@@ -97,7 +97,8 @@ function getGroupForPath(pathname = "") {
     pathname.includes("/transfer-gains") ||
     pathname.includes("/cash-requests") ||
     pathname.includes("/payment-requests") ||
-    pathname.includes("/ops/liquidity-bif")
+    pathname.includes("/ops/liquidity-bif") ||
+    pathname.includes("/ops/errors")
   ) {
     return "operations";
   }
@@ -480,6 +481,9 @@ export default function AdminSidebar() {
             </NavLink>
             <NavLink to="ops/liquidity-bif" className={linkClass} onClick={onNavigate}>
               <Droplets size={18} /> Liquidite BIF (OPS)
+            </NavLink>
+            <NavLink to="ops/errors" className={linkClass} onClick={onNavigate}>
+              <Activity size={18} /> Erreurs API
             </NavLink>
           </div>
         )}
