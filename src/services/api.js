@@ -790,6 +790,14 @@ const api = {
   async getExternalBeneficiariesByUser(userId) {
     return this.get(`/agent/external/beneficiaries?user_id=${userId}`);
   },
+  async createAgentExternalTransfer(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(
+      "/agent/external/create",
+      payload,
+      idempotencyKey,
+      "agent-external-transfer"
+    );
+  },
   async completeExternalTransfer(transferId) {
     return this.post(`/agent/external/${transferId}/close`, {});
   },
