@@ -8,6 +8,7 @@ import QuickActions from "@/components/QuickActions";
 export default function AdminUsersList() {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectSearch, setSelectSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("active");
   const [deleting, setDeleting] = useState(false);
 
@@ -30,6 +31,11 @@ export default function AdminUsersList() {
     if (!selectedUserId) return users;
     return users.filter((u) => String(u.user_id) === selectedUserId);
   }, [users, selectedUserId]);
+  const filteredSelectUsers = useMemo(() => {
+    const query = selectSearch.trim().toLowerCase();
+    if (!query) return users;
+    return users.filter((u) => String(u.full_name || "").toLowerCase().includes(query));
+  }, [users, selectSearch]);
 
   const handleDelete = async (userId) => {
     if (!window.confirm("Supprimer définitivement cet utilisateur ?")) return;
@@ -140,12 +146,19 @@ export default function AdminUsersList() {
           value={selectedUserId}
           onChange={(e) => setSelectedUserId(e.target.value)}
         >
-          {users.map((user) => (
+          {filteredSelectUsers.map((user) => (
             <option key={user.user_id} value={user.user_id}>
               {user.full_name || user.email || user.user_id}
             </option>
           ))}
         </select>
+        <input
+          type="text"
+          className="border p-2 rounded"
+          placeholder="Filtrer le select par full name"
+          value={selectSearch}
+          onChange={(e) => setSelectSearch(e.target.value)}
+        />
         <select
           className="border p-2 rounded"
           value={statusFilter}

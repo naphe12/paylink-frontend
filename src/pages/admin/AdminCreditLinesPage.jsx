@@ -6,6 +6,7 @@ import api from "@/services/api";
 export default function AdminCreditLinesPage() {
   const [users, setUsers] = useState([]);
   const [userSearch, setUserSearch] = useState("");
+  const [selectSearch, setSelectSearch] = useState("");
   const [lines, setLines] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [detail, setDetail] = useState(null);
@@ -129,6 +130,11 @@ export default function AdminCreditLinesPage() {
     () => users.find((user) => user.user_id === targetUserId) || null,
     [users, targetUserId]
   );
+  const filteredUsers = useMemo(() => {
+    const query = selectSearch.trim().toLowerCase();
+    if (!query) return users;
+    return users.filter((user) => String(user.full_name || "").toLowerCase().includes(query));
+  }, [users, selectSearch]);
 
   const increaseLimit = async (e) => {
     e.preventDefault();
@@ -221,12 +227,19 @@ export default function AdminCreditLinesPage() {
             className="min-w-[280px] rounded-lg border px-3 py-2 text-sm"
           >
             <option value="">Choisir un utilisateur</option>
-            {users.map((user) => (
+            {filteredUsers.map((user) => (
               <option key={user.user_id} value={user.user_id}>
                 {user.full_name || user.email || user.user_id}
               </option>
             ))}
           </select>
+          <input
+            type="text"
+            value={selectSearch}
+            onChange={(e) => setSelectSearch(e.target.value)}
+            placeholder="Filtrer le select par full name"
+            className="rounded-lg border px-3 py-2 text-sm"
+          />
           <input
             type="text"
             value={search}

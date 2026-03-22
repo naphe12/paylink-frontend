@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api, { fetchPublicApi } from "@/services/api";
 import { Send, Info } from "lucide-react";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
@@ -57,6 +57,7 @@ function normalizeRecipientPhone(value) {
 export default function AgentExternalTransferPage() {
   const [countries, setCountries] = useState([]);
   const [users, setUsers] = useState([]);
+  const [userSelectSearch, setUserSelectSearch] = useState("");
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedBeneficiary, setSelectedBeneficiary] = useState("");
@@ -73,6 +74,11 @@ export default function AgentExternalTransferPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const destinationOptions = buildDestinationOptions(countries, prefill.country_destination);
+  const filteredUsers = useMemo(() => {
+    const query = userSelectSearch.trim().toLowerCase();
+    if (!query) return users;
+    return users.filter((u) => String(u.full_name || "").toLowerCase().includes(query));
+  }, [users, userSelectSearch]);
 
   const getDestinationCurrency = (countryName) =>
     destinationOptions.find((option) => option.value === countryName)?.currency || "EUR";
@@ -299,13 +305,20 @@ export default function AgentExternalTransferPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <label className="block text-sm font-semibold mb-1">Utilisateur</label>
+            <input
+              type="text"
+              value={userSelectSearch}
+              onChange={(e) => setUserSelectSearch(e.target.value)}
+              className="w-full px-3 py-2 mb-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              placeholder="Rechercher par full name"
+            />
             <select
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
               className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
             >
               <option value="">-- Selectionner un utilisateur --</option>
-              {users.map((u) => (
+              {filteredUsers.map((u) => (
                 <option key={u.user_id} value={u.user_id}>
                   {u.full_name || "Utilisateur"}
                 </option>

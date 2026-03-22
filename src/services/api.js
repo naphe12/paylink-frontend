@@ -171,10 +171,43 @@ function isHtmlResponse(res) {
   return contentType.includes("text/html");
 }
 
+const MOJIBAKE_PATTERN = /(?:Ã.|Â.|â.|ð)/;
+
+function repairLikelyMojibake(value) {
+  if (typeof value !== "string" || !MOJIBAKE_PATTERN.test(value)) {
+    return value;
+  }
+  try {
+    const bytes = Uint8Array.from(Array.from(value, (ch) => ch.charCodeAt(0) & 0xff));
+    const repaired = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    if (!repaired || repaired === value) {
+      return value;
+    }
+    const originalNoise = (value.match(MOJIBAKE_PATTERN) || []).length;
+    const repairedNoise = (repaired.match(MOJIBAKE_PATTERN) || []).length;
+    return repairedNoise < originalNoise ? repaired : value;
+  } catch {
+    return value;
+  }
+}
+
+function normalizeApiPayload(value) {
+  if (Array.isArray(value)) {
+    return value.map(normalizeApiPayload);
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [key, normalizeApiPayload(nestedValue)])
+    );
+  }
+  return repairLikelyMojibake(value);
+}
+
 async function parseJsonOrThrow(res, path, method = "GET") {
   const contentType = res.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
-    return res.json();
+    const payload = await res.json();
+    return normalizeApiPayload(payload);
   }
   const text = await res.text();
   throw new Error(
@@ -188,7 +221,7 @@ async function readErrorMessage(res, path, method = "GET") {
   const contentType = res.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
     try {
-      const payload = await res.json();
+      const payload = normalizeApiPayload(await res.json());
       const requestIdPayload = payload?.request_id;
       const requestId = requestIdPayload || requestIdHeader;
       const requestIdSuffix = requestId ? ` [request_id=${requestId}]` : "";

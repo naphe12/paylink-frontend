@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api from "@/services/api";
 
@@ -11,8 +11,14 @@ export default function CashInPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const idemKeyRef = useRef(null);
+  const [selectSearch, setSelectSearch] = useState("");
   const selectedUser = users.find((u) => u.user_id === selectedUserId) || null;
   const selectedCurrency = selectedUser?.currency_code || "EUR";
+  const filteredUsers = useMemo(() => {
+    const query = selectSearch.trim().toLowerCase();
+    if (!query) return users;
+    return users.filter((u) => String(u.full_name || "").toLowerCase().includes(query));
+  }, [users, selectSearch]);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -75,12 +81,20 @@ export default function CashInPage() {
         onChange={(e) => setSelectedUserId(e.target.value)}
       >
         <option value="">-- selectionner un user --</option>
-        {users.map((u) => (
+        {filteredUsers.map((u) => (
           <option key={u.user_id} value={u.user_id}>
             {u.full_name || "Sans nom"}
           </option>
         ))}
       </select>
+
+      <input
+        type="text"
+        className="input w-full"
+        placeholder="Filtrer le select par full name"
+        value={selectSearch}
+        onChange={(e) => setSelectSearch(e.target.value)}
+      />
 
       {selectedUser ? (
         <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">

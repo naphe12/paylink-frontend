@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, RefreshCcw, X } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
@@ -42,6 +42,7 @@ export default function CashRequestsPage() {
   const [userQuery, setUserQuery] = useState("");
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectSearch, setSelectSearch] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [error, setError] = useState("");
   const directDepositIdemRef = useRef(null);
@@ -53,6 +54,11 @@ export default function CashRequestsPage() {
   const criticalPendingCount = requests.filter(
     (item) => item.status === "pending" && getAgeHours(item.created_at) >= 6
   ).length;
+  const filteredUsers = useMemo(() => {
+    const query = selectSearch.trim().toLowerCase();
+    if (!query) return users;
+    return users.filter((u) => String(u.full_name || "").toLowerCase().includes(query));
+  }, [users, selectSearch]);
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -230,12 +236,18 @@ export default function CashRequestsPage() {
             className="mt-2 border rounded-lg px-3 py-2 text-sm w-full"
           >
             <option value="">-- selectionner --</option>
-            {users.map((u) => (
+            {filteredUsers.map((u) => (
               <option key={u.user_id} value={u.user_id}>
                 {u.full_name || "Sans nom"} - {u.email || "-"} - {u.phone_e164 || "-"}
               </option>
             ))}
           </select>
+          <input
+            value={selectSearch}
+            onChange={(e) => setSelectSearch(e.target.value)}
+            placeholder="Filtrer le select par full name"
+            className="mt-2 border rounded-lg px-3 py-2 text-sm w-full"
+          />
           <div className="mt-2 flex gap-2">
             <input
               type="number"

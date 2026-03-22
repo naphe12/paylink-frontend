@@ -18,6 +18,7 @@ export default function AdminTontineCreatePage() {
   });
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
+  const [ownerSelectSearch, setOwnerSelectSearch] = useState("");
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -32,6 +33,11 @@ export default function AdminTontineCreatePage() {
       Number(form.amount_per_member) > 0,
     [form]
   );
+  const filteredOwnerUsers = useMemo(() => {
+    const query = ownerSelectSearch.trim().toLowerCase();
+    if (!query) return users;
+    return users.filter((u) => String(u.full_name || "").toLowerCase().includes(query));
+  }, [users, ownerSelectSearch]);
 
   const loadUsers = async (query = "") => {
     setLoadingUsers(true);
@@ -186,6 +192,13 @@ export default function AdminTontineCreatePage() {
 
           <div>
             <label className="block text-sm font-medium text-slate-700">Owner (utilisateur créateur)</label>
+            <input
+              type="text"
+              value={ownerSelectSearch}
+              onChange={(e) => setOwnerSelectSearch(e.target.value)}
+              className="mt-1 w-full rounded-lg border px-3 py-2"
+              placeholder="Rechercher par full name"
+            />
             <select
               name="owner_user"
               value={form.owner_user}
@@ -194,7 +207,7 @@ export default function AdminTontineCreatePage() {
               required
             >
               <option value="">Choisir un utilisateur</option>
-              {users.map((u) => (
+              {filteredOwnerUsers.map((u) => (
                 <option key={u.user_id} value={u.user_id}>
                   {u.full_name || u.email || u.user_id}
                 </option>
