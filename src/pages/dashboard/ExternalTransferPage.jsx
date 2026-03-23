@@ -18,6 +18,13 @@ function getCountryCurrency(country) {
   return String(country?.currency_code || country?.currency || "EUR").toUpperCase();
 }
 
+function normalizeSourceCurrency(value) {
+  const raw = String(value || "EUR").trim().toUpperCase();
+  if (raw === "CFA") return "XOF";
+  if (raw === "FCFA") return "XAF";
+  return raw;
+}
+
 function getDefaultDestinationCountry(countries = []) {
   const burundi = countries.find(
     (country) => getCountryName(country).toLowerCase() === "burundi"
@@ -128,25 +135,36 @@ export default function ExternalTransferPage() {
   const loadRate = async () => {
     try {
       setLoadError("");
+      setRate(0);
+      setFeesPercent(0);
       const dest = getDestinationCurrency(form.country_destination);
-      if (sourceCurrency !== "EUR" && dest === "BIF") {
+      const normalizedSourceCurrency = normalizeSourceCurrency(sourceCurrency);
+      if (normalizedSourceCurrency !== "EUR" && dest === "BIF") {
         const [sourceToEur, eurToDest] = await Promise.all([
-          api.getExchangeRate(sourceCurrency, "EUR"),
+          api.getExchangeRate(normalizedSourceCurrency, "EUR"),
           api.getExchangeRate("EUR", dest),
         ]);
         const chainedRate = Number(sourceToEur?.rate || 0) * Number(eurToDest?.rate || 0);
-        if (chainedRate > 0) setRate(chainedRate);
+        if (!(chainedRate > 0)) {
+          throw new Error("Taux source vers EUR introuvable.");
+        }
+        setRate(chainedRate);
         if (eurToDest?.fees_percent !== undefined && eurToDest?.fees_percent !== null) {
           setFeesPercent(Number(eurToDest.fees_percent));
         }
         return;
       }
-      const res = await api.getExchangeRate(sourceCurrency, dest);
-      if (res?.rate) setRate(Number(res.rate));
+      const res = await api.getExchangeRate(normalizedSourceCurrency, dest);
+      if (!(Number(res?.rate || 0) > 0)) {
+        throw new Error("Taux de change introuvable.");
+      }
+      setRate(Number(res.rate));
       if (res?.fees_percent !== undefined && res?.fees_percent !== null) {
         setFeesPercent(Number(res.fees_percent));
       }
     } catch (err) {
+      setRate(0);
+      setFeesPercent(0);
       setLoadError(err?.message || "Impossible de charger le taux de change.");
     }
   };
@@ -166,7 +184,7 @@ export default function ExternalTransferPage() {
       const data = await api.getFinancialSummary();
       setAvailableBalance(Number(data?.wallet_available || 0));
       setCreditAvailable(Number(data?.credit_available || 0));
-      setSourceCurrency(String(data?.wallet_currency || "EUR").toUpperCase());
+      setSourceCurrency(normalizeSourceCurrency(String(data?.wallet_currency || "EUR")));
     } catch (err) {
       setLoadError(err?.message || "Impossible de charger la capacite de transfert.");
     }

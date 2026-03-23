@@ -18,6 +18,13 @@ function getCountryCurrency(country) {
   return String(country?.currency_code || country?.currency || "EUR").toUpperCase();
 }
 
+function normalizeSourceCurrency(value) {
+  const raw = String(value || "EUR").trim().toUpperCase();
+  if (raw === "CFA") return "XOF";
+  if (raw === "FCFA") return "XAF";
+  return raw;
+}
+
 function getDefaultDestinationCountry(countries = []) {
   const burundi = countries.find(
     (country) => getCountryName(country).toLowerCase() === "burundi"
@@ -113,8 +120,9 @@ export default function AgentExternalTransferPage() {
   const getDestinationCurrency = (countryName) =>
     destinationOptions.find((option) => option.value === countryName)?.currency || "EUR";
 
-  const selectedUserCurrency =
-    users.find((user) => user.user_id === selectedUser)?.currency || "EUR";
+  const selectedUserCurrency = normalizeSourceCurrency(
+    users.find((user) => user.user_id === selectedUser)?.currency || "EUR"
+  );
   const destinationCurrency = getDestinationCurrency(form.country_destination);
   const isBifDestination = destinationCurrency === "BIF";
   const effectiveSourceAmount =
@@ -192,6 +200,8 @@ export default function AgentExternalTransferPage() {
     try {
       setLoadError("");
       setLoadingRate(true);
+      setRate(0);
+      setFeesPercent(0);
       const target = getDestinationCurrency(countryDestination);
       if (selectedUserCurrency !== "EUR" && target === "BIF") {
         const [sourceToEur, eurToDest] = await Promise.all([
@@ -199,18 +209,26 @@ export default function AgentExternalTransferPage() {
           api.getExchangeRate("EUR", target),
         ]);
         const chainedRate = Number(sourceToEur?.rate || 0) * Number(eurToDest?.rate || 0);
-        if (chainedRate > 0) setRate(chainedRate);
+        if (!(chainedRate > 0)) {
+          throw new Error("Taux source vers EUR introuvable.");
+        }
+        setRate(chainedRate);
         if (eurToDest?.fees_percent !== undefined && eurToDest?.fees_percent !== null) {
           setFeesPercent(Number(eurToDest.fees_percent));
         }
       } else {
         const res = await api.getExchangeRate(selectedUserCurrency, target);
-        if (res?.rate) setRate(Number(res.rate));
+        if (!(Number(res?.rate || 0) > 0)) {
+          throw new Error("Taux de change introuvable.");
+        }
+        setRate(Number(res.rate));
         if (res?.fees_percent !== undefined && res?.fees_percent !== null) {
           setFeesPercent(Number(res.fees_percent));
         }
       }
     } catch (err) {
+      setRate(0);
+      setFeesPercent(0);
       setLoadError(err?.message || "Impossible de charger le taux FX pour cette destination.");
     } finally {
       setLoadingRate(false);
