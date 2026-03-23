@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { getAccessToken, logout as logoutSession } from "@/services/authStore";
 import QuickActions from "@/components/QuickActions";
+import { getAdminQuickActions } from "@/constants/adminQuickActions";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 const OPS_ALERT_MUTE_KEY = "ops_alert_muted_until";
@@ -47,51 +48,6 @@ const DEFAULT_COLLAPSED_GROUPS = {
   config: true,
   modeAgent: true,
 };
-
-const GLOBAL_ADMIN_ACTIONS = [
-  {
-    label: "Utilisateurs",
-    description: "Acces direct a la base client",
-    to: "/dashboard/admin/users",
-    icon: Users,
-    className: "border-blue-200 bg-blue-50 hover:bg-blue-100/60",
-  },
-  {
-    label: "Validation cash",
-    description: "Depots et retraits a traiter",
-    to: "/dashboard/admin/cash-requests",
-    icon: Wallet,
-    className: "border-cyan-200 bg-cyan-50 hover:bg-cyan-100/60",
-  },
-  {
-    label: "Transferts",
-    description: "Vue generale des flux externes",
-    to: "/dashboard/admin/transfers",
-    icon: GitPullRequest,
-    className: "border-emerald-200 bg-emerald-50 hover:bg-emerald-100/60",
-  },
-  {
-    label: "Approvals",
-    description: "Transferts en attente de validation",
-    to: "/dashboard/admin/transfer-approvals",
-    icon: ShieldAlert,
-    className: "border-amber-200 bg-amber-50 hover:bg-amber-100/60",
-  },
-  {
-    label: "Lignes de credit",
-    description: "Ajuster les capacites client",
-    to: "/dashboard/admin/credit-lines",
-    icon: CreditCard,
-    className: "border-orange-200 bg-orange-50 hover:bg-orange-100/60",
-  },
-  {
-    label: "Remboursement",
-    description: "Rembourser les clients endettes",
-    to: "/dashboard/admin/credit-lines/repay",
-    icon: BookOpen,
-    className: "border-lime-200 bg-lime-50 hover:bg-lime-100/60",
-  },
-];
 
 function computeOpsLevel(metrics) {
   const unbalanced = Number(metrics?.ledger?.unbalanced_journals || 0);
@@ -692,7 +648,7 @@ export default function AdminSidebar() {
             <QuickActions
               title="Actions rapides admin"
               subtitle="Disponible sur toutes les pages admin."
-              actions={GLOBAL_ADMIN_ACTIONS}
+              actions={getAdminQuickActions()}
             />
           </div>
           <Outlet />
