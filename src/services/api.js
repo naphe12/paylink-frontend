@@ -679,6 +679,13 @@ const api = {
     const query = search.toString();
     return this.get(`/admin/credit-history${query ? `?${query}` : ""}`);
   },
+  async getAdminCreditLineEvents(params = {}) {
+    const search = new URLSearchParams();
+    if (params.user_id) search.append("user_id", params.user_id);
+    if (params.limit) search.append("limit", params.limit);
+    const query = search.toString();
+    return this.get(`/admin/credit-history/events${query ? `?${query}` : ""}`);
+  },
   async getAdminBalanceEvents(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
