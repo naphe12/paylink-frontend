@@ -36,6 +36,7 @@ export default function AdminCreditHistoryPage() {
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [openDetails, setOpenDetails] = useState({});
 
   const loadHistory = async () => {
     try {
@@ -160,8 +161,10 @@ export default function AdminCreditHistoryPage() {
           <div className="grid gap-3">
             {entries.map((entry) => {
               const amount = Number(mode === "events" ? entry.amount_delta : entry.amount);
+              const entryKey = entry.entry_id || entry.event_id;
+              const detailsOpen = !!openDetails[entryKey];
               return (
-                <article key={entry.entry_id || entry.event_id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <article key={entryKey} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
@@ -205,6 +208,15 @@ export default function AdminCreditHistoryPage() {
                           <ArrowLeftRight size={14} />
                           Remboursement
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenDetails((prev) => ({ ...prev, [entryKey]: !prev[entryKey] }))
+                          }
+                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                          {detailsOpen ? "Masquer details" : "Voir details"}
+                        </button>
                       </div>
                     </div>
 
@@ -236,20 +248,22 @@ export default function AdminCreditHistoryPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 text-sm text-slate-600 lg:grid-cols-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-400">Description / Source</p>
-                      <p className="mt-1">{entry.description || entry.source || "-"}</p>
+                  {detailsOpen ? (
+                    <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 text-sm text-slate-600 lg:grid-cols-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Description / Source</p>
+                        <p className="mt-1">{entry.description || entry.source || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Reference</p>
+                        <p className="mt-1 break-all">{entry.transaction_id || entry.event_id || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Ligne</p>
+                        <p className="mt-1 break-all">{entry.credit_line_id || "-"}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-400">Reference</p>
-                      <p className="mt-1 break-all">{entry.transaction_id || entry.event_id || "-"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-400">Ligne</p>
-                      <p className="mt-1 break-all">{entry.credit_line_id || "-"}</p>
-                    </div>
-                  </div>
+                  ) : null}
                 </article>
               );
             })}
