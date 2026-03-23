@@ -63,7 +63,9 @@ export default function ExternalTransferPage() {
     country_destination: "",
     partner_name: PARTNERS[0],
     amount: "",
+    local_amount: "",
   });
+  const [amountMode, setAmountMode] = useState("send_eur");
   const [rate, setRate] = useState(0);
   const [feesPercent, setFeesPercent] = useState(0);
   const [feesAmountEur, setFeesAmountEur] = useState(0);
@@ -83,17 +85,42 @@ export default function ExternalTransferPage() {
   const getDestinationCurrency = (countryName) =>
     destinationOptions.find((option) => option.value === countryName)?.currency || "EUR";
 
+  const destinationCurrency = getDestinationCurrency(form.country_destination);
+  const isBifDestination = destinationCurrency === "BIF";
+  const effectiveEurAmount =
+    amountMode === "receive_local" && isBifDestination
+      ? rate > 0 && form.local_amount
+        ? Number(form.local_amount) / rate
+        : 0
+      : Number(form.amount || 0);
+
   useEffect(() => {
-    if (!form.amount || isNaN(form.amount) || rate === 0) {
+    if (rate === 0) {
       setRecipientAmount(0);
       setFeesAmountEur(0);
       return;
     }
-    const eur = parseFloat(form.amount);
+    const eur =
+      amountMode === "receive_local" && isBifDestination
+        ? Number(form.local_amount || 0) / rate
+        : Number(form.amount || 0);
+    if (!eur || Number.isNaN(eur)) {
+      setRecipientAmount(0);
+      setFeesAmountEur(0);
+      return;
+    }
     const fee = eur * (feesPercent / 100);
     setFeesAmountEur(fee);
-    setRecipientAmount(eur * rate);
-  }, [form.amount, rate, feesPercent]);
+    setRecipientAmount(
+      amountMode === "receive_local" && isBifDestination ? Number(form.local_amount || 0) : eur * rate
+    );
+  }, [form.amount, form.local_amount, rate, feesPercent, amountMode, isBifDestination]);
+
+  useEffect(() => {
+    if (!isBifDestination && amountMode !== "send_eur") {
+      setAmountMode("send_eur");
+    }
+  }, [isBifDestination, amountMode]);
 
   const loadRate = async () => {
     try {
@@ -198,7 +225,7 @@ export default function ExternalTransferPage() {
     setError("");
     setSuccess(null);
 
-    const requestedAmount = Number(form.amount || 0);
+    const requestedAmount = effectiveEurAmount;
     const normalizedPhone = normalizeRecipientPhone(form.recipient_phone);
 
     if (normalizedPhone.length < 8) {
@@ -229,7 +256,7 @@ export default function ExternalTransferPage() {
           country_destination: form.country_destination,
           recipient_name: form.recipient_name,
           recipient_phone: normalizedPhone,
-          amount: form.amount,
+          amount: requestedAmount.toFixed(2),
         },
         idemKey,
         "external-transfer"
@@ -242,6 +269,7 @@ export default function ExternalTransferPage() {
         country_destination: getDefaultDestinationCountry(countries),
         partner_name: PARTNERS[0],
         amount: "",
+        local_amount: "",
       });
       setSelectedBeneficiary("");
       await loadFinancialCapacity();
@@ -273,10 +301,43 @@ export default function ExternalTransferPage() {
           </p>
           <p className="text-[13px] text-blue-700">
             Montant recu estime: <span className="font-semibold">{recipientAmount.toFixed(2)} </span>
-            {getDestinationCurrency(form.country_destination)}
+            {destinationCurrency}
           </p>
+          {isBifDestination ? (
+            <p className="text-[13px] text-blue-700">
+              EUR necessaires: <span className="font-semibold">{effectiveEurAmount.toFixed(2)} EUR</span>
+            </p>
+          ) : null}
         </div>
       </div>
+
+      {isBifDestination ? (
+        <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <label className="block text-sm font-semibold mb-2">Mode de saisie du montant</label>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <label className={`rounded-lg border px-3 py-3 text-sm ${amountMode === "send_eur" ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}`}>
+              <input
+                type="radio"
+                name="amount_mode"
+                className="mr-2"
+                checked={amountMode === "send_eur"}
+                onChange={() => setAmountMode("send_eur")}
+              />
+              Montant a envoyer en EUR
+            </label>
+            <label className={`rounded-lg border px-3 py-3 text-sm ${amountMode === "receive_local" ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}`}>
+              <input
+                type="radio"
+                name="amount_mode"
+                className="mr-2"
+                checked={amountMode === "receive_local"}
+                onChange={() => setAmountMode("receive_local")}
+              />
+              Montant a recevoir en BIF
+            </label>
+          </div>
+        </div>
+      ) : null}
 
       <ApiErrorAlert
         message={loadError}
@@ -366,20 +427,39 @@ export default function ExternalTransferPage() {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold mb-1">Montant (EUR)</label>
-          <input
-            type="number"
-            name="amount"
-            value={form.amount}
-            onChange={handleChange}
-            required
-            min="1"
-            className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            placeholder="100.00"
-          />
-          <p className="text-xs text-slate-500 mt-1">Frais estimes : {feesAmountEur.toFixed(2)} EUR ({feesPercent || 0}%)</p>
-        </div>
+        {amountMode === "receive_local" && isBifDestination ? (
+          <div>
+            <label className="block text-sm font-semibold mb-1">Montant a recevoir (BIF)</label>
+            <input
+              type="number"
+              name="local_amount"
+              value={form.local_amount}
+              onChange={handleChange}
+              required
+              min="1"
+              className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              placeholder="150000"
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              Le beneficiaire recevra {Number(form.local_amount || 0).toFixed(2)} BIF et il faudra {effectiveEurAmount.toFixed(2)} EUR.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-semibold mb-1">Montant (EUR)</label>
+            <input
+              type="number"
+              name="amount"
+              value={form.amount}
+              onChange={handleChange}
+              required
+              min="1"
+              className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              placeholder="100.00"
+            />
+            <p className="text-xs text-slate-500 mt-1">Frais estimes : {feesAmountEur.toFixed(2)} EUR ({feesPercent || 0}%)</p>
+          </div>
+        )}
 
         <div className="rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700 space-y-1">
           <div className="flex justify-between">
@@ -393,9 +473,15 @@ export default function ExternalTransferPage() {
           <div className="flex justify-between">
             <span>Montant recu estime</span>
             <span className="font-semibold">
-              {recipientAmount.toFixed(2)} {getDestinationCurrency(form.country_destination)}
+              {recipientAmount.toFixed(2)} {destinationCurrency}
             </span>
           </div>
+          {isBifDestination ? (
+            <div className="flex justify-between">
+              <span>EUR necessaires</span>
+              <span className="font-semibold">{effectiveEurAmount.toFixed(2)} EUR</span>
+            </div>
+          ) : null}
         </div>
 
         {error && <ApiErrorAlert message={error} />}
