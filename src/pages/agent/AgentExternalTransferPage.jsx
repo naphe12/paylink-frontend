@@ -131,6 +131,7 @@ export default function AgentExternalTransferPage() {
         ? Number(form.local_amount) / rate
         : 0
       : Number(form.amount || 0);
+  const totalDebitSourceAmount = effectiveSourceAmount + feesAmountSource;
 
   useEffect(() => {
     if (rate === 0) {
@@ -203,6 +204,11 @@ export default function AgentExternalTransferPage() {
       setRate(0);
       setFeesPercent(0);
       const target = getDestinationCurrency(countryDestination);
+      if (selectedUserCurrency === "BIF" && target === "BIF") {
+        setRate(1);
+        setFeesPercent(6.25);
+        return;
+      }
       if (selectedUserCurrency !== "EUR" && target === "BIF") {
         const [sourceToEur, eurToDest] = await Promise.all([
           api.getExchangeRate(selectedUserCurrency, "EUR"),
@@ -455,7 +461,7 @@ export default function AgentExternalTransferPage() {
               </p>
               {isBifDestination ? (
                 <p className="text-blue-700">
-                  {selectedUserCurrency} necessaires: <span className="font-semibold">{effectiveSourceAmount.toFixed(2)} {selectedUserCurrency}</span>
+                  {selectedUserCurrency} necessaires: <span className="font-semibold">{totalDebitSourceAmount.toFixed(2)} {selectedUserCurrency}</span>
                 </p>
               ) : null}
             </div>
@@ -638,7 +644,7 @@ export default function AgentExternalTransferPage() {
                     placeholder="150000"
                   />
                   <p className="text-xs text-slate-500 mt-2">
-                    {selectedUserCurrency} necessaires : {effectiveSourceAmount.toFixed(2)} {selectedUserCurrency}
+                    {selectedUserCurrency} necessaires : {totalDebitSourceAmount.toFixed(2)} {selectedUserCurrency}
                   </p>
                 </>
               ) : (
@@ -698,7 +704,7 @@ export default function AgentExternalTransferPage() {
                 {isBifDestination ? (
                   <div className="flex items-center justify-between gap-4">
                     <span>{selectedUserCurrency} necessaires</span>
-                    <span className="font-semibold">{effectiveSourceAmount.toFixed(2)} {selectedUserCurrency}</span>
+                    <span className="font-semibold">{totalDebitSourceAmount.toFixed(2)} {selectedUserCurrency}</span>
                   </div>
                 ) : null}
               </div>

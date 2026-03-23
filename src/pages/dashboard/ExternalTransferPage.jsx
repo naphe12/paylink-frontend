@@ -101,6 +101,7 @@ export default function ExternalTransferPage() {
         ? Number(form.local_amount) / rate
         : 0
       : Number(form.amount || 0);
+  const totalDebitSourceAmount = effectiveSourceAmount + feesAmountSource;
 
   useEffect(() => {
     if (rate === 0) {
@@ -139,6 +140,11 @@ export default function ExternalTransferPage() {
       setFeesPercent(0);
       const dest = getDestinationCurrency(form.country_destination);
       const normalizedSourceCurrency = normalizeSourceCurrency(sourceCurrency);
+      if (normalizedSourceCurrency === "BIF" && dest === "BIF") {
+        setRate(1);
+        setFeesPercent(6.25);
+        return;
+      }
       if (normalizedSourceCurrency !== "EUR" && dest === "BIF") {
         const [sourceToEur, eurToDest] = await Promise.all([
           api.getExchangeRate(normalizedSourceCurrency, "EUR"),
@@ -339,7 +345,7 @@ export default function ExternalTransferPage() {
           </p>
           {isBifDestination ? (
             <p className="text-[13px] text-blue-700">
-              {sourceCurrency} necessaires: <span className="font-semibold">{effectiveSourceAmount.toFixed(2)} {sourceCurrency}</span>
+              {sourceCurrency} necessaires: <span className="font-semibold">{totalDebitSourceAmount.toFixed(2)} {sourceCurrency}</span>
             </p>
           ) : null}
         </div>
@@ -475,7 +481,7 @@ export default function ExternalTransferPage() {
               placeholder="150000"
             />
             <p className="text-xs text-slate-500 mt-1">
-              Le beneficiaire recevra {Number(form.local_amount || 0).toFixed(2)} BIF et il faudra {effectiveSourceAmount.toFixed(2)} {sourceCurrency}.
+              Le beneficiaire recevra {Number(form.local_amount || 0).toFixed(2)} BIF et il faudra {totalDebitSourceAmount.toFixed(2)} {sourceCurrency} au total, frais inclus.
             </p>
           </div>
         ) : (
@@ -513,7 +519,7 @@ export default function ExternalTransferPage() {
           {isBifDestination ? (
             <div className="flex justify-between">
               <span>{sourceCurrency} necessaires</span>
-              <span className="font-semibold">{effectiveSourceAmount.toFixed(2)} {sourceCurrency}</span>
+              <span className="font-semibold">{totalDebitSourceAmount.toFixed(2)} {sourceCurrency}</span>
             </div>
           ) : null}
         </div>
