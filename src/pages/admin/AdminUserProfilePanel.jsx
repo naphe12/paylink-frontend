@@ -20,6 +20,10 @@ export default function AdminUserProfilePanel() {
   const [creditLines, setCreditLines] = useState([]);
   const [creditHistory, setCreditHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [amlResolveNote, setAmlResolveNote] = useState("");
+  const [raiseKycTier, setRaiseKycTier] = useState(true);
+  const [resolvingAml, setResolvingAml] = useState(false);
+  const [actionMessage, setActionMessage] = useState("");
 
   const loadUser = async () => {
     setLoading(true);
@@ -61,6 +65,26 @@ export default function AdminUserProfilePanel() {
   const requestKycUpgrade = async () => {
     await api.post(`/admin/users/${user.user_id}/request-kyc-upgrade`);
     alert("Demande de mise a niveau KYC envoyee.");
+  };
+
+  const resolveAmlLock = async () => {
+    setResolvingAml(true);
+    setActionMessage("");
+    try {
+      const res = await api.post(`/admin/users/${user.user_id}/resolve-aml-lock`, {
+        note: amlResolveNote || "Resolution admin du blocage AML",
+        raise_kyc_tier_to_one: raiseKycTier,
+        reset_risk_score: true,
+      });
+      setActionMessage(
+        `${res?.message || "Blocage AML leve"}${res?.kyc_tier ? `, KYC tier ${res.kyc_tier}` : ""}.`
+      );
+      await loadUser();
+    } catch (error) {
+      setActionMessage(error?.message || "Impossible de lever le blocage AML.");
+    } finally {
+      setResolvingAml(false);
+    }
   };
 
   const walletAvailable = Number(summary?.wallet_available || 0);
@@ -202,6 +226,39 @@ export default function AdminUserProfilePanel() {
             >
               Demander mise a niveau KYC
             </button>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm font-semibold text-amber-900">Lever un blocage AML</p>
+            <p className="mt-1 text-xs text-amber-800">
+              Remet le compte en actif, remet le risque a zero, reautorise les transferts externes
+              et peut remonter le KYC tier a 1 pour eviter un reblocage immediat.
+            </p>
+            <textarea
+              value={amlResolveNote}
+              onChange={(event) => setAmlResolveNote(event.target.value)}
+              rows={3}
+              className="mt-3 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-300"
+              placeholder="Note admin pour la levee du blocage AML"
+            />
+            <label className="mt-3 flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={raiseKycTier}
+                onChange={(event) => setRaiseKycTier(event.target.checked)}
+              />
+              Remonter automatiquement le KYC tier a 1 si le client est a 0
+            </label>
+            <button
+              onClick={resolveAmlLock}
+              disabled={resolvingAml}
+              className="mt-3 w-full rounded-xl bg-amber-600 py-2 text-white disabled:opacity-60"
+            >
+              {resolvingAml ? "Resolution en cours..." : "Lever le blocage AML"}
+            </button>
+            {actionMessage ? (
+              <p className="mt-2 text-xs text-emerald-700">{actionMessage}</p>
+            ) : null}
           </div>
 
           <div className="mt-5 space-y-3 border-t border-slate-100 pt-4 text-sm">
