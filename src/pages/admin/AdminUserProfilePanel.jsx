@@ -1,28 +1,50 @@
-// src/pages/admin/AdminUserProfilePanel.jsx
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import {
+  AlertTriangle,
+  ArrowLeftRight,
+  CreditCard,
+  Mail,
+  Phone,
+  ShieldCheck,
+  UserCircle2,
+  Wallet,
+} from "lucide-react";
+
 import api from "@/services/api";
 
 export default function AdminUserProfilePanel() {
   const { user_id } = useParams();
   const [user, setUser] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [creditLines, setCreditLines] = useState([]);
+  const [creditHistory, setCreditHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const loadUser = async () => {
-    const data = await api.get(`/admin/users/${user_id}`);
-    setUser(data);
+    setLoading(true);
+    const [userData, summaryData, creditLineData, creditHistoryData] = await Promise.all([
+      api.getUser(user_id),
+      api.getAdminFinancialSummary(user_id).catch(() => null),
+      api.listAdminCreditLines({ user_id }).catch(() => []),
+      api.getAdminCreditHistory({ user_id, limit: 5, offset: 0 }).catch(() => ({ items: [] })),
+    ]);
+    setUser(userData);
+    setSummary(summaryData);
+    setCreditLines(Array.isArray(creditLineData) ? creditLineData : []);
+    setCreditHistory(Array.isArray(creditHistoryData?.items) ? creditHistoryData.items : []);
+    setLoading(false);
   };
 
   useEffect(() => {
     loadUser();
   }, [user_id]);
 
-  if (!user) return <p className="p-6">Chargement...</p>;
+  if (loading || !user) return <p className="p-6">Chargement...</p>;
 
   const toggleFreeze = async () => {
     await api.post(
-      `/admin/users/${user.user_id}/${
-        user.status === "frozen" ? "unfreeze" : "freeze"
-      }`
+      `/admin/users/${user.user_id}/${user.status === "frozen" ? "unfreeze" : "freeze"}`
     );
     loadUser();
   };
@@ -38,45 +60,299 @@ export default function AdminUserProfilePanel() {
 
   const requestKycUpgrade = async () => {
     await api.post(`/admin/users/${user.user_id}/request-kyc-upgrade`);
-    alert("📨 Demande de mise à niveau KYC envoyée !");
+    alert("Demande de mise a niveau KYC envoyee.");
   };
 
+  const walletAvailable = Number(summary?.wallet_available || 0);
+  const creditUsed = Number(summary?.credit_used || user.credit_used || 0);
+  const creditAvailable = Number(summary?.credit_available || 0);
+  const hasDebt = walletAvailable < 0 || creditUsed > 0;
+  const latestCreditLine = creditLines[0] || null;
+
   return (
-    <div className="p-6 max-w-3xl mx-auto bg-white rounded-xl shadow-md">
-      <h1 className="text-2xl font-bold mb-4">👤 {user.full_name}</h1>
+    <div className="space-y-6">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                <UserCircle2 size={28} />
+              </span>
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">{user.full_name}</h1>
+                <p className="text-sm text-slate-500">
+                  {user.role || "client"} • {user.status} • KYC {user.kyc_status}
+                </p>
+              </div>
+            </div>
 
-      <p className="text-gray-600 mb-4">{user.email}</p>
+            <div className="grid gap-3 md:grid-cols-2">
+              <InfoCard icon={Mail} label="Email" value={user.email || "-"} />
+              <InfoCard icon={Phone} label="Telephone" value={user.phone_e164 || "-"} />
+              <InfoCard label="User ID" value={user.user_id} mono />
+              <InfoCard label="Pays" value={user.country_code || "-"} />
+              <InfoCard label="Derniere activite" value={formatDate(user.last_seen)} />
+              <InfoCard label="Creation" value={formatDate(user.created_at)} />
+            </div>
+          </div>
 
-      <div className="space-y-3">
-        <button
-          onClick={toggleFreeze}
-          className={`w-full py-2 rounded-lg text-white ${
-            user.status === "frozen" ? "bg-green-600" : "bg-red-600"
-          }`}
-        >
-          {user.status === "frozen"
-            ? "🔓 Débloquer le compte"
-            : "🛑 Geler le compte"}
-        </button>
+          <div className="grid gap-3 sm:grid-cols-2 xl:w-[420px]">
+            <MetricCard
+              label="Wallet"
+              value={`${walletAvailable.toLocaleString()} ${summary?.wallet_currency || ""}`.trim()}
+              tone={walletAvailable < 0 ? "rose" : "slate"}
+            />
+            <MetricCard
+              label="Credit utilise"
+              value={`${creditUsed.toLocaleString()} EUR`}
+              tone={creditUsed > 0 ? "amber" : "slate"}
+            />
+            <MetricCard
+              label="Credit dispo"
+              value={`${creditAvailable.toLocaleString()} EUR`}
+              tone="blue"
+            />
+            <MetricCard
+              label="Risque"
+              value={String(user.risk_score ?? 0)}
+              tone={Number(user.risk_score || 0) >= 80 ? "rose" : "emerald"}
+            />
+          </div>
+        </div>
+      </section>
 
-        <button
-          onClick={toggleExternal}
-          className={`w-full py-2 rounded-lg text-white ${
-            user.external_transfers_blocked ? "bg-green-600" : "bg-orange-600"
-          }`}
-        >
-          {user.external_transfers_blocked
-            ? "✅ Autoriser transferts externes"
-            : "🚫 Bloquer transferts externes"}
-        </button>
+      <section className="grid gap-4 lg:grid-cols-[1.3fr_0.9fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Navigation rapide client</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Acces direct aux dettes, transferts, credit, balance et situation financiere.
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <QuickLink
+              to={`/dashboard/admin/financial-summary?user_id=${user.user_id}`}
+              icon={Wallet}
+              title="Situation financiere"
+              subtitle="Wallet, credit, bonus, tontines"
+            />
+            <QuickLink
+              to={`/dashboard/admin/credit-lines?user_id=${user.user_id}`}
+              icon={CreditCard}
+              title="Ligne de credit"
+              subtitle="Detail et capacite de credit"
+            />
+            <QuickLink
+              to={`/dashboard/admin/credit-history?user_id=${user.user_id}`}
+              icon={ArrowLeftRight}
+              title="Dettes et historique"
+              subtitle="History + evenements credit"
+            />
+            <QuickLink
+              to={`/dashboard/admin/credit-lines/repay?user_id=${user.user_id}`}
+              icon={CreditCard}
+              title="Remboursement"
+              subtitle="Traiter une dette client"
+            />
+            <QuickLink
+              to={`/dashboard/admin/transfers?user_id=${user.user_id}`}
+              icon={ArrowLeftRight}
+              title="Transferts"
+              subtitle="Flux et transferts externes"
+            />
+            <QuickLink
+              to={`/dashboard/admin/users/${user.user_id}/balance-events`}
+              icon={Wallet}
+              title="Balance events"
+              subtitle="Historique des mouvements de solde"
+            />
+            <QuickLink
+              to={`/dashboard/admin/cash-requests?user_id=${user.user_id}`}
+              icon={Wallet}
+              title="Cash in/out"
+              subtitle="Depots et retraits lies au client"
+            />
+          </div>
+        </div>
 
-        <button
-          onClick={requestKycUpgrade}
-          className="w-full py-2 rounded-lg bg-blue-600 text-white"
-        >
-          📄 Demander mise à niveau KYC
-        </button>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Actions admin</h2>
+          <div className="mt-4 space-y-3">
+            <button
+              onClick={toggleFreeze}
+              className={`w-full rounded-xl py-2 text-white ${
+                user.status === "frozen" ? "bg-green-600" : "bg-red-600"
+              }`}
+            >
+              {user.status === "frozen" ? "Debloquer le compte" : "Geler le compte"}
+            </button>
+
+            <button
+              onClick={toggleExternal}
+              className={`w-full rounded-xl py-2 text-white ${
+                user.external_transfers_blocked ? "bg-green-600" : "bg-orange-600"
+              }`}
+            >
+              {user.external_transfers_blocked
+                ? "Autoriser transferts externes"
+                : "Bloquer transferts externes"}
+            </button>
+
+            <button
+              onClick={requestKycUpgrade}
+              className="w-full rounded-xl bg-blue-600 py-2 text-white"
+            >
+              Demander mise a niveau KYC
+            </button>
+          </div>
+
+          <div className="mt-5 space-y-3 border-t border-slate-100 pt-4 text-sm">
+            <p className="font-medium text-slate-700">Etat du client</p>
+            <StatusLine ok={!hasDebt} label={hasDebt ? "Dette detectee" : "Pas de dette active"} />
+            <StatusLine
+              ok={!user.external_transfers_blocked}
+              label={
+                user.external_transfers_blocked
+                  ? "Transferts externes bloques"
+                  : "Transferts externes autorises"
+              }
+            />
+            <StatusLine
+              ok={!!user.email_verified}
+              label={user.email_verified ? "Email verifie" : "Email non verifie"}
+            />
+            <StatusLine
+              ok={Number(user.risk_score || 0) < 80}
+              label={Number(user.risk_score || 0) >= 80 ? "Risque eleve" : "Risque acceptable"}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Dette et credit</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <MetricCard label="Limite journaliere" value={formatNumber(user.daily_limit)} tone="slate" />
+            <MetricCard label="Utilise aujourd'hui" value={formatNumber(user.used_daily)} tone="blue" />
+            <MetricCard label="Limite mensuelle" value={formatNumber(user.monthly_limit)} tone="slate" />
+            <MetricCard label="Utilise ce mois" value={formatNumber(user.used_monthly)} tone="blue" />
+          </div>
+          <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
+            {latestCreditLine ? (
+              <>
+                <p className="font-semibold text-slate-900">Derniere ligne de credit</p>
+                <p className="mt-1">
+                  ID: <span className="font-mono text-xs">{latestCreditLine.credit_line_id}</span>
+                </p>
+                <p>Devise: {latestCreditLine.currency_code}</p>
+                <p>Plafond: {formatNumber(latestCreditLine.initial_amount)}</p>
+                <p>Utilise: {formatNumber(latestCreditLine.used_amount)}</p>
+                <p>Disponible: {formatNumber(latestCreditLine.outstanding_amount)}</p>
+              </>
+            ) : (
+              <p>Aucune ligne de credit rattachee.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Activite credit recente</h2>
+          {creditHistory.length === 0 ? (
+            <p className="mt-4 text-sm text-slate-500">Aucun historique credit recent.</p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {creditHistory.map((row) => (
+                <div key={row.entry_id} className="rounded-xl border border-slate-100 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-medium text-slate-900">{row.description || "Mouvement credit"}</p>
+                    <p
+                      className={`text-sm font-semibold ${
+                        Number(row.amount || 0) >= 0 ? "text-emerald-600" : "text-rose-600"
+                      }`}
+                    >
+                      {Number(row.amount || 0) >= 0 ? "+" : "-"}{" "}
+                      {Math.abs(Number(row.amount || 0)).toLocaleString()}
+                    </p>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{formatDate(row.created_at)}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Avant {formatNumber(row.credit_available_before)} • Apres{" "}
+                    {formatNumber(row.credit_available_after)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function formatDate(value) {
+  if (!value) return "-";
+  return new Date(value).toLocaleString();
+}
+
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString();
+}
+
+function InfoCard({ icon: Icon, label, value, mono = false }) {
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+        {Icon ? <Icon size={14} /> : null}
+        <span>{label}</span>
       </div>
+      <p className={`mt-1 text-sm text-slate-900 ${mono ? "break-all font-mono" : ""}`}>{value || "-"}</p>
+    </div>
+  );
+}
+
+function MetricCard({ label, value, tone = "slate" }) {
+  const tones = {
+    slate: "border-slate-200 bg-slate-50 text-slate-900",
+    blue: "border-blue-200 bg-blue-50 text-blue-900",
+    emerald: "border-emerald-200 bg-emerald-50 text-emerald-900",
+    rose: "border-rose-200 bg-rose-50 text-rose-900",
+    amber: "border-amber-200 bg-amber-50 text-amber-900",
+  };
+  return (
+    <div className={`rounded-2xl border px-4 py-3 ${tones[tone] || tones.slate}`}>
+      <p className="text-xs uppercase tracking-wide opacity-70">{label}</p>
+      <p className="mt-1 text-lg font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function QuickLink({ to, icon: Icon, title, subtitle }) {
+  return (
+    <Link
+      to={to}
+      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 transition hover:bg-white hover:shadow-sm"
+    >
+      <div className="flex items-start gap-3">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm">
+          <Icon size={18} />
+        </span>
+        <div>
+          <p className="text-sm font-semibold text-slate-900">{title}</p>
+          <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function StatusLine({ ok, label }) {
+  return (
+    <div className="flex items-center gap-2">
+      {ok ? (
+        <ShieldCheck size={16} className="text-emerald-600" />
+      ) : (
+        <AlertTriangle size={16} className="text-amber-600" />
+      )}
+      <span className={ok ? "text-slate-700" : "text-amber-700"}>{label}</span>
     </div>
   );
 }
