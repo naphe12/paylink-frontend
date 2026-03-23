@@ -33,6 +33,8 @@ export default function AdminCreditHistoryPage() {
   const [mode, setMode] = useState("history");
   const [userId, setUserId] = useState("");
   const [limit, setLimit] = useState(200);
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
   const loadHistory = async () => {
@@ -40,12 +42,14 @@ export default function AdminCreditHistoryPage() {
       setLoading(true);
       const data =
         mode === "events"
-          ? await api.getAdminCreditLineEvents({ user_id: userId || undefined, limit })
-          : await api.getAdminCreditHistory({ user_id: userId || undefined, limit });
-      setEntries(Array.isArray(data) ? data : []);
+          ? await api.getAdminCreditLineEvents({ user_id: userId || undefined, limit, offset })
+          : await api.getAdminCreditHistory({ user_id: userId || undefined, limit, offset });
+      setEntries(Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []);
+      setTotal(Number(data?.total || 0));
     } catch (err) {
       console.error("Erreur chargement admin credit history", err);
       setEntries([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
@@ -53,7 +57,10 @@ export default function AdminCreditHistoryPage() {
 
   useEffect(() => {
     loadHistory();
-  }, [mode]);
+  }, [mode, offset, limit]);
+
+  const currentPage = Math.floor(offset / limit) + 1;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
     <div className="space-y-4">
@@ -78,6 +85,7 @@ export default function AdminCreditHistoryPage() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            setOffset(0);
             loadHistory();
           }}
           className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center"
@@ -91,7 +99,10 @@ export default function AdminCreditHistoryPage() {
           />
           <select
             value={limit}
-            onChange={(e) => setLimit(Number(e.target.value))}
+            onChange={(e) => {
+              setLimit(Number(e.target.value));
+              setOffset(0);
+            }}
             className="rounded-lg border px-3 py-2 text-sm"
           >
             {[50, 100, 200, 500].map((value) => (
@@ -121,102 +132,128 @@ export default function AdminCreditHistoryPage() {
       ) : entries.length === 0 ? (
         <div className="rounded-2xl bg-white p-8 text-center text-slate-500 shadow">Aucune donnee</div>
       ) : (
-        <div className="grid gap-3">
-          {entries.map((entry) => {
-            const amount = Number(mode === "events" ? entry.amount_delta : entry.amount);
-            return (
-              <article key={entry.entry_id || entry.event_id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                        {mode === "events" ? "Evenement" : "Historique"}
-                      </span>
-                      {mode === "events" && entry.status ? (
-                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                          {entry.status}
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-slate-600">
+              Page {currentPage} / {totalPages} • {total} ligne(s)
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setOffset(Math.max(0, offset - limit))}
+                disabled={offset === 0 || loading}
+                className="rounded-xl border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Precedent
+              </button>
+              <button
+                type="button"
+                onClick={() => setOffset(offset + limit)}
+                disabled={offset + limit >= total || loading}
+                className="rounded-xl border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Suivant
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            {entries.map((entry) => {
+              const amount = Number(mode === "events" ? entry.amount_delta : entry.amount);
+              return (
+                <article key={entry.entry_id || entry.event_id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                          {mode === "events" ? "Evenement" : "Historique"}
                         </span>
-                      ) : null}
-                      <span className="text-xs text-slate-500">
-                        {formatDate(entry.occurred_at || entry.created_at)}
-                      </span>
+                        {mode === "events" && entry.status ? (
+                          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                            {entry.status}
+                          </span>
+                        ) : null}
+                        <span className="text-xs text-slate-500">
+                          {formatDate(entry.occurred_at || entry.created_at)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-base font-semibold text-slate-900">
+                          {entry.full_name || entry.email || entry.user_id}
+                        </p>
+                        <p className="text-sm text-slate-500">{entry.email || entry.user_id}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          to={`/dashboard/admin/users/${entry.user_id}`}
+                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                          <UserCircle2 size={14} />
+                          Profil user
+                        </Link>
+                        <Link
+                          to={`/dashboard/admin/credit-lines?user_id=${entry.user_id}`}
+                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                          <CreditCard size={14} />
+                          Ligne de credit
+                        </Link>
+                        <Link
+                          to={`/dashboard/admin/credit-lines/repay${entry.user_id ? `?user_id=${entry.user_id}` : ""}`}
+                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                          <ArrowLeftRight size={14} />
+                          Remboursement
+                        </Link>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[420px]">
+                      <MetricCard
+                        label={mode === "events" ? "Delta" : "Montant"}
+                        value={`${amount >= 0 ? "+" : "-"} ${formatAmount(Math.abs(amount))}`}
+                        tone={amount >= 0 ? "emerald" : "rose"}
+                      />
+                      <MetricCard
+                        label="Devise"
+                        value={entry.currency_code || "-"}
+                        tone="slate"
+                      />
+                      <MetricCard
+                        label="Avant"
+                        value={formatAmount(
+                          mode === "events" ? entry.old_limit : entry.credit_available_before
+                        )}
+                        tone="slate"
+                      />
+                      <MetricCard
+                        label="Apres"
+                        value={formatAmount(
+                          mode === "events" ? entry.new_limit : entry.credit_available_after
+                        )}
+                        tone="blue"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 text-sm text-slate-600 lg:grid-cols-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-slate-400">Description / Source</p>
+                      <p className="mt-1">{entry.description || entry.source || "-"}</p>
                     </div>
                     <div>
-                      <p className="text-base font-semibold text-slate-900">
-                        {entry.full_name || entry.email || entry.user_id}
-                      </p>
-                      <p className="text-sm text-slate-500">{entry.email || entry.user_id}</p>
+                      <p className="text-xs uppercase tracking-wide text-slate-400">Reference</p>
+                      <p className="mt-1 break-all">{entry.transaction_id || entry.event_id || "-"}</p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Link
-                        to={`/dashboard/admin/users/${entry.user_id}`}
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                      >
-                        <UserCircle2 size={14} />
-                        Profil user
-                      </Link>
-                      <Link
-                        to={`/dashboard/admin/credit-lines?user_id=${entry.user_id}`}
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                      >
-                        <CreditCard size={14} />
-                        Ligne de credit
-                      </Link>
-                      <Link
-                        to={`/dashboard/admin/credit-lines/repay${entry.user_id ? `?user_id=${entry.user_id}` : ""}`}
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                      >
-                        <ArrowLeftRight size={14} />
-                        Remboursement
-                      </Link>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-slate-400">Ligne</p>
+                      <p className="mt-1 break-all">{entry.credit_line_id || "-"}</p>
                     </div>
                   </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[420px]">
-                    <MetricCard
-                      label={mode === "events" ? "Delta" : "Montant"}
-                      value={`${amount >= 0 ? "+" : "-"} ${formatAmount(Math.abs(amount))}`}
-                      tone={amount >= 0 ? "emerald" : "rose"}
-                    />
-                    <MetricCard
-                      label="Devise"
-                      value={entry.currency_code || "-"}
-                      tone="slate"
-                    />
-                    <MetricCard
-                      label="Avant"
-                      value={formatAmount(
-                        mode === "events" ? entry.old_limit : entry.credit_available_before
-                      )}
-                      tone="slate"
-                    />
-                    <MetricCard
-                      label="Apres"
-                      value={formatAmount(
-                        mode === "events" ? entry.new_limit : entry.credit_available_after
-                      )}
-                      tone="blue"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 text-sm text-slate-600 lg:grid-cols-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-slate-400">Description / Source</p>
-                    <p className="mt-1">{entry.description || entry.source || "-"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-slate-400">Reference</p>
-                    <p className="mt-1 break-all">{entry.transaction_id || entry.event_id || "-"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-slate-400">Ligne</p>
-                    <p className="mt-1 break-all">{entry.credit_line_id || "-"}</p>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+                </article>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

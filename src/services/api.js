@@ -676,6 +676,7 @@ const api = {
     const search = new URLSearchParams();
     if (params.user_id) search.append("user_id", params.user_id);
     if (params.limit) search.append("limit", params.limit);
+    if (params.offset !== undefined && params.offset !== null) search.append("offset", params.offset);
     const query = search.toString();
     return this.get(`/admin/credit-history${query ? `?${query}` : ""}`);
   },
@@ -683,6 +684,7 @@ const api = {
     const search = new URLSearchParams();
     if (params.user_id) search.append("user_id", params.user_id);
     if (params.limit) search.append("limit", params.limit);
+    if (params.offset !== undefined && params.offset !== null) search.append("offset", params.offset);
     const query = search.toString();
     return this.get(`/admin/credit-history/events${query ? `?${query}` : ""}`);
   },
