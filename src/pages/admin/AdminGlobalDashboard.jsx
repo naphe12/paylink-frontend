@@ -233,6 +233,9 @@ export default function AdminGlobalDashboard() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-2xl border border-fuchsia-300 bg-fuchsia-50 px-4 py-3 text-sm font-semibold text-fuchsia-900">
+        UI marker: admin-dashboard-quick-actions-v2
+      </div>
       <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6 text-white shadow-xl">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div>

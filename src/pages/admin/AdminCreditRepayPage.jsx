@@ -77,6 +77,9 @@ export default function AdminCreditRepayPage() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-2xl border border-fuchsia-300 bg-fuchsia-50 px-4 py-3 text-sm font-semibold text-fuchsia-900">
+        UI marker: credit-repay-select-v2
+      </div>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Remboursement clients endettes</h1>
