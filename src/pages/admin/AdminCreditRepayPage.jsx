@@ -104,50 +104,38 @@ export default function AdminCreditRepayPage() {
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 border rounded-2xl bg-white shadow-sm">
-          <div className="px-4 py-3 border-b bg-slate-50 text-sm font-semibold text-slate-700">
-            Debiteurs
+      <div className="space-y-4">
+        <div className="bg-white border rounded-2xl shadow-sm p-4 space-y-3">
+          <div>
+            <label className="block text-sm font-semibold text-slate-800 mb-1">Utilisateur</label>
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="w-full rounded-lg border px-3 py-2 text-sm"
+            >
+              <option value="">Selectionner un utilisateur</option>
+              {debtors.map((debtor) => (
+                <option key={debtor.user_id} value={debtor.user_id}>
+                  {debtor.full_name || debtor.email || debtor.user_id} | {debtor.debt_origin_label}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="max-h-[520px] overflow-y-auto divide-y">
-            {debtors.length === 0 ? (
-              <p className="p-4 text-sm text-slate-500">Aucun client avec dette.</p>
-            ) : (
-              debtors.map((debtor) => {
-                const active = debtor.user_id === selectedUserId;
-                return (
-                  <button
-                    key={debtor.user_id}
-                    onClick={() => setSelectedUserId(debtor.user_id)}
-                    className={`w-full text-left p-3 transition ${
-                      active ? "bg-slate-100" : "hover:bg-slate-50"
-                    }`}
-                  >
-                    <div className="flex justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-slate-900">
-                          {debtor.full_name || "Sans nom"}
-                        </p>
-                        <p className="text-xs text-slate-500">{debtor.email || "-"}</p>
-                      </div>
-                      <div className="text-xs text-slate-500 font-mono">
-                        {debtor.wallet_currency}
-                      </div>
-                    </div>
-                    <p className="text-sm text-slate-700 mt-1">
-                      Wallet: {Number(debtor.wallet_available || 0).toLocaleString()} {debtor.wallet_currency}
-                    </p>
-                    <p className="text-sm text-slate-700">
-                      Credit du: {Number(debtor.credit_due || 0).toLocaleString()} {debtor.credit_line_currency || debtor.wallet_currency}
-                    </p>
-                  </button>
-                );
-              })
-            )}
-          </div>
+          {selectedDebtor ? (
+            <div className="rounded-xl border bg-slate-50 p-4 text-sm text-slate-700 space-y-2">
+              <p><span className="font-semibold text-slate-900">Utilisateur:</span> {selectedDebtor.full_name || "Sans nom"}</p>
+              <p><span className="font-semibold text-slate-900">Email:</span> {selectedDebtor.email || "-"}</p>
+              <p><span className="font-semibold text-slate-900">Origine de la dette:</span> {selectedDebtor.debt_origin_label}</p>
+              <p><span className="font-semibold text-slate-900">Wallet:</span> {Number(selectedDebtor.wallet_available || 0).toLocaleString()} {selectedDebtor.wallet_currency}</p>
+              <p><span className="font-semibold text-slate-900">Credit du:</span> {Number(selectedDebtor.credit_due || 0).toLocaleString()} {selectedDebtor.credit_line_currency || selectedDebtor.wallet_currency}</p>
+              <p><span className="font-semibold text-slate-900">Disponible ligne:</span> {Number(selectedDebtor.credit_available || 0).toLocaleString()} {selectedDebtor.credit_line_currency || selectedDebtor.wallet_currency}</p>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">Aucun utilisateur selectionne.</p>
+          )}
         </div>
 
-        <div className="lg:col-span-2 space-y-4">
+        <div className="space-y-4">
           {selectedDebtor ? (
             <>
               <div className="bg-white border rounded-2xl shadow-sm p-4">
