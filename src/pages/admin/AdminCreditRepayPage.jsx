@@ -105,21 +105,24 @@ export default function AdminCreditRepayPage() {
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       <div className="space-y-4">
-        <div className="bg-white border rounded-2xl shadow-sm p-4 space-y-3">
+        <div className="bg-white border rounded-2xl shadow-sm p-5 space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-slate-800 mb-1">Utilisateur</label>
+            <label className="block text-sm font-semibold text-slate-900 mb-2">Selection du client</label>
             <select
               value={selectedUserId}
               onChange={(e) => setSelectedUserId(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
             >
-              <option value="">Selectionner un utilisateur</option>
+              <option value="">-- selectionner un user --</option>
               {debtors.map((debtor) => (
                 <option key={debtor.user_id} value={debtor.user_id}>
                   {debtor.full_name || debtor.email || debtor.user_id} | {debtor.debt_origin_label}
                 </option>
               ))}
             </select>
+            <p className="mt-2 text-xs text-slate-500">
+              Le select affiche uniquement les utilisateurs avec wallet negatif ou credit utilise.
+            </p>
           </div>
           {selectedDebtor ? (
             <div className="rounded-xl border bg-slate-50 p-4 text-sm text-slate-700 space-y-2">
