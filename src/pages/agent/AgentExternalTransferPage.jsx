@@ -94,7 +94,7 @@ export default function AgentExternalTransferPage() {
   const [amountMode, setAmountMode] = useState("send_eur");
   const [rate, setRate] = useState(0);
   const [feesPercent, setFeesPercent] = useState(0);
-  const [feesAmountEur, setFeesAmountEur] = useState(0);
+  const [feesAmountSource, setFeesAmountSource] = useState(0);
   const [recipientAmount, setRecipientAmount] = useState(0);
   const [loadingRate, setLoadingRate] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -113,9 +113,11 @@ export default function AgentExternalTransferPage() {
   const getDestinationCurrency = (countryName) =>
     destinationOptions.find((option) => option.value === countryName)?.currency || "EUR";
 
+  const selectedUserCurrency =
+    users.find((user) => user.user_id === selectedUser)?.currency || "EUR";
   const destinationCurrency = getDestinationCurrency(form.country_destination);
   const isBifDestination = destinationCurrency === "BIF";
-  const effectiveEurAmount =
+  const effectiveSourceAmount =
     amountMode === "receive_local" && isBifDestination
       ? rate > 0 && form.local_amount
         ? Number(form.local_amount) / rate
@@ -125,22 +127,24 @@ export default function AgentExternalTransferPage() {
   useEffect(() => {
     if (rate === 0) {
       setRecipientAmount(0);
-      setFeesAmountEur(0);
+      setFeesAmountSource(0);
       return;
     }
-    const eur =
+    const sourceAmount =
       amountMode === "receive_local" && isBifDestination
         ? Number(form.local_amount || 0) / rate
         : Number(form.amount || 0);
-    if (!eur || Number.isNaN(eur)) {
+    if (!sourceAmount || Number.isNaN(sourceAmount)) {
       setRecipientAmount(0);
-      setFeesAmountEur(0);
+      setFeesAmountSource(0);
       return;
     }
-    const fee = eur * (feesPercent / 100);
-    setFeesAmountEur(fee);
+    const fee = sourceAmount * (feesPercent / 100);
+    setFeesAmountSource(fee);
     setRecipientAmount(
-      amountMode === "receive_local" && isBifDestination ? Number(form.local_amount || 0) : eur * rate
+      amountMode === "receive_local" && isBifDestination
+        ? Number(form.local_amount || 0)
+        : sourceAmount * rate
     );
   }, [form.amount, form.local_amount, rate, feesPercent, amountMode, isBifDestination]);
 
@@ -189,10 +193,22 @@ export default function AgentExternalTransferPage() {
       setLoadError("");
       setLoadingRate(true);
       const target = getDestinationCurrency(countryDestination);
-      const res = await api.getExchangeRate("EUR", target);
-      if (res?.rate) setRate(Number(res.rate));
-      if (res?.fees_percent !== undefined && res?.fees_percent !== null) {
-        setFeesPercent(Number(res.fees_percent));
+      if (selectedUserCurrency !== "EUR" && target === "BIF") {
+        const [sourceToEur, eurToDest] = await Promise.all([
+          api.getExchangeRate(selectedUserCurrency, "EUR"),
+          api.getExchangeRate("EUR", target),
+        ]);
+        const chainedRate = Number(sourceToEur?.rate || 0) * Number(eurToDest?.rate || 0);
+        if (chainedRate > 0) setRate(chainedRate);
+        if (eurToDest?.fees_percent !== undefined && eurToDest?.fees_percent !== null) {
+          setFeesPercent(Number(eurToDest.fees_percent));
+        }
+      } else {
+        const res = await api.getExchangeRate(selectedUserCurrency, target);
+        if (res?.rate) setRate(Number(res.rate));
+        if (res?.fees_percent !== undefined && res?.fees_percent !== null) {
+          setFeesPercent(Number(res.fees_percent));
+        }
       }
     } catch (err) {
       setLoadError(err?.message || "Impossible de charger le taux FX pour cette destination.");
@@ -217,7 +233,7 @@ export default function AgentExternalTransferPage() {
     if (form.country_destination) {
       loadRate(form.country_destination);
     }
-  }, [form.country_destination, countries.length]);
+  }, [form.country_destination, countries.length, selectedUserCurrency]);
 
   useEffect(() => {
     if (!selectedUser) {
@@ -309,7 +325,7 @@ export default function AgentExternalTransferPage() {
     setSubmitError("");
     setSuccess("");
 
-    const requestedAmount = effectiveEurAmount;
+    const requestedAmount = effectiveSourceAmount;
     const normalizedPhone = normalizeRecipientPhone(form.recipient_phone);
 
     if (!selectedUser) {
@@ -413,7 +429,7 @@ export default function AgentExternalTransferPage() {
               <p className="text-blue-700">
                 Taux FX applique: <span className="font-semibold">{loadingRate ? "..." : rate || "-"}</span>
                 {" · "}
-                Frais: <span className="font-semibold">{feesPercent || 0}% ({feesAmountEur.toFixed(2)} EUR)</span>
+                Frais: <span className="font-semibold">{feesPercent || 0}% ({feesAmountSource.toFixed(2)} {selectedUserCurrency})</span>
               </p>
               <p className="text-blue-700">
                 Montant recu estime: <span className="font-semibold">{recipientAmount.toFixed(2)}</span>{" "}
@@ -421,7 +437,7 @@ export default function AgentExternalTransferPage() {
               </p>
               {isBifDestination ? (
                 <p className="text-blue-700">
-                  EUR necessaires: <span className="font-semibold">{effectiveEurAmount.toFixed(2)} EUR</span>
+                  {selectedUserCurrency} necessaires: <span className="font-semibold">{effectiveSourceAmount.toFixed(2)} {selectedUserCurrency}</span>
                 </p>
               ) : null}
             </div>
@@ -456,10 +472,13 @@ export default function AgentExternalTransferPage() {
                   <option value="">-- Selectionner un utilisateur --</option>
                   {filteredUsers.map((user) => (
                     <option key={user.user_id} value={user.user_id}>
-                      {user.full_name || "Utilisateur"}
+                      {(user.full_name || "Utilisateur")} {user.currency ? `(${user.currency})` : ""}
                     </option>
                   ))}
                 </select>
+                {selectedUser ? (
+                  <p className="mt-2 text-xs text-slate-500">Devise source du wallet: {selectedUserCurrency}</p>
+                ) : null}
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
@@ -572,7 +591,7 @@ export default function AgentExternalTransferPage() {
                         checked={amountMode === "send_eur"}
                         onChange={() => setAmountMode("send_eur")}
                       />
-                      Montant a envoyer en EUR
+                      Montant a envoyer en {selectedUserCurrency}
                     </label>
                     <label className={`rounded-lg border px-3 py-2 text-sm ${amountMode === "receive_local" ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}`}>
                       <input
@@ -601,12 +620,12 @@ export default function AgentExternalTransferPage() {
                     placeholder="150000"
                   />
                   <p className="text-xs text-slate-500 mt-2">
-                    EUR necessaires : {effectiveEurAmount.toFixed(2)} EUR
+                    {selectedUserCurrency} necessaires : {effectiveSourceAmount.toFixed(2)} {selectedUserCurrency}
                   </p>
                 </>
               ) : (
                 <>
-                  <label className="block text-sm font-semibold mb-1">Montant (EUR)</label>
+                  <label className="block text-sm font-semibold mb-1">Montant ({selectedUserCurrency})</label>
                   <input
                     type="number"
                     name="amount"
@@ -617,7 +636,7 @@ export default function AgentExternalTransferPage() {
                     placeholder="100.00"
                   />
                   <p className="text-xs text-slate-500 mt-2">
-                    Frais estimes : {feesAmountEur.toFixed(2)} EUR ({feesPercent || 0}%)
+                    Frais estimes : {feesAmountSource.toFixed(2)} {selectedUserCurrency} ({feesPercent || 0}%)
                   </p>
                 </>
               )}
@@ -650,7 +669,7 @@ export default function AgentExternalTransferPage() {
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <span>Frais</span>
-                  <span className="font-semibold">{feesAmountEur.toFixed(2)} EUR ({feesPercent || 0}%)</span>
+                  <span className="font-semibold">{feesAmountSource.toFixed(2)} {selectedUserCurrency} ({feesPercent || 0}%)</span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <span>Montant recu estime</span>
@@ -660,8 +679,8 @@ export default function AgentExternalTransferPage() {
                 </div>
                 {isBifDestination ? (
                   <div className="flex items-center justify-between gap-4">
-                    <span>EUR necessaires</span>
-                    <span className="font-semibold">{effectiveEurAmount.toFixed(2)} EUR</span>
+                    <span>{selectedUserCurrency} necessaires</span>
+                    <span className="font-semibold">{effectiveSourceAmount.toFixed(2)} {selectedUserCurrency}</span>
                   </div>
                 ) : null}
               </div>
