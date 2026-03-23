@@ -36,6 +36,9 @@ function normalizeTransfer(transfer) {
     status: transfer.status,
     userName: transfer.user?.full_name || transfer.user_name,
     userEmail: transfer.user?.email || transfer.user_email,
+    reviewReason: transfer.metadata?.review_reason || "",
+    amlRiskScore: Number(transfer.metadata?.aml_risk_score || 0),
+    requiredCreditTopup: Number(transfer.metadata?.required_credit_topup || 0),
   };
 }
 
@@ -147,6 +150,15 @@ export default function ExternalTransferApprovalsPage() {
                   <td className="px-4 py-3 font-semibold">
                     <div className="flex items-center gap-2">
                       <span className="font-mono">{transfer.reference}</span>
+                      {transfer.reviewReason === "aml" ? (
+                        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-rose-700">
+                          AML review
+                        </span>
+                      ) : transfer.reviewReason === "insufficient_funds" ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
+                          Fonds insuffisants
+                        </span>
+                      ) : null}
                       {getAgeHours(transfer.createdAt) >= 6 ? (
                         <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-red-700">
                           Urgent
@@ -164,6 +176,15 @@ export default function ExternalTransferApprovalsPage() {
                       <span className="text-xs text-slate-500">
                         {transfer.userEmail}
                       </span>
+                      {transfer.reviewReason === "aml" ? (
+                        <span className="text-xs text-rose-600">
+                          Score AML: {transfer.amlRiskScore || "-"}
+                        </span>
+                      ) : transfer.reviewReason === "insufficient_funds" ? (
+                        <span className="text-xs text-amber-700">
+                          Credit a ouvrir/completer: {transfer.requiredCreditTopup.toLocaleString()} {transfer.currency}
+                        </span>
+                      ) : null}
                     </div>
                   </td>
                   <td className="px-4 py-3">
