@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { PencilLine, RefreshCw, Settings } from "lucide-react";
+
 import api from "@/services/api";
-import { Settings, RefreshCw } from "lucide-react";
 
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -13,9 +14,11 @@ export default function AdminSettingsPage() {
     smsTransfert_fees: "",
     currency: "EUR",
   });
+  const [fxOrigin, setFxOrigin] = useState("EUR");
   const [fxCurrency, setFxCurrency] = useState("BIF");
   const [fxRate, setFxRate] = useState("");
   const [fxList, setFxList] = useState([]);
+  const [selectedFxKey, setSelectedFxKey] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -61,7 +64,7 @@ export default function AdminSettingsPage() {
   const saveFx = async () => {
     setSaving(true);
     try {
-      await api.updateFxCustomRate(fxCurrency, fxRate);
+      await api.updateFxCustomRate(fxCurrency, fxRate, { origin: fxOrigin });
       await load();
     } catch (err) {
       setError(err.message || "Sauvegarde FX impossible");
@@ -70,13 +73,20 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const selectFxRow = (fx) => {
+    setSelectedFxKey(`${fx.origin_currency}-${fx.destination_currency}`);
+    setFxOrigin(fx.origin_currency || "EUR");
+    setFxCurrency(fx.destination_currency || "");
+    setFxRate(String(fx.rate ?? ""));
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Admin</p>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-            <Settings className="text-indigo-600" /> Paramètres & FX
+          <h1 className="flex items-center gap-2 text-3xl font-bold text-slate-900">
+            <Settings className="text-indigo-600" /> Parametres & FX
           </h1>
         </div>
         <button
@@ -84,7 +94,7 @@ export default function AdminSettingsPage() {
           className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium hover:bg-slate-50"
           disabled={loading}
         >
-          <RefreshCw size={16} /> Rafraîchir
+          <RefreshCw size={16} /> Rafraichir
         </button>
       </header>
 
@@ -95,7 +105,7 @@ export default function AdminSettingsPage() {
       )}
 
       <section className="rounded-2xl border bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900 mb-3">Paramètres généraux</h2>
+        <h2 className="mb-3 text-lg font-semibold text-slate-900">Parametres generaux</h2>
         {loading ? (
           <p className="text-slate-500">Chargement...</p>
         ) : (
@@ -119,8 +129,9 @@ export default function AdminSettingsPage() {
       </section>
 
       <section className="rounded-2xl border bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900 mb-3">Taux FX custom</h2>
-        <div className="grid gap-3 md:grid-cols-2">
+        <h2 className="mb-3 text-lg font-semibold text-slate-900">Taux FX custom</h2>
+        <div className="grid gap-3 md:grid-cols-3">
+          <Input label="Devise origine" value={fxOrigin} onChange={setFxOrigin} />
           <Input label="Devise destination" value={fxCurrency} onChange={setFxCurrency} />
           <Input label="Taux" value={fxRate} onChange={setFxRate} />
         </div>
@@ -130,28 +141,40 @@ export default function AdminSettingsPage() {
             className="rounded-xl bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 disabled:opacity-50"
             disabled={saving}
           >
-            {saving ? "Sauvegarde..." : "Mettre à jour"}
+            {saving ? "Sauvegarde..." : "Mettre a jour la ligne selectionnee"}
           </button>
         </div>
         <div className="mt-4 space-y-2">
           {fxList.length === 0 ? (
-            <p className="text-slate-500 text-sm">Aucun taux défini.</p>
+            <p className="text-sm text-slate-500">Aucun taux defini.</p>
           ) : (
             fxList.map((fx) => (
               <div
                 key={`${fx.origin_currency}-${fx.destination_currency}`}
-                className="rounded-xl border px-3 py-2 flex justify-between text-sm"
+                className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm ${
+                  selectedFxKey === `${fx.origin_currency}-${fx.destination_currency}`
+                    ? "border-indigo-400 bg-indigo-50"
+                    : "border-slate-200"
+                }`}
               >
                 <div>
                   <p className="font-semibold">
-                    {fx.origin_currency} → {fx.destination_currency}
+                    {fx.origin_currency} -> {fx.destination_currency}
                   </p>
-                  <p className="text-slate-500">Source: {fx.source || "custom"} </p>
+                  <p className="text-slate-500">Source: {fx.source || "custom"}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">{fx.rate}</p>
                   <p className="text-xs text-slate-500">Actif: {fx.is_active ? "Oui" : "Non"}</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => selectFxRow(fx)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  <PencilLine size={14} />
+                  Modifier cette ligne
+                </button>
               </div>
             ))
           )}
