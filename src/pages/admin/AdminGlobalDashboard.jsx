@@ -375,6 +375,13 @@ export default function AdminGlobalDashboard() {
             className: "border-orange-200 bg-orange-50 hover:bg-orange-100/60",
           },
           {
+            label: "Remboursement",
+            description: "Rembourser les clients endettes",
+            to: "/dashboard/admin/credit-lines/repay",
+            icon: CreditCard,
+            className: "border-lime-200 bg-lime-50 hover:bg-lime-100/60",
+          },
+          {
             label: "Balance events",
             description: "Historique des variations de solde",
             to: "/dashboard/admin/balance-events",
