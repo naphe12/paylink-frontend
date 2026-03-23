@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   QrCode,
   ArrowLeftRight,
+  ArrowLeft,
   Smartphone,
   Users,
   Send,
@@ -150,7 +151,14 @@ export default function AgentSidebar() {
       </aside>
 
       <main className="flex-1 flex flex-col pt-16 lg:pt-0">
-        <div className="hidden lg:flex justify-end px-4 pt-4">
+        <div className="hidden lg:flex justify-between px-4 pt-4">
+          <button
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft size={18} />
+            Retour
+          </button>
           <button
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition"
             onClick={() => setSidebarVisible((v) => !v)}
@@ -160,6 +168,15 @@ export default function AgentSidebar() {
           </button>
         </div>
         <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+          <div className="mb-4 lg:hidden">
+            <button
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-700 hover:bg-slate-100 transition"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft size={18} />
+              Retour
+            </button>
+          </div>
           <Outlet />
         </div>
       </main>

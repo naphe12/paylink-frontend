@@ -20,6 +20,7 @@ import {
   Store,
   ChevronDown,
   ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 import NotificationsBell from "@/components/NotificationsBell";
 import useNotifications from "@/hooks/useNotifications";
@@ -266,6 +267,13 @@ export default function DashboardLayout() {
       <div className="flex-1 flex flex-col pt-16 lg:pt-0">
         <header className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 bg-white border-b shadow-sm">
           <div className="flex items-center gap-3">
+            <button
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft size={18} />
+              Retour
+            </button>
             <button
               className="hidden lg:inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition"
               onClick={() => setSidebarVisible((v) => !v)}

@@ -22,6 +22,7 @@ import {
   LineChart,
   Menu,
   X,
+  ArrowLeft,
   HandCoins,
   Shield,
   LayoutDashboard,
@@ -631,7 +632,14 @@ export default function AdminSidebar() {
       </aside>
 
       <main className="flex-1 flex flex-col pt-16 lg:pt-0">
-        <div className="hidden lg:flex justify-end px-4 pt-4">
+        <div className="hidden lg:flex justify-between px-4 pt-4">
+          <button
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft size={18} />
+            Retour
+          </button>
           <button
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition"
             onClick={() => setSidebarVisible((v) => !v)}
@@ -641,6 +649,15 @@ export default function AdminSidebar() {
           </button>
         </div>
         <div className="p-4 sm:p-6 lg:p-8 bg-slate-50 rounded-t-3xl lg:rounded-none lg:rounded-l-3xl shadow-inner">
+          <div className="mb-4 lg:hidden">
+            <button
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-700 hover:bg-slate-100 transition"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft size={18} />
+              Retour
+            </button>
+          </div>
           <div className="mb-6 space-y-3">
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">
               UI marker: admin-global-quick-actions-layout-v1
