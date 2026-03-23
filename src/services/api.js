@@ -714,6 +714,21 @@ const api = {
     ).toString();
     return this.get(`/admin/wallets/${walletId}/history${query ? `?${query}` : ""}`);
   },
+  async getAdminCryptoWalletSummary(userId) {
+    return this.get(`/admin/wallets/crypto/${userId}/summary`);
+  },
+  async ensureAdminCryptoWallet(userId, tokenSymbol) {
+    const query = new URLSearchParams({ token_symbol: tokenSymbol }).toString();
+    return this.post(`/admin/wallets/crypto/${userId}/ensure${query ? `?${query}` : ""}`, {});
+  },
+  async getAdminCryptoWalletHistory(userId, tokenSymbol, params = {}) {
+    const query = new URLSearchParams(
+      Object.entries({ ...params, token_symbol: tokenSymbol }).filter(
+        ([, v]) => v !== undefined && v !== null && v !== ""
+      )
+    ).toString();
+    return this.get(`/admin/wallets/crypto/${userId}/history${query ? `?${query}` : ""}`);
+  },
   async getAdminPaymentRequests(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")

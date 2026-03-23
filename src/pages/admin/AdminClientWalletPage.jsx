@@ -1,9 +1,52 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Coins, CreditCard, Search, Users, Wallet } from "lucide-react";
 import api from "@/services/api";
 import { formatWalletOperationLabel, inferWalletEntryIsCredit } from "@/utils/walletHistory";
 
 const DEFAULT_HISTORY_FILTERS = { limit: 25, search: "" };
+
+function buildWalletHistoryLinks(entry, userId, selectedWalletId) {
+  const operationType = String(entry?.operation_type || "").toLowerCase();
+  const reference = encodeURIComponent(String(entry?.reference || "").trim());
+  const links = [];
+
+  if (operationType.includes("external_transfer")) {
+    links.push({
+      label: "Transfert externe",
+      to: `/dashboard/admin/transfers?user_id=${userId}`,
+    });
+  }
+  if (operationType.includes("cash") || operationType.includes("topup") || operationType.includes("deposit")) {
+    links.push({
+      label: "Cash in/out",
+      to: `/dashboard/admin/cash-requests`,
+    });
+  }
+  if (operationType.includes("tontine")) {
+    links.push({
+      label: "Tontines",
+      to: `/dashboard/admin/tontines-dashboard`,
+    });
+    links.push({
+      label: "Membres tontines",
+      to: `/dashboard/admin/tontines/members`,
+    });
+  }
+  if (selectedWalletId?.startsWith("crypto:")) {
+    links.push({
+      label: "Audit ledger",
+      to: `/dashboard/admin/transactions-audit`,
+    });
+  }
+  if (reference && reference !== "-") {
+    links.push({
+      label: "Balance events",
+      to: `/dashboard/admin/users/${userId}/balance-events`,
+    });
+  }
+  return links;
+}
 
 function SummaryCard({ title, value, subvalue, icon: Icon, tone = "slate" }) {
   const toneClass = {
@@ -34,7 +77,9 @@ export default function AdminClientWalletPage() {
   const [wallets, setWallets] = useState([]);
   const [selectedWalletId, setSelectedWalletId] = useState("");
   const [summary, setSummary] = useState(null);
+  const [cryptoSummary, setCryptoSummary] = useState(null);
   const [walletsLoading, setWalletsLoading] = useState(false);
+  const [cryptoActionLoading, setCryptoActionLoading] = useState("");
   const [error, setError] = useState("");
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -77,6 +122,7 @@ export default function AdminClientWalletPage() {
     if (!selectedUserId) {
       setSelectedUser(null);
       setSummary(null);
+      setCryptoSummary(null);
       setWallets([]);
       setSelectedWalletId("");
       setHistory([]);
@@ -89,10 +135,11 @@ export default function AdminClientWalletPage() {
       setWalletsLoading(true);
       setError("");
       try {
-        const [userData, summaryData, walletsData] = await Promise.all([
+        const [userData, summaryData, walletsData, cryptoData] = await Promise.all([
           api.getUser(selectedUserId),
           api.getAdminFinancialSummary(selectedUserId),
           api.getAdminWallets({ user_id: selectedUserId, limit: 50 }),
+          api.getAdminCryptoWalletSummary(selectedUserId),
         ]);
 
         if (!active) return;
@@ -100,6 +147,7 @@ export default function AdminClientWalletPage() {
         const normalizedWallets = Array.isArray(walletsData) ? walletsData : [];
         setSelectedUser(userData || null);
         setSummary(summaryData || null);
+        setCryptoSummary(cryptoData || null);
         setWallets(normalizedWallets);
         setSelectedWalletId((current) => {
           if (current && normalizedWallets.some((wallet) => wallet.wallet_id === current)) {
@@ -115,6 +163,7 @@ export default function AdminClientWalletPage() {
         console.error("Erreur chargement wallets client admin:", err);
         setSelectedUser(null);
         setSummary(null);
+        setCryptoSummary(null);
         setWallets([]);
         setSelectedWalletId("");
         setHistory([]);
@@ -142,7 +191,13 @@ export default function AdminClientWalletPage() {
     const loadHistory = async () => {
       setHistoryLoading(true);
       try {
-        const data = await api.getAdminWalletHistory(selectedWalletId, historyFilters);
+        const data = selectedWalletId.startsWith("crypto:")
+          ? await api.getAdminCryptoWalletHistory(
+              selectedUserId,
+              selectedWalletId.replace("crypto:", ""),
+              historyFilters
+            )
+          : await api.getAdminWalletHistory(selectedWalletId, historyFilters);
         if (active) {
           setHistory(Array.isArray(data) ? data : []);
         }
@@ -162,13 +217,27 @@ export default function AdminClientWalletPage() {
     return () => {
       active = false;
     };
-  }, [selectedWalletId, historyFilters, historyReload]);
+  }, [selectedWalletId, selectedUserId, historyFilters, historyReload]);
 
   const selectedWallet = wallets.find((wallet) => wallet.wallet_id === selectedWalletId) || null;
-  const usdcWallet =
-    wallets.find((wallet) => String(wallet.currency || "").toUpperCase() === "USDC") || null;
-  const usdtWallet =
-    wallets.find((wallet) => String(wallet.currency || "").toUpperCase() === "USDT") || null;
+  const usdcWallet = cryptoSummary?.wallets?.find((wallet) => wallet.token_symbol === "USDC") || null;
+  const usdtWallet = cryptoSummary?.wallets?.find((wallet) => wallet.token_symbol === "USDT") || null;
+
+  const handleEnsureCryptoWallet = async (tokenSymbol) => {
+    if (!selectedUserId) return;
+    setCryptoActionLoading(tokenSymbol);
+    setError("");
+    try {
+      await api.ensureAdminCryptoWallet(selectedUserId, tokenSymbol);
+      const refreshed = await api.getAdminCryptoWalletSummary(selectedUserId);
+      setCryptoSummary(refreshed || null);
+      setSelectedWalletId(`crypto:${tokenSymbol}`);
+    } catch (err) {
+      setError(err?.message || `Impossible de creer le wallet ${tokenSymbol}.`);
+    } finally {
+      setCryptoActionLoading("");
+    }
+  };
 
   const handleHistorySubmit = (event) => {
     event.preventDefault();
@@ -276,10 +345,10 @@ export default function AdminClientWalletPage() {
                 />
                 <SummaryCard
                   title="Wallet USDC"
-                  value={usdcWallet ? `${Number(usdcWallet.available || 0).toLocaleString()} USDC` : "Non cree"}
+                  value={usdcWallet?.exists ? `${Number(usdcWallet.balance || 0).toLocaleString()} USDC` : "Non cree"}
                   subvalue={
-                    usdcWallet
-                      ? `En attente: ${Number(usdcWallet.pending || 0).toLocaleString()} USDC`
+                    usdcWallet?.exists
+                      ? `Compte crypto actif`
                       : "Aucun wallet USDC pour ce client"
                   }
                   icon={Coins}
@@ -287,10 +356,10 @@ export default function AdminClientWalletPage() {
                 />
                 <SummaryCard
                   title="Wallet USDT"
-                  value={usdtWallet ? `${Number(usdtWallet.available || 0).toLocaleString()} USDT` : "Non cree"}
+                  value={usdtWallet?.exists ? `${Number(usdtWallet.balance || 0).toLocaleString()} USDT` : "Non cree"}
                   subvalue={
-                    usdtWallet
-                      ? `En attente: ${Number(usdtWallet.pending || 0).toLocaleString()} USDT`
+                    usdtWallet?.exists
+                      ? `Compte crypto actif`
                       : "Aucun wallet USDT pour ce client"
                   }
                   icon={Coins}
@@ -312,6 +381,66 @@ export default function AdminClientWalletPage() {
                 />
               </div>
             ) : null}
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to={`/dashboard/admin/users/${selectedUserId}`} className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
+                Profil client
+              </Link>
+              <Link to={`/dashboard/admin/transfers?user_id=${selectedUserId}`} className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
+                Transferts externes
+              </Link>
+              <Link to={`/dashboard/admin/cash-requests`} className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
+                Cash in/out
+              </Link>
+              <Link to={`/dashboard/admin/tontines-dashboard`} className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
+                Tontines
+              </Link>
+              <Link to={`/dashboard/admin/users/${selectedUserId}/balance-events`} className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
+                Balance events
+              </Link>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {["USDC", "USDT"].map((tokenSymbol) => {
+                const cryptoWallet = tokenSymbol === "USDC" ? usdcWallet : usdtWallet;
+                const exists = Boolean(cryptoWallet?.exists);
+                return (
+                  <div key={tokenSymbol} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Wallet {tokenSymbol}</p>
+                        <p className="text-xs text-slate-500">
+                          {exists ? `Compte ledger: ${cryptoWallet.account_code}` : "Wallet crypto absent"}
+                        </p>
+                      </div>
+                      <p className="text-lg font-bold text-slate-900">
+                        {exists ? `${Number(cryptoWallet.balance || 0).toLocaleString()} ${tokenSymbol}` : "Non cree"}
+                      </p>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {exists ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedWalletId(`crypto:${tokenSymbol}`)}
+                          className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                        >
+                          Voir operations {tokenSymbol}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleEnsureCryptoWallet(tokenSymbol)}
+                          disabled={cryptoActionLoading === tokenSymbol}
+                          className="rounded-xl bg-blue-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                        >
+                          {cryptoActionLoading === tokenSymbol ? "Creation..." : `Creer wallet ${tokenSymbol}`}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </section>
 
           <section className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
@@ -372,14 +501,20 @@ export default function AdminClientWalletPage() {
             </div>
 
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              {selectedWallet ? (
+              {selectedWallet || selectedWalletId.startsWith("crypto:") ? (
                 <>
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                       <h3 className="text-lg font-semibold text-slate-900">
-                        Historique wallet {selectedWallet.type?.toUpperCase()} {selectedWallet.currency}
+                        {selectedWalletId.startsWith("crypto:")
+                          ? `Historique wallet crypto ${selectedWalletId.replace("crypto:", "")}`
+                          : `Historique wallet ${selectedWallet?.type?.toUpperCase()} ${selectedWallet?.currency}`}
                       </h3>
-                      <p className="text-sm text-slate-500">{selectedWallet.wallet_id}</p>
+                      <p className="text-sm text-slate-500">
+                        {selectedWalletId.startsWith("crypto:")
+                          ? cryptoSummary?.wallets?.find((w) => w.token_symbol === selectedWalletId.replace("crypto:", ""))?.account_code || "-"
+                          : selectedWallet?.wallet_id}
+                      </p>
                     </div>
 
                     <form onSubmit={handleHistorySubmit} className="flex flex-wrap items-center gap-2">
@@ -485,12 +620,25 @@ export default function AdminClientWalletPage() {
                                   }`}
                                 >
                                   {isCredit ? "+" : "-"}
-                                  {Math.abs(amountNum).toLocaleString()} {selectedWallet.currency || ""}
+                                  {Math.abs(amountNum).toLocaleString()} {entry.currency_code || selectedWallet?.currency || ""}
                                 </td>
                                 <td className="p-3 text-slate-700">
-                                  {Number(entry.balance_after || 0).toLocaleString()} {selectedWallet.currency || ""}
+                                  {Number(entry.balance_after || 0).toLocaleString()} {entry.currency_code || selectedWallet?.currency || ""}
                                 </td>
-                                <td className="p-3 text-slate-500">{entry.reference || "-"}</td>
+                                <td className="p-3 text-slate-500">
+                                  <div>{entry.reference || "-"}</div>
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    {buildWalletHistoryLinks(entry, selectedUserId, selectedWalletId).map((link) => (
+                                      <Link
+                                        key={`${entry.transaction_id}-${link.to}-${link.label}`}
+                                        to={link.to}
+                                        className="inline-flex rounded-full border border-slate-200 px-2 py-1 text-[11px] font-medium text-blue-700"
+                                      >
+                                        {link.label}
+                                      </Link>
+                                    ))}
+                                  </div>
+                                </td>
                               </tr>
                             );
                           })
