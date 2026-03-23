@@ -978,8 +978,17 @@ const api = {
   async decreaseAdminCreditLine(creditLineId, amount) {
     return this.post(`/admin/credit-lines/${creditLineId}/decrease`, { amount });
   },
+  async listAdminCreditDebtors(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/credit-lines/debtors${query ? `?${query}` : ""}`);
+  },
   async repayAdminCreditLine(creditLineId, amount) {
     return this.post(`/admin/credit-lines/${creditLineId}/repay`, { amount });
+  },
+  async repayAdminClientDebt(userId, amount) {
+    return this.post(`/admin/credit-lines/users/${userId}/repay`, { amount });
   },
 };
 
