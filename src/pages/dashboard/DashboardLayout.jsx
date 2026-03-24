@@ -48,19 +48,27 @@ const menuGroups = [
       { name: "Demandes paiement", path: "/dashboard/client/payments", icon: <Send size={18} /> },
       { name: "Transfert interne", path: "/dashboard/client/transfer", icon: <RefreshCcw size={18} /> },
       { name: "Transfert externe", path: "/dashboard/client/external-transfer", icon: <Globe size={18} /> },
-      { name: "Assistant transfert", path: "/dashboard/client/agent-chat", icon: <MessageSquare size={18} /> },
-      { name: "Assistant cash", path: "/dashboard/client/cash-agent", icon: <MessageSquare size={18} /> },
-      { name: "Assistant credit", path: "/dashboard/client/credit-agent", icon: <MessageSquare size={18} /> },
-      { name: "Assistant KYC", path: "/dashboard/client/kyc-agent", icon: <MessageSquare size={18} /> },
-      { name: "Support transfert", path: "/dashboard/client/transfer-support-agent", icon: <MessageSquare size={18} /> },
-      { name: "Assistant wallet", path: "/dashboard/client/wallet-agent", icon: <MessageSquare size={18} /> },
-      { name: "Support wallet", path: "/dashboard/client/wallet-support-agent", icon: <MessageSquare size={18} /> },
       { name: "Mobile Money", path: "/dashboard/client/mobiletopup", icon: <Smartphone size={18} /> },
       { name: "Depot cash", path: "/dashboard/client/deposit", icon: <ArrowDown size={18} /> },
       { name: "Retrait cash", path: "/dashboard/client/withdraw/bif", icon: <ArrowUp size={18} /> },
       { name: "Retrait USDC", path: "/dashboard/client/withdraw/usdc", icon: <ArrowUp size={18} /> },
       { name: "Bonus", path: "/dashboard/client/bonus", icon: <Gift size={18} /> },
+    ],
+  },
+  {
+    key: "assistants",
+    title: "Assistants",
+    items: [
       { name: "Guide assistants", path: "/dashboard/client/assistants-guide", icon: <BookOpen size={18} /> },
+      { name: "Assistant transfert", path: "/dashboard/client/agent-chat", icon: <MessageSquare size={18} /> },
+      { name: "Support transfert", path: "/dashboard/client/transfer-support-agent", icon: <MessageSquare size={18} /> },
+      { name: "Assistant cash", path: "/dashboard/client/cash-agent", icon: <MessageSquare size={18} /> },
+      { name: "Assistant credit", path: "/dashboard/client/credit-agent", icon: <MessageSquare size={18} /> },
+      { name: "Assistant KYC", path: "/dashboard/client/kyc-agent", icon: <MessageSquare size={18} /> },
+      { name: "Assistant wallet", path: "/dashboard/client/wallet-agent", icon: <MessageSquare size={18} /> },
+      { name: "Support wallet", path: "/dashboard/client/wallet-support-agent", icon: <MessageSquare size={18} /> },
+      { name: "Assistant escrow", path: "/dashboard/client/escrow-agent", icon: <MessageSquare size={18} /> },
+      { name: "Assistant P2P", path: "/dashboard/client/p2p-agent", icon: <MessageSquare size={18} /> },
     ],
   },
   {
@@ -68,9 +76,7 @@ const menuGroups = [
     title: "Escrow et P2P",
     items: [
       { name: "Paiement crypto securise", path: "/dashboard/client/crypto-pay", icon: <Send size={18} /> },
-      { name: "Assistant escrow", path: "/dashboard/client/escrow-agent", icon: <MessageSquare size={18} /> },
       { name: "P2P Exchange", path: "/app/p2p", icon: <Store size={18} /> },
-      { name: "Assistant P2P", path: "/dashboard/client/p2p-agent", icon: <MessageSquare size={18} /> },
       { name: "Mes Trades", path: "/app/p2p/my-trades", icon: <Store size={18} /> },
       { name: "Mes Offres", path: "/app/p2p/my-offers", icon: <Store size={18} /> },
     ],
@@ -103,6 +109,7 @@ const menuGroups = [
 const DEFAULT_COLLAPSED_GROUPS = {
   wallet: false,
   payments: true,
+  assistants: false,
   escrowP2p: true,
   credit: true,
   community: true,
@@ -112,12 +119,26 @@ const DEFAULT_COLLAPSED_GROUPS = {
 function getGroupForPath(pathname = "") {
   if (pathname.includes("/overview")) return "wallet";
   if (
-    pathname.includes("/p2p") ||
+    pathname.startsWith("/app/p2p") ||
     pathname.includes("/crypto-pay") ||
-    pathname.includes("/escrow-agent") ||
-    pathname.includes("/p2p-agent")
+    pathname.includes("/p2p/my-trades") ||
+    pathname.includes("/p2p/my-offers")
   ) {
     return "escrowP2p";
+  }
+  if (
+    pathname.includes("/agent-chat") ||
+    pathname.includes("/cash-agent") ||
+    pathname.includes("/credit-agent") ||
+    pathname.includes("/kyc-agent") ||
+    pathname.includes("/transfer-support-agent") ||
+    pathname.includes("/wallet-agent") ||
+    pathname.includes("/wallet-support-agent") ||
+    pathname.includes("/escrow-agent") ||
+    pathname.includes("/p2p-agent") ||
+    pathname.includes("/assistants-guide")
+  ) {
+    return "assistants";
   }
   if (
     pathname.includes("/credit") ||
@@ -133,14 +154,6 @@ function getGroupForPath(pathname = "") {
     pathname.includes("/payments") ||
     pathname.includes("/transfer") ||
     pathname.includes("/external-transfer") ||
-    pathname.includes("/agent-chat") ||
-    pathname.includes("/cash-agent") ||
-    pathname.includes("/credit-agent") ||
-    pathname.includes("/kyc-agent") ||
-    pathname.includes("/transfer-support-agent") ||
-    pathname.includes("/wallet-agent") ||
-    pathname.includes("/wallet-support-agent") ||
-    pathname.includes("/assistants-guide") ||
     pathname.includes("/mobiletopup") ||
     pathname.includes("/deposit") ||
     pathname.includes("/withdraw")
@@ -195,6 +208,13 @@ export default function DashboardLayout() {
         : "text-slate-200 hover:bg-white/10"
     }`;
 
+  const assistantLinkClass = ({ isActive }) =>
+    `flex items-center gap-3 px-4 py-2 rounded-2xl border transition ${
+      isActive
+        ? "border-cyan-200 bg-white text-indigo-950 shadow-lg shadow-cyan-900/20"
+        : "border-white/10 bg-white/5 text-white hover:bg-white/12 hover:border-cyan-200/40"
+    }`;
+
   const groupButtonClass =
     "w-full flex items-center justify-between px-2 py-2 text-[11px] uppercase tracking-[0.3em] text-white/60 hover:text-white transition";
 
@@ -231,9 +251,14 @@ export default function DashboardLayout() {
               {collapsedGroups[group.key] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
             </button>
             {!collapsedGroups[group.key] && (
-              <div className="flex flex-col gap-2 mt-2">
+              <div className={`mt-2 ${group.key === "assistants" ? "grid gap-2" : "flex flex-col gap-2"}`}>
                 {group.items.map((item) => (
-                  <NavLink key={item.path} to={item.path} className={linkClass} onClick={onNavigate}>
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={group.key === "assistants" ? assistantLinkClass : linkClass}
+                    onClick={onNavigate}
+                  >
                     {item.icon} {item.name}
                   </NavLink>
                 ))}
