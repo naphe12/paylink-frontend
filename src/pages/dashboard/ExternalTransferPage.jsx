@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Info, Send } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
@@ -62,8 +63,29 @@ function beneficiaryOptionValue(beneficiary) {
   ].join("|");
 }
 
+function getTransferStatusBadgeClass(status) {
+  const normalized = String(status || "").toLowerCase();
+  if (["pending", "initiated"].includes(normalized)) {
+    return "bg-amber-100 text-amber-800 border border-amber-200";
+  }
+  if (normalized === "approved") {
+    return "bg-blue-100 text-blue-800 border border-blue-200";
+  }
+  if (["succeeded", "completed"].includes(normalized)) {
+    return "bg-emerald-100 text-emerald-800 border border-emerald-200";
+  }
+  if (normalized === "failed") {
+    return "bg-rose-100 text-rose-800 border border-rose-200";
+  }
+  if (["cancelled", "reversed"].includes(normalized)) {
+    return "bg-slate-200 text-slate-700 border border-slate-300";
+  }
+  return "bg-white text-slate-700 border border-slate-300";
+}
+
 export default function ExternalTransferPage() {
   const [countries, setCountries] = useState([]);
+  const [recentTransfers, setRecentTransfers] = useState([]);
   const [sourceCurrency, setSourceCurrency] = useState("EUR");
   const [form, setForm] = useState({
     recipient_name: "",
@@ -82,6 +104,7 @@ export default function ExternalTransferPage() {
   const [creditAvailable, setCreditAvailable] = useState(0);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
+  const [createdTransferReference, setCreatedTransferReference] = useState("");
   const [error, setError] = useState("");
   const [loadError, setLoadError] = useState("");
   const [selectedBeneficiary, setSelectedBeneficiary] = useState("");
@@ -185,6 +208,15 @@ export default function ExternalTransferPage() {
     }
   };
 
+  const loadRecentTransfers = async () => {
+    try {
+      const data = await api.get("/wallet/transfer/external/mine?limit=8");
+      setRecentTransfers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setLoadError((current) => current || err?.message || "Impossible de charger l'historique des transferts externes.");
+    }
+  };
+
   const loadFinancialCapacity = async () => {
     try {
       const data = await api.getFinancialSummary();
@@ -229,10 +261,11 @@ export default function ExternalTransferPage() {
     loadCountries();
     loadBeneficiaries();
     loadFinancialCapacity();
+    loadRecentTransfers();
   }, []);
 
   const retryLoad = async () => {
-    await Promise.allSettled([loadCountries(), loadRate(), loadBeneficiaries(), loadFinancialCapacity()]);
+    await Promise.allSettled([loadCountries(), loadRate(), loadBeneficiaries(), loadFinancialCapacity(), loadRecentTransfers()]);
   };
 
   const handleChange = (e) => {
@@ -264,6 +297,7 @@ export default function ExternalTransferPage() {
     setLoading(true);
     setError("");
     setSuccess(null);
+    setCreatedTransferReference("");
 
     const requestedAmount = effectiveSourceAmount;
     const normalizedPhone = normalizeRecipientPhone(form.recipient_phone);
@@ -289,7 +323,7 @@ export default function ExternalTransferPage() {
     try {
       const idemKey = submitIdempotencyKey || api.newIdempotencyKey("external-transfer");
       if (!submitIdempotencyKey) setSubmitIdempotencyKey(idemKey);
-      await api.postIdempotent(
+      const response = await api.postIdempotent(
         "/wallet/transfer/external",
         {
           partner_name: form.partner_name,
@@ -302,6 +336,13 @@ export default function ExternalTransferPage() {
         "external-transfer"
       );
       setSuccess("Transfert soumis avec succes.");
+      setCreatedTransferReference(String(response?.reference_code || response?.transfer_id || ""));
+      if (response?.reference_code || response?.transfer_id) {
+        window.localStorage.setItem(
+          "paylink_last_transfer_reference",
+          String(response?.reference_code || response?.transfer_id || "")
+        );
+      }
       setSubmitIdempotencyKey("");
       setForm({
         recipient_name: "",
@@ -313,6 +354,7 @@ export default function ExternalTransferPage() {
       });
       setSelectedBeneficiary("");
       await loadFinancialCapacity();
+      await loadRecentTransfers();
     } catch (err) {
       setError(err?.message || "Erreur lors de l'envoi du transfert.");
     } finally {
@@ -525,7 +567,20 @@ export default function ExternalTransferPage() {
         </div>
 
         {error && <ApiErrorAlert message={error} />}
-        {success && <p className="text-sm text-green-600">{success}</p>}
+        {success ? (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <p className="font-semibold">{success}</p>
+            {createdTransferReference ? <p className="mt-1">Reference : {createdTransferReference}</p> : null}
+            {createdTransferReference ? (
+              <Link
+                to={`/dashboard/client/transfer-support-agent?reference=${encodeURIComponent(createdTransferReference)}`}
+                className="mt-3 inline-flex items-center rounded-lg border border-emerald-300 bg-white px-3 py-2 font-medium text-emerald-800 hover:bg-emerald-100/60"
+              >
+                Suivre cette demande
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
 
         <button
           type="submit"
@@ -535,6 +590,78 @@ export default function ExternalTransferPage() {
           {loading ? "Envoi en cours..." : "Envoyer le transfert"}
         </button>
       </form>
+
+      <section className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">Demandes recentes</h3>
+            <p className="text-sm text-slate-500">Suivi rapide de tes derniers transferts externes.</p>
+          </div>
+          <button
+            type="button"
+            onClick={loadRecentTransfers}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+          >
+            Rafraichir
+          </button>
+        </div>
+
+        {recentTransfers.length === 0 ? (
+          <p className="mt-4 text-sm italic text-slate-500">Aucune demande recente.</p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead className="text-slate-500">
+                <tr>
+                  <th className="py-2 pr-4">Reference</th>
+                  <th className="py-2 pr-4">Beneficiaire</th>
+                  <th className="py-2 pr-4">Destination</th>
+                  <th className="py-2 pr-4">Montant</th>
+                  <th className="py-2 pr-4">Statut</th>
+                  <th className="py-2 pr-0 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 text-slate-700">
+                {recentTransfers.map((transfer) => {
+                  const reference = transfer.reference_code || transfer.transfer_id;
+                  return (
+                    <tr key={transfer.transfer_id}>
+                      <td className="py-3 pr-4 font-mono text-xs">{reference}</td>
+                      <td className="py-3 pr-4">
+                        <div>{transfer.recipient_name}</div>
+                        <div className="text-xs text-slate-500">{transfer.recipient_phone}</div>
+                      </td>
+                      <td className="py-3 pr-4">
+                        {transfer.country_destination} / {transfer.partner_name}
+                      </td>
+                      <td className="py-3 pr-4 font-medium">
+                        {transfer.amount} {transfer.currency}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getTransferStatusBadgeClass(
+                            transfer.status
+                          )}`}
+                        >
+                          {transfer.status}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-0 text-right">
+                        <Link
+                          to={`/dashboard/client/transfer-support-agent?reference=${encodeURIComponent(reference)}`}
+                          className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-100"
+                        >
+                          Suivre
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

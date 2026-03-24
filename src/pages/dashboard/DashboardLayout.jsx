@@ -47,7 +47,13 @@ const menuGroups = [
       { name: "Demandes paiement", path: "/dashboard/client/payments", icon: <Send size={18} /> },
       { name: "Transfert interne", path: "/dashboard/client/transfer", icon: <RefreshCcw size={18} /> },
       { name: "Transfert externe", path: "/dashboard/client/external-transfer", icon: <Globe size={18} /> },
-      { name: "Agent PayLink", path: "/dashboard/client/agent-chat", icon: <MessageSquare size={18} /> },
+      { name: "Assistant transfert", path: "/dashboard/client/agent-chat", icon: <MessageSquare size={18} /> },
+      { name: "Assistant cash", path: "/dashboard/client/cash-agent", icon: <MessageSquare size={18} /> },
+      { name: "Assistant credit", path: "/dashboard/client/credit-agent", icon: <MessageSquare size={18} /> },
+      { name: "Assistant KYC", path: "/dashboard/client/kyc-agent", icon: <MessageSquare size={18} /> },
+      { name: "Support transfert", path: "/dashboard/client/transfer-support-agent", icon: <MessageSquare size={18} /> },
+      { name: "Assistant wallet", path: "/dashboard/client/wallet-agent", icon: <MessageSquare size={18} /> },
+      { name: "Support wallet", path: "/dashboard/client/wallet-support-agent", icon: <MessageSquare size={18} /> },
       { name: "Mobile Money", path: "/dashboard/client/mobiletopup", icon: <Smartphone size={18} /> },
       { name: "Depot cash", path: "/dashboard/client/deposit", icon: <ArrowDown size={18} /> },
       { name: "Retrait cash", path: "/dashboard/client/withdraw/bif", icon: <ArrowUp size={18} /> },
@@ -60,7 +66,9 @@ const menuGroups = [
     title: "Escrow et P2P",
     items: [
       { name: "Paiement crypto securise", path: "/dashboard/client/crypto-pay", icon: <Send size={18} /> },
+      { name: "Assistant escrow", path: "/dashboard/client/escrow-agent", icon: <MessageSquare size={18} /> },
       { name: "P2P Exchange", path: "/app/p2p", icon: <Store size={18} /> },
+      { name: "Assistant P2P", path: "/dashboard/client/p2p-agent", icon: <MessageSquare size={18} /> },
       { name: "Mes Trades", path: "/app/p2p/my-trades", icon: <Store size={18} /> },
       { name: "Mes Offres", path: "/app/p2p/my-offers", icon: <Store size={18} /> },
     ],
@@ -101,7 +109,14 @@ const DEFAULT_COLLAPSED_GROUPS = {
 
 function getGroupForPath(pathname = "") {
   if (pathname.includes("/overview")) return "wallet";
-  if (pathname.includes("/p2p") || pathname.includes("/crypto-pay")) return "escrowP2p";
+  if (
+    pathname.includes("/p2p") ||
+    pathname.includes("/crypto-pay") ||
+    pathname.includes("/escrow-agent") ||
+    pathname.includes("/p2p-agent")
+  ) {
+    return "escrowP2p";
+  }
   if (
     pathname.includes("/credit") ||
     pathname.includes("/microfinance") ||
@@ -117,6 +132,12 @@ function getGroupForPath(pathname = "") {
     pathname.includes("/transfer") ||
     pathname.includes("/external-transfer") ||
     pathname.includes("/agent-chat") ||
+    pathname.includes("/cash-agent") ||
+    pathname.includes("/credit-agent") ||
+    pathname.includes("/kyc-agent") ||
+    pathname.includes("/transfer-support-agent") ||
+    pathname.includes("/wallet-agent") ||
+    pathname.includes("/wallet-support-agent") ||
     pathname.includes("/mobiletopup") ||
     pathname.includes("/deposit") ||
     pathname.includes("/withdraw")

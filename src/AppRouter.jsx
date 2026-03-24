@@ -26,6 +26,14 @@ import ExternalTransferPage from "@/pages/dashboard/ExternalTransferPage";
 import FxRatesPage from "@/pages/dashboard/FxRatesPage";
 import BonusPage from "@/pages/dashboard/BonusPage";
 import AgentChatPage from "@/pages/dashboard/AgentChatPage";
+import CashAgentPage from "@/pages/dashboard/CashAgentPage";
+import CreditAgentPage from "@/pages/dashboard/CreditAgentPage";
+import KycAgentPage from "@/pages/dashboard/KycAgentPage";
+import TransferSupportAgentPage from "@/pages/dashboard/TransferSupportAgentPage";
+import WalletAgentPage from "@/pages/dashboard/WalletAgentPage";
+import WalletSupportAgentPage from "@/pages/dashboard/WalletSupportAgentPage";
+import EscrowAgentPage from "@/pages/dashboard/EscrowAgentPage";
+import P2PAgentPage from "@/pages/dashboard/P2PAgentPage";
 
 import TontineCreatePage from "@/pages/tontines/TontineCreatePage";
 import TontineListPage from "@/pages/tontines/TontineListPage";
@@ -92,6 +100,7 @@ import AgentHistoryPage from "@/pages/agent/AgentHistoryPage";
 import AgentAssignmentsPage from "@/pages/agent/AgentAssignmentsPage";
 import AgentConfirmPage from "@/pages/agent/AgentConfirmPage";
 import AgentSidebar from "@/layouts/AgentSidebar";
+import AgentOnboardingPage from "@/pages/agent/AgentOnboardingPage";
 import MyQrPage from "@/pages/profile/MyQrPage";
 import AgentTransferClosurePage from "@/pages/agent/AgentTransferClosurePage";
 import AgentExternalTransferPage from "@/pages/agent/AgentExternalTransferPage";
@@ -164,6 +173,14 @@ export default function AppRouter() {
         <Route path="fx-rates" element={<FxRatesPage />} />
         <Route path="bonus" element={<BonusPage />} />
         <Route path="agent-chat" element={<AgentChatPage />} />
+        <Route path="cash-agent" element={<CashAgentPage />} />
+        <Route path="credit-agent" element={<CreditAgentPage />} />
+        <Route path="kyc-agent" element={<KycAgentPage />} />
+        <Route path="transfer-support-agent" element={<TransferSupportAgentPage />} />
+        <Route path="wallet-agent" element={<WalletAgentPage />} />
+        <Route path="wallet-support-agent" element={<WalletSupportAgentPage />} />
+        <Route path="escrow-agent" element={<EscrowAgentPage />} />
+        <Route path="p2p-agent" element={<P2PAgentPage />} />
         <Route path="loans" element={<LoansPage />} />
         <Route path="tontines" element={<TontineListPage />} />
         <Route path="tontines/create" element={<TontineCreatePage />} />
@@ -261,6 +278,7 @@ export default function AppRouter() {
         <Route path="assignments/:assignmentId" element={<AgentConfirmPage />} />
         <Route path="external-transfer" element={<AgentExternalTransferPage />} />
         <Route path="transfers/close" element={<AgentTransferClosurePage />} />
+        <Route path="onboarding" element={<AgentOnboardingPage />} />
       </Route>
 
       <Route path="/me/qr" element={<MyQrPage />} />
