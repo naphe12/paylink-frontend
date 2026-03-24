@@ -3,6 +3,14 @@ import { AlertTriangle, Bug, RefreshCw, Search } from "lucide-react";
 import api from "@/services/api";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 
+function getTodayDateInput() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function KpiCard({ label, value, tone }) {
   return (
     <div className={`rounded-2xl border px-4 py-3 ${tone}`}>
@@ -22,6 +30,7 @@ function prettyJson(value) {
 }
 
 export default function AdminErrorLogsPage() {
+  const today = getTodayDateInput();
   const [rows, setRows] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [filters, setFilters] = useState({
@@ -29,6 +38,8 @@ export default function AdminErrorLogsPage() {
     path: "",
     error_type: "",
     status_code: "",
+    date_from: today,
+    date_to: today,
     limit: 100,
   });
   const [form, setForm] = useState({
@@ -36,6 +47,8 @@ export default function AdminErrorLogsPage() {
     path: "",
     error_type: "",
     status_code: "",
+    date_from: today,
+    date_to: today,
     limit: 100,
   });
   const [loading, setLoading] = useState(false);
@@ -82,6 +95,8 @@ export default function AdminErrorLogsPage() {
       path: form.path.trim(),
       error_type: form.error_type.trim(),
       status_code: form.status_code,
+      date_from: form.date_from,
+      date_to: form.date_to,
       limit: Number(form.limit) || 100,
     };
     setFilters(nextFilters);
@@ -94,6 +109,8 @@ export default function AdminErrorLogsPage() {
       path: "",
       error_type: "",
       status_code: "",
+      date_from: today,
+      date_to: today,
       limit: 100,
     };
     setForm(initial);
@@ -134,7 +151,7 @@ export default function AdminErrorLogsPage() {
       </section>
 
       <section className="rounded-2xl border bg-white p-4 shadow-sm">
-        <form onSubmit={applyFilters} className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+        <form onSubmit={applyFilters} className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
           <label className="xl:col-span-2">
             <span className="text-sm text-slate-600">Recherche</span>
             <div className="relative mt-1">
@@ -181,6 +198,24 @@ export default function AdminErrorLogsPage() {
               <option value="422">422</option>
               <option value="500">500</option>
             </select>
+          </label>
+          <label>
+            <span className="text-sm text-slate-600">Du</span>
+            <input
+              type="date"
+              value={form.date_from}
+              onChange={(e) => setForm((prev) => ({ ...prev, date_from: e.target.value }))}
+              className="mt-1 w-full rounded-xl border px-3 py-2"
+            />
+          </label>
+          <label>
+            <span className="text-sm text-slate-600">Au</span>
+            <input
+              type="date"
+              value={form.date_to}
+              onChange={(e) => setForm((prev) => ({ ...prev, date_to: e.target.value }))}
+              className="mt-1 w-full rounded-xl border px-3 py-2"
+            />
           </label>
           <label>
             <span className="text-sm text-slate-600">Limite</span>
