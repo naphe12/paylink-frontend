@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
+import AdminAssistantUserPicker from "@/components/admin/AdminAssistantUserPicker";
 import api from "@/services/api";
 
 function SummaryCard({ summary }) {
@@ -85,7 +86,7 @@ export default function CreditAgentPage() {
   const [isAutoAnalyzing, setIsAutoAnalyzing] = useState(false);
   const analyzeRequestIdRef = useRef(0);
   const isAdmin = String(window.localStorage.getItem("role") || "").toLowerCase() === "admin";
-  const targetUserId = String(searchParams.get("user") || "").trim();
+  const [targetUserId, setTargetUserId] = useState(String(searchParams.get("user") || "").trim());
   const buildPayload = (nextMessage) => ({
     message: nextMessage,
     ...(isAdmin && targetUserId ? { target_user_id: targetUserId } : {}),
@@ -181,6 +182,7 @@ export default function CreditAgentPage() {
 
       <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          {isAdmin ? <AdminAssistantUserPicker targetUserId={targetUserId} setTargetUserId={setTargetUserId} /> : null}
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
             <MessageSquare size={16} />
             Conversation
@@ -218,7 +220,7 @@ export default function CreditAgentPage() {
             <div className="mt-3 flex flex-wrap gap-3">
               <button
                 onClick={() => sendMessage()}
-                disabled={loading}
+                disabled={loading || (isAdmin && !targetUserId)}
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-white disabled:opacity-60"
               >
                 <Send size={16} />
@@ -228,6 +230,11 @@ export default function CreditAgentPage() {
           </div>
 
           <ApiErrorAlert message={error} className="mt-4" />
+          {isAdmin && !targetUserId ? (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              Selectionne d'abord un client pour utiliser l'assistant credit en mode admin.
+            </div>
+          ) : null}
 
           <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
