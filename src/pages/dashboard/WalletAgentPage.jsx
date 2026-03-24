@@ -14,6 +14,7 @@ import {
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import AdminAssistantUserPicker from "@/components/admin/AdminAssistantUserPicker";
 import api from "@/services/api";
+import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
 
 function SummaryCard({ summary }) {
   if (!summary) return null;
@@ -30,10 +31,11 @@ function SummaryCard({ summary }) {
 }
 
 function Metric({ label, value, suffix = "" }) {
+  const tone = label === "En attente" ? "warning" : label === "Solde" ? "success" : "info";
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
       <p className="text-[11px] uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-slate-900">{value ?? "-"} {suffix}</p>
+      <p className={`mt-1 text-sm ${getMetricValueClass(tone)}`}>{value ?? "-"} {suffix}</p>
     </div>
   );
 }
@@ -163,7 +165,9 @@ export default function WalletAgentPage() {
                     Assistant wallet
                   </div>
                   <p className="mt-2">{response.message}</p>
-                  <p className="mt-2 text-[11px] uppercase tracking-wide text-slate-400">{response.status}</p>
+                  <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${getStatusBadgeClass(response.status)}`}>
+                    {response.status}
+                  </span>
                 </div>
               </div>
             ) : null}

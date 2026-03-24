@@ -313,7 +313,7 @@ export default function AdminErrorLogsPage() {
               </div>
 
               <TextBlock label="Message" value={selectedRow.message || "-"} />
-              <TextBlock label="Stack trace" value={selectedRow.stack_trace || "-"} />
+              <TextBlock label="Stack trace" value={selectedRow.stack_trace || "-"} copyable />
               <TextBlock label="Headers" value={prettyJson(selectedRow.headers)} />
               <TextBlock label="Query params" value={prettyJson(selectedRow.query_params)} />
               <TextBlock label="Request body" value={selectedRow.request_body || "-"} />
@@ -338,10 +338,35 @@ function InfoBlock({ label, value, mono = false }) {
   );
 }
 
-function TextBlock({ label, value }) {
+function TextBlock({ label, value, copyable = false }) {
+  const [copied, setCopied] = useState(false);
+  const canCopy = copyable && typeof navigator !== "undefined" && navigator.clipboard;
+
+  const handleCopy = async () => {
+    if (!canCopy) return;
+    try {
+      await navigator.clipboard.writeText(String(value || ""));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   return (
     <div>
-      <p className="text-sm font-medium text-slate-700">{label}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-slate-700">{label}</p>
+        {canCopy && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          >
+            {copied ? "Copie" : "Copier"}
+          </button>
+        )}
+      </div>
       <pre className="mt-1 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 whitespace-pre-wrap break-words">
         {value}
       </pre>

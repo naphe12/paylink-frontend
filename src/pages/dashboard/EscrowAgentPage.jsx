@@ -13,12 +13,17 @@ import {
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import AdminAssistantUserPicker from "@/components/admin/AdminAssistantUserPicker";
 import api from "@/services/api";
+import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
 
 function Metric({ label, value }) {
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
       <p className="text-[11px] uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-slate-900 break-all">{value || "-"}</p>
+      {label === "Statut" ? (
+        <span className={`mt-1 inline-flex rounded-full px-2 py-1 text-sm font-bold ${getStatusBadgeClass(value)}`}>{value || "-"}</span>
+      ) : (
+        <p className={`mt-1 text-sm break-all ${getMetricValueClass(label.includes("USDC") || label.includes("BIF") ? "success" : "info")}`}>{value || "-"}</p>
+      )}
     </div>
   );
 }
@@ -181,7 +186,9 @@ export default function EscrowAgentPage() {
                     Assistant escrow
                   </div>
                   <p className="mt-2">{response.message}</p>
-                  <p className="mt-2 text-[11px] uppercase tracking-wide text-slate-400">{response.status}</p>
+                  <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${getStatusBadgeClass(response.status)}`}>
+                    {response.status}
+                  </span>
                 </div>
               </div>
             ) : null}

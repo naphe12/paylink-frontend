@@ -14,6 +14,7 @@ import {
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import AdminAssistantUserPicker from "@/components/admin/AdminAssistantUserPicker";
 import api from "@/services/api";
+import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
 
 function SummaryCard({ summary }) {
   if (!summary) return null;
@@ -49,7 +50,11 @@ function Metric({ label, value }) {
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
       <p className="text-[11px] uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-slate-900">{value || "-"}</p>
+      {label.toLowerCase().includes("statut") ? (
+        <span className={`mt-1 inline-flex rounded-full px-2 py-1 text-sm font-bold ${getStatusBadgeClass(value)}`}>{value || "-"}</span>
+      ) : (
+        <p className={`mt-1 text-sm ${getMetricValueClass(label === "Montant" ? "success" : label === "Prochaine etape" ? "warning" : "info")}`}>{value || "-"}</p>
+      )}
     </div>
   );
 }
@@ -79,7 +84,7 @@ function Field({ label, value }) {
   return (
     <div className="rounded-xl border border-slate-100 bg-white px-3 py-3">
       <p className="text-[11px] uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 font-semibold text-slate-900">{value || "-"}</p>
+      <p className={`mt-1 ${getMetricValueClass(label === "Reference" ? "info" : "warning")}`}>{value || "-"}</p>
     </div>
   );
 }
@@ -224,7 +229,9 @@ export default function TransferSupportAgentPage() {
                     Assistant support
                   </div>
                   <p className="mt-2">{response.message}</p>
-                  <p className="mt-2 text-[11px] uppercase tracking-wide text-slate-400">{response.status}</p>
+                  <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${getStatusBadgeClass(response.status)}`}>
+                    {response.status}
+                  </span>
                 </div>
               </div>
             ) : null}

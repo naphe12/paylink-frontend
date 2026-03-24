@@ -14,6 +14,7 @@ import {
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import AdminAssistantUserPicker from "@/components/admin/AdminAssistantUserPicker";
+import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
 import api from "@/services/api";
 
 function SummaryCard({ summary }) {
@@ -33,13 +34,14 @@ function SummaryCard({ summary }) {
 }
 
 function Metric({ label, value, suffix = "", icon: Icon = Wallet }) {
+  const tone = label === "Wallet" ? "info" : "success";
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-500">
         <Icon size={13} />
         <span>{label}</span>
       </div>
-      <p className="mt-1 text-sm font-semibold text-slate-900">
+      <p className={`mt-1 text-sm ${getMetricValueClass(tone)}`}>
         {value ?? "-"} {suffix}
       </p>
     </div>
@@ -72,7 +74,7 @@ function Field({ label, value }) {
   return (
     <div className="rounded-xl border border-slate-100 bg-white px-3 py-3">
       <p className="text-[11px] uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 font-semibold text-slate-900">{value || "-"}</p>
+      <p className={`mt-1 ${getMetricValueClass(label === "Montant" ? "success" : "info")}`}>{value || "-"}</p>
     </div>
   );
 }
@@ -202,7 +204,9 @@ export default function CreditAgentPage() {
                     Assistant credit
                   </div>
                   <p className="mt-2">{response.message}</p>
-                  <p className="mt-2 text-[11px] uppercase tracking-wide text-slate-400">{response.status}</p>
+                  <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${getStatusBadgeClass(response.status)}`}>
+                    {response.status}
+                  </span>
                 </div>
               </div>
             ) : null}
