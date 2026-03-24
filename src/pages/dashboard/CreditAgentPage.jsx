@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Bot,
   ChevronRight,
@@ -76,12 +77,19 @@ function Field({ label, value }) {
 }
 
 export default function CreditAgentPage() {
+  const [searchParams] = useSearchParams();
   const [message, setMessage] = useState("");
   const [response, setResponse] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isAutoAnalyzing, setIsAutoAnalyzing] = useState(false);
   const analyzeRequestIdRef = useRef(0);
+  const isAdmin = String(window.localStorage.getItem("role") || "").toLowerCase() === "admin";
+  const targetUserId = String(searchParams.get("user") || "").trim();
+  const buildPayload = (nextMessage) => ({
+    message: nextMessage,
+    ...(isAdmin && targetUserId ? { target_user_id: targetUserId } : {}),
+  });
 
   const quickPrompts = [
     "combien me reste en credit",
@@ -96,7 +104,7 @@ export default function CreditAgentPage() {
     setLoading(true);
     setError("");
     try {
-      const data = await api.post("/agent/credit-chat", { message: finalMessage });
+      const data = await api.post("/agent/credit-chat", buildPayload(finalMessage));
       if (requestId === analyzeRequestIdRef.current) {
         setResponse(data);
       }
@@ -128,7 +136,7 @@ export default function CreditAgentPage() {
       setLoading(true);
       setError("");
       try {
-        const data = await api.post("/agent/credit-chat", { message: trimmedMessage });
+        const data = await api.post("/agent/credit-chat", buildPayload(trimmedMessage));
         if (requestId === analyzeRequestIdRef.current) {
           setResponse(data);
         }

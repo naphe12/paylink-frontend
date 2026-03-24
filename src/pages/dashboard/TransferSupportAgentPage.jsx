@@ -91,6 +91,12 @@ export default function TransferSupportAgentPage() {
   const [loading, setLoading] = useState(false);
   const [isAutoAnalyzing, setIsAutoAnalyzing] = useState(false);
   const analyzeRequestIdRef = useRef(0);
+  const isAdmin = String(window.localStorage.getItem("role") || "").toLowerCase() === "admin";
+  const targetUserId = String(searchParams.get("user") || "").trim();
+  const buildPayload = (nextMessage) => ({
+    message: nextMessage,
+    ...(isAdmin && targetUserId ? { target_user_id: targetUserId } : {}),
+  });
 
   const quickPrompts = [
     "quel est le statut de ma derniere demande",
@@ -106,7 +112,7 @@ export default function TransferSupportAgentPage() {
     setLoading(true);
     setError("");
     try {
-      const data = await api.post("/agent/transfer-support-chat", { message: finalMessage });
+      const data = await api.post("/agent/transfer-support-chat", buildPayload(finalMessage));
       if (requestId === analyzeRequestIdRef.current) {
         setResponse(data);
         if (data?.summary?.reference_code) {
@@ -149,7 +155,7 @@ export default function TransferSupportAgentPage() {
       setLoading(true);
       setError("");
       try {
-        const data = await api.post("/agent/transfer-support-chat", { message: trimmedMessage });
+        const data = await api.post("/agent/transfer-support-chat", buildPayload(trimmedMessage));
         if (requestId === analyzeRequestIdRef.current) {
           setResponse(data);
           if (data?.summary?.reference_code) {

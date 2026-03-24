@@ -41,6 +41,7 @@ const API_BASE = import.meta.env.VITE_API_URL || "";
 const OPS_ALERT_MUTE_KEY = "ops_alert_muted_until";
 const DEFAULT_COLLAPSED_GROUPS = {
   surveillance: false,
+  assistants: false,
   p2p: true,
   escrowLedger: true,
   operations: true,
@@ -69,6 +70,20 @@ function computeOpsLevel(metrics) {
 
 function getGroupForPath(pathname = "") {
   if (pathname.startsWith("/dashboard/agent")) return "modeAgent";
+  if (
+    pathname.includes("/assistants-guide") ||
+    pathname.includes("/agent-chat") ||
+    pathname.includes("/cash-agent") ||
+    pathname.includes("/credit-agent") ||
+    pathname.includes("/kyc-agent") ||
+    pathname.includes("/transfer-support-agent") ||
+    pathname.includes("/wallet-agent") ||
+    pathname.includes("/wallet-support-agent") ||
+    pathname.includes("/escrow-agent") ||
+    pathname.includes("/p2p-agent")
+  ) {
+    return "assistants";
+  }
   if (pathname.includes("/p2p/") || pathname.endsWith("/trades") || pathname.endsWith("/disputes")) return "p2p";
   if (
     pathname.includes("/escrow") ||
@@ -399,8 +414,44 @@ export default function AdminSidebar() {
             <NavLink to="risk" className={linkClass} onClick={onNavigate}>
               <ShieldAlert size={18} /> Monitoring risque
             </NavLink>
+          </div>
+        )}
+
+        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("assistants")}>
+          <span>Assistants admin</span>
+          {collapsedGroups.assistants ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        </button>
+        {!collapsedGroups.assistants && (
+          <div className="space-y-2">
             <NavLink to="/dashboard/admin/assistants-guide" className={linkClass} onClick={onNavigate}>
               <BookOpen size={18} /> Guide assistants
+            </NavLink>
+            <NavLink to="/dashboard/admin/agent-chat" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Assistant transfert
+            </NavLink>
+            <NavLink to="/dashboard/admin/cash-agent" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Assistant cash
+            </NavLink>
+            <NavLink to="/dashboard/admin/credit-agent" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Assistant credit
+            </NavLink>
+            <NavLink to="/dashboard/admin/kyc-agent" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Assistant KYC
+            </NavLink>
+            <NavLink to="/dashboard/admin/transfer-support-agent" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Support transfert
+            </NavLink>
+            <NavLink to="/dashboard/admin/wallet-agent" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Assistant wallet
+            </NavLink>
+            <NavLink to="/dashboard/admin/wallet-support-agent" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Support wallet
+            </NavLink>
+            <NavLink to="/dashboard/admin/escrow-agent" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Assistant escrow
+            </NavLink>
+            <NavLink to="/dashboard/admin/p2p-agent" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Assistant P2P
             </NavLink>
           </div>
         )}

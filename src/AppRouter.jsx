@@ -254,6 +254,15 @@ export default function AppRouter() {
         <Route path="webhooks" element={<WebhookLogs />} />
         <Route path="risk" element={<RiskMonitoring />} />
         <Route path="assistants-guide" element={<AssistantsGuidePage />} />
+        <Route path="agent-chat" element={<AgentChatPage />} />
+        <Route path="cash-agent" element={<CashAgentPage />} />
+        <Route path="credit-agent" element={<CreditAgentPage />} />
+        <Route path="kyc-agent" element={<KycAgentPage />} />
+        <Route path="transfer-support-agent" element={<TransferSupportAgentPage />} />
+        <Route path="wallet-agent" element={<WalletAgentPage />} />
+        <Route path="wallet-support-agent" element={<WalletSupportAgentPage />} />
+        <Route path="escrow-agent" element={<EscrowAgentPage />} />
+        <Route path="p2p-agent" element={<P2PAgentPage />} />
         <Route path="trades" element={<P2PAdminTrades />} />
         <Route path="disputes" element={<P2PAdminDisputes />} />
         <Route path="risk-flags" element={<P2PAdminRisk />} />

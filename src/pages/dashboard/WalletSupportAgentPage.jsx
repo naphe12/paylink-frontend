@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   AlertTriangle,
   Bot,
@@ -38,12 +39,19 @@ function Metric({ label, value }) {
 }
 
 export default function WalletSupportAgentPage() {
+  const [searchParams] = useSearchParams();
   const [message, setMessage] = useState("");
   const [response, setResponse] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isAutoAnalyzing, setIsAutoAnalyzing] = useState(false);
   const analyzeRequestIdRef = useRef(0);
+  const isAdmin = String(window.localStorage.getItem("role") || "").toLowerCase() === "admin";
+  const targetUserId = String(searchParams.get("user") || "").trim();
+  const buildPayload = (nextMessage) => ({
+    message: nextMessage,
+    ...(isAdmin && targetUserId ? { target_user_id: targetUserId } : {}),
+  });
 
   const quickPrompts = [
     "pourquoi mon solde a baisse",
@@ -59,7 +67,7 @@ export default function WalletSupportAgentPage() {
     setLoading(true);
     setError("");
     try {
-      const data = await api.post("/agent/wallet-support-chat", { message: finalMessage });
+      const data = await api.post("/agent/wallet-support-chat", buildPayload(finalMessage));
       if (requestId === analyzeRequestIdRef.current) {
         setResponse(data);
       }
@@ -91,7 +99,7 @@ export default function WalletSupportAgentPage() {
       setLoading(true);
       setError("");
       try {
-        const data = await api.post("/agent/wallet-support-chat", { message: trimmedMessage });
+        const data = await api.post("/agent/wallet-support-chat", buildPayload(trimmedMessage));
         if (requestId === analyzeRequestIdRef.current) {
           setResponse(data);
         }

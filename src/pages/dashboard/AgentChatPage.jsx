@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Bot,
   CheckCircle2,
@@ -95,19 +95,78 @@ function Field({ label, value }) {
 }
 
 export default function AgentChatPage() {
+  const [searchParams] = useSearchParams();
   const [message, setMessage] = useState("");
   const [response, setResponse] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [isAutoAnalyzing, setIsAutoAnalyzing] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [userResults, setUserResults] = useState([]);
+  const [userLoading, setUserLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const analyzeRequestIdRef = useRef(0);
+  const isAdmin = String(window.localStorage.getItem("role") || "").toLowerCase() === "admin";
+  const [targetUserId, setTargetUserId] = useState(String(searchParams.get("user") || "").trim());
+  const buildPayload = (nextMessage) => ({
+    message: nextMessage,
+    ...(isAdmin && targetUserId ? { target_user_id: targetUserId } : {}),
+  });
 
   const quickPrompts = [
     "envoie 100 EUR a Jean via Lumicash au Burundi au +25761234567",
     "transfert 250 usd a Clarisse au Rwanda via Ecocash",
     "envoie 66000 CFA a Jean au Burundi",
   ];
+
+  useEffect(() => {
+    if (!isAdmin || !targetUserId) return;
+    let cancelled = false;
+    api
+      .get(`/admin/users/${targetUserId}`)
+      .then((data) => {
+        if (cancelled || !data) return;
+        setSelectedUser({
+          user_id: data.user_id,
+          full_name: data.full_name,
+          email: data.email,
+          phone: data.phone_e164,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, targetUserId]);
+
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    const query = String(userSearch || "").trim();
+    if (query.length < 2) {
+      setUserResults([]);
+      setUserLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    const timeoutId = window.setTimeout(async () => {
+      setUserLoading(true);
+      try {
+        const data = await api.get(`/admin/users?q=${encodeURIComponent(query)}`);
+        if (!cancelled) {
+          setUserResults(Array.isArray(data) ? data.slice(0, 8) : []);
+        }
+      } catch {
+        if (!cancelled) setUserResults([]);
+      } finally {
+        if (!cancelled) setUserLoading(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [isAdmin, userSearch]);
 
   const sendMessage = async (nextMessage = null) => {
     const finalMessage = String(nextMessage ?? message).trim();
@@ -116,7 +175,7 @@ export default function AgentChatPage() {
     setLoading(true);
     setError("");
     try {
-      const data = await api.post("/agent/chat", { message: finalMessage });
+      const data = await api.post("/agent/chat", buildPayload(finalMessage));
       if (requestId === analyzeRequestIdRef.current) {
         setResponse(data);
       }
@@ -149,7 +208,7 @@ export default function AgentChatPage() {
       setLoading(true);
       setError("");
       try {
-        const data = await api.post("/agent/chat", { message: trimmedMessage });
+        const data = await api.post("/agent/chat", buildPayload(trimmedMessage));
         if (requestId === analyzeRequestIdRef.current) {
           setResponse(data);
         }
@@ -197,6 +256,13 @@ export default function AgentChatPage() {
     }
   };
 
+  const chooseUser = (user) => {
+    setSelectedUser(user);
+    setTargetUserId(String(user?.user_id || ""));
+    setUserSearch(user?.full_name || user?.email || "");
+    setUserResults([]);
+  };
+
   return (
     <div className="space-y-6">
       <section className="rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_#dbeafe,_#ffffff_45%,_#eef2ff_100%)] p-6 shadow-sm">
@@ -219,13 +285,50 @@ export default function AgentChatPage() {
               <ShieldCheck size={16} />
               Controle
             </div>
-            <p className="mt-1 text-xs text-slate-500">Confirmation obligatoire avant execution.</p>
+            <p className="mt-1 text-xs text-slate-500">
+              {isAdmin ? "Mode admin: choisir un client puis analyser son transfert." : "Confirmation obligatoire avant execution."}
+            </p>
           </div>
         </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          {isAdmin ? (
+            <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm font-semibold text-blue-900">Client cible</p>
+              <input
+                value={userSearch}
+                onChange={(event) => setUserSearch(event.target.value)}
+                className="mt-3 w-full rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                placeholder="Rechercher un client par nom, email ou telephone"
+              />
+              {selectedUser ? (
+                <div className="mt-3 rounded-xl border border-blue-200 bg-white px-3 py-3 text-sm text-slate-700">
+                  <p className="font-semibold text-slate-900">{selectedUser.full_name || "Client sans nom"}</p>
+                  <p>{selectedUser.email || selectedUser.phone || selectedUser.user_id}</p>
+                  <p className="mt-1 text-xs text-slate-500">user_id: {selectedUser.user_id}</p>
+                </div>
+              ) : null}
+              {userLoading ? <p className="mt-3 text-xs text-blue-700">Recherche...</p> : null}
+              {userResults.length ? (
+                <div className="mt-3 space-y-2">
+                  {userResults.map((user) => (
+                    <button
+                      key={user.user_id}
+                      type="button"
+                      onClick={() => chooseUser(user)}
+                      className="w-full rounded-xl border border-blue-200 bg-white px-3 py-3 text-left text-sm text-slate-700 hover:bg-blue-100/60"
+                    >
+                      <p className="font-semibold text-slate-900">{user.full_name || "Client sans nom"}</p>
+                      <p>{user.email || user.phone || user.user_id}</p>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
             <MessageSquare size={16} />
             Conversation
@@ -264,7 +367,7 @@ export default function AgentChatPage() {
             <div className="mt-3 flex flex-wrap gap-3">
               <button
                 onClick={() => sendMessage()}
-                disabled={loading}
+                disabled={loading || (isAdmin && !targetUserId)}
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-white disabled:opacity-60"
               >
                 <Send size={16} />
@@ -272,14 +375,16 @@ export default function AgentChatPage() {
               </button>
               {response?.data ? (
                 <>
-                  <button
-                    onClick={confirmDraft}
-                    disabled={confirming || !response?.executable}
-                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <CheckCircle2 size={16} />
-                    {confirming ? "Confirmation..." : "Confirmer la demande"}
-                  </button>
+                  {!isAdmin ? (
+                    <button
+                      onClick={confirmDraft}
+                      disabled={confirming || !response?.executable}
+                      className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <CheckCircle2 size={16} />
+                      {confirming ? "Confirmation..." : "Confirmer la demande"}
+                    </button>
+                  ) : null}
                   <button
                     onClick={cancelDraft}
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-slate-700"
@@ -293,6 +398,11 @@ export default function AgentChatPage() {
           </div>
 
           <ApiErrorAlert message={error} className="mt-4" />
+          {isAdmin && !targetUserId ? (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              Selectionne d'abord un client pour utiliser l'assistant transfert en mode admin.
+            </div>
+          ) : null}
 
           <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">

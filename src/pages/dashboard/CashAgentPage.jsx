@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   ArrowDown,
   ArrowUp,
@@ -99,6 +100,7 @@ function DraftCard({ draft, missingFields = [], executable = false }) {
 }
 
 export default function CashAgentPage() {
+  const [searchParams] = useSearchParams();
   const [message, setMessage] = useState("");
   const [response, setResponse] = useState(null);
   const [error, setError] = useState("");
@@ -106,6 +108,12 @@ export default function CashAgentPage() {
   const [confirming, setConfirming] = useState(false);
   const [isAutoAnalyzing, setIsAutoAnalyzing] = useState(false);
   const analyzeRequestIdRef = useRef(0);
+  const isAdmin = String(window.localStorage.getItem("role") || "").toLowerCase() === "admin";
+  const targetUserId = String(searchParams.get("user") || "").trim();
+  const buildPayload = (nextMessage) => ({
+    message: nextMessage,
+    ...(isAdmin && targetUserId ? { target_user_id: targetUserId } : {}),
+  });
 
   const quickPrompts = [
     "depot 25000 bif",
@@ -121,7 +129,7 @@ export default function CashAgentPage() {
     setLoading(true);
     setError("");
     try {
-      const data = await api.post("/agent/cash-chat", { message: finalMessage });
+      const data = await api.post("/agent/cash-chat", buildPayload(finalMessage));
       if (requestId === analyzeRequestIdRef.current) {
         setResponse(data);
       }
@@ -154,7 +162,7 @@ export default function CashAgentPage() {
       setLoading(true);
       setError("");
       try {
-        const data = await api.post("/agent/cash-chat", { message: trimmedMessage });
+        const data = await api.post("/agent/cash-chat", buildPayload(trimmedMessage));
         if (requestId === analyzeRequestIdRef.current) {
           setResponse(data);
         }
@@ -222,7 +230,9 @@ export default function CashAgentPage() {
               <ShieldCheck size={16} />
               Controle
             </div>
-            <p className="mt-1 text-xs text-slate-500">Confirmation obligatoire avant creation de la demande cash.</p>
+            <p className="mt-1 text-xs text-slate-500">
+              {isAdmin ? "Mode admin consultation. Ajoute ?user=<uuid> pour cibler un client." : "Confirmation obligatoire avant creation de la demande cash."}
+            </p>
           </div>
         </div>
       </section>
@@ -275,14 +285,16 @@ export default function CashAgentPage() {
               </button>
               {response?.data ? (
                 <>
-                  <button
-                    onClick={confirmDraft}
-                    disabled={confirming || !response?.executable}
-                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <CheckCircle2 size={16} />
-                    {confirming ? "Confirmation..." : "Confirmer la demande"}
-                  </button>
+                  {!isAdmin ? (
+                    <button
+                      onClick={confirmDraft}
+                      disabled={confirming || !response?.executable}
+                      className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <CheckCircle2 size={16} />
+                      {confirming ? "Confirmation..." : "Confirmer la demande"}
+                    </button>
+                  ) : null}
                   <button
                     onClick={cancelDraft}
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-slate-700"
