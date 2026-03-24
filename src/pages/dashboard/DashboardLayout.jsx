@@ -18,6 +18,7 @@ import {
   Shield,
   LineChart,
   Store,
+  MessageSquare,
   ChevronDown,
   ChevronRight,
   ArrowLeft,
@@ -46,6 +47,7 @@ const menuGroups = [
       { name: "Demandes paiement", path: "/dashboard/client/payments", icon: <Send size={18} /> },
       { name: "Transfert interne", path: "/dashboard/client/transfer", icon: <RefreshCcw size={18} /> },
       { name: "Transfert externe", path: "/dashboard/client/external-transfer", icon: <Globe size={18} /> },
+      { name: "Agent PayLink", path: "/dashboard/client/agent-chat", icon: <MessageSquare size={18} /> },
       { name: "Mobile Money", path: "/dashboard/client/mobiletopup", icon: <Smartphone size={18} /> },
       { name: "Depot cash", path: "/dashboard/client/deposit", icon: <ArrowDown size={18} /> },
       { name: "Retrait cash", path: "/dashboard/client/withdraw/bif", icon: <ArrowUp size={18} /> },
@@ -114,6 +116,7 @@ function getGroupForPath(pathname = "") {
     pathname.includes("/payments") ||
     pathname.includes("/transfer") ||
     pathname.includes("/external-transfer") ||
+    pathname.includes("/agent-chat") ||
     pathname.includes("/mobiletopup") ||
     pathname.includes("/deposit") ||
     pathname.includes("/withdraw")

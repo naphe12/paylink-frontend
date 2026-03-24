@@ -25,6 +25,7 @@ import AgentTransfersPage from "@/pages/dashboard/AgentTransfersPage";
 import ExternalTransferPage from "@/pages/dashboard/ExternalTransferPage";
 import FxRatesPage from "@/pages/dashboard/FxRatesPage";
 import BonusPage from "@/pages/dashboard/BonusPage";
+import AgentChatPage from "@/pages/dashboard/AgentChatPage";
 
 import TontineCreatePage from "@/pages/tontines/TontineCreatePage";
 import TontineListPage from "@/pages/tontines/TontineListPage";
@@ -162,6 +163,7 @@ export default function AppRouter() {
         <Route path="external-transfer" element={<ExternalTransferPage />} />
         <Route path="fx-rates" element={<FxRatesPage />} />
         <Route path="bonus" element={<BonusPage />} />
+        <Route path="agent-chat" element={<AgentChatPage />} />
         <Route path="loans" element={<LoansPage />} />
         <Route path="tontines" element={<TontineListPage />} />
         <Route path="tontines/create" element={<TontineCreatePage />} />
