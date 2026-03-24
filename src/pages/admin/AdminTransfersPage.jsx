@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import api from "@/services/api";
 
 const statusBadge = (status) => {
@@ -136,6 +136,25 @@ export default function AdminTransfersPage() {
           <StatCard label="Echecs" value={summary.failed} accent="bg-red-100 text-red-700" />
         </div>
       )}
+
+      {summary?.pending ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="font-semibold">{summary.pending} transfert(s) en attente de validation</p>
+              <p className="text-xs text-amber-800">
+                Utilise la page de validations pour approuver les transferts pending avant execution.
+              </p>
+            </div>
+            <Link
+              to="/dashboard/admin/transfer-approvals"
+              className="inline-flex items-center justify-center rounded-xl bg-amber-600 px-4 py-2 text-white"
+            >
+              Ouvrir les validations
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       {(staleTransfersCount > 0 || criticalTransfersCount > 0) && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
