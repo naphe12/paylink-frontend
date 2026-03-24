@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Bot,
   CheckCircle2,
@@ -99,6 +99,8 @@ export default function AgentChatPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [isAutoAnalyzing, setIsAutoAnalyzing] = useState(false);
+  const analyzeRequestIdRef = useRef(0);
 
   const quickPrompts = [
     "envoie 100 EUR a Jean via Lumicash au Burundi au +25761234567",
@@ -109,18 +111,63 @@ export default function AgentChatPage() {
   const sendMessage = async (nextMessage = null) => {
     const finalMessage = String(nextMessage ?? message).trim();
     if (!finalMessage) return;
+    const requestId = ++analyzeRequestIdRef.current;
     setLoading(true);
     setError("");
     try {
       const data = await api.post("/agent/chat", { message: finalMessage });
-      setResponse(data);
+      if (requestId === analyzeRequestIdRef.current) {
+        setResponse(data);
+      }
       if (nextMessage !== null) setMessage(finalMessage);
     } catch (err) {
-      setError(err?.message || "Impossible de contacter l'agent.");
+      if (requestId === analyzeRequestIdRef.current) {
+        setError(err?.message || "Impossible de contacter l'agent.");
+      }
     } finally {
-      setLoading(false);
+      if (requestId === analyzeRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
+
+  useEffect(() => {
+    const trimmedMessage = String(message || "").trim();
+    if (!trimmedMessage) {
+      analyzeRequestIdRef.current += 1;
+      setResponse(null);
+      setError("");
+      setLoading(false);
+      setIsAutoAnalyzing(false);
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      const requestId = ++analyzeRequestIdRef.current;
+      setIsAutoAnalyzing(true);
+      setLoading(true);
+      setError("");
+      try {
+        const data = await api.post("/agent/chat", { message: trimmedMessage });
+        if (requestId === analyzeRequestIdRef.current) {
+          setResponse(data);
+        }
+      } catch (err) {
+        if (requestId === analyzeRequestIdRef.current) {
+          setError(err?.message || "Impossible de contacter l'agent.");
+        }
+      } finally {
+        if (requestId === analyzeRequestIdRef.current) {
+          setLoading(false);
+          setIsAutoAnalyzing(false);
+        }
+      }
+    }, 450);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [message]);
 
   const confirmDraft = async () => {
     if (!response?.data) return;
@@ -220,14 +267,14 @@ export default function AgentChatPage() {
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-white disabled:opacity-60"
               >
                 <Send size={16} />
-                {loading ? "Analyse..." : "Analyser"}
+                {loading ? (isAutoAnalyzing ? "Analyse auto..." : "Analyse...") : "Analyser"}
               </button>
-              {response?.status === "CONFIRM" ? (
+              {response?.data ? (
                 <>
                   <button
                     onClick={confirmDraft}
-                    disabled={confirming}
-                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-white disabled:opacity-60"
+                    disabled={confirming || !response?.executable}
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <CheckCircle2 size={16} />
                     {confirming ? "Confirmation..." : "Confirmer le transfert"}
