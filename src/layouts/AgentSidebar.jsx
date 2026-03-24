@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   GraduationCap,
+  BookOpen,
 } from "lucide-react";
 import { getCurrentRole, logout as logoutSession } from "@/services/authStore";
 
@@ -81,6 +82,9 @@ export default function AgentSidebar() {
         </NavLink>
         <NavLink to="onboarding" className={linkClass} onClick={onNavigate}>
           <GraduationCap size={18} /> Assistant onboarding
+        </NavLink>
+        <NavLink to="assistants-guide" className={linkClass} onClick={onNavigate}>
+          <BookOpen size={18} /> Guide assistants
         </NavLink>
         <NavLink to="assignments" className={linkClass} onClick={onNavigate}>
           <CheckCircle size={18} /> Assignments payout

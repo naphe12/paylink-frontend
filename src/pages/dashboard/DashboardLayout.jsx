@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronRight,
   ArrowLeft,
+  BookOpen,
 } from "lucide-react";
 import NotificationsBell from "@/components/NotificationsBell";
 import useNotifications from "@/hooks/useNotifications";
@@ -59,6 +60,7 @@ const menuGroups = [
       { name: "Retrait cash", path: "/dashboard/client/withdraw/bif", icon: <ArrowUp size={18} /> },
       { name: "Retrait USDC", path: "/dashboard/client/withdraw/usdc", icon: <ArrowUp size={18} /> },
       { name: "Bonus", path: "/dashboard/client/bonus", icon: <Gift size={18} /> },
+      { name: "Guide assistants", path: "/dashboard/client/assistants-guide", icon: <BookOpen size={18} /> },
     ],
   },
   {
@@ -138,6 +140,7 @@ function getGroupForPath(pathname = "") {
     pathname.includes("/transfer-support-agent") ||
     pathname.includes("/wallet-agent") ||
     pathname.includes("/wallet-support-agent") ||
+    pathname.includes("/assistants-guide") ||
     pathname.includes("/mobiletopup") ||
     pathname.includes("/deposit") ||
     pathname.includes("/withdraw")

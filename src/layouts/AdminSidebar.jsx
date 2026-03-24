@@ -399,6 +399,9 @@ export default function AdminSidebar() {
             <NavLink to="risk" className={linkClass} onClick={onNavigate}>
               <ShieldAlert size={18} /> Monitoring risque
             </NavLink>
+            <NavLink to="/dashboard/admin/assistants-guide" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Guide assistants
+            </NavLink>
           </div>
         )}
 

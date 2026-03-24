@@ -122,6 +122,7 @@ import CreateOffer from "@/pages/p2p/CreateOffer";
 import TradeRoom from "@/pages/p2p/TradeRoom";
 import P2PMyTrades from "@/pages/p2p/P2PMyTrades";
 import P2PMyOffers from "@/pages/p2p/P2PMyOffers";
+import AssistantsGuidePage from "@/pages/shared/AssistantsGuidePage";
 
 export default function AppRouter() {
   return (
@@ -181,6 +182,7 @@ export default function AppRouter() {
         <Route path="wallet-support-agent" element={<WalletSupportAgentPage />} />
         <Route path="escrow-agent" element={<EscrowAgentPage />} />
         <Route path="p2p-agent" element={<P2PAgentPage />} />
+        <Route path="assistants-guide" element={<AssistantsGuidePage />} />
         <Route path="loans" element={<LoansPage />} />
         <Route path="tontines" element={<TontineListPage />} />
         <Route path="tontines/create" element={<TontineCreatePage />} />
@@ -251,6 +253,7 @@ export default function AppRouter() {
         <Route path="onchain-simulator" element={<OnChainSimulatorPage />} />
         <Route path="webhooks" element={<WebhookLogs />} />
         <Route path="risk" element={<RiskMonitoring />} />
+        <Route path="assistants-guide" element={<AssistantsGuidePage />} />
         <Route path="trades" element={<P2PAdminTrades />} />
         <Route path="disputes" element={<P2PAdminDisputes />} />
         <Route path="risk-flags" element={<P2PAdminRisk />} />
@@ -279,6 +282,7 @@ export default function AppRouter() {
         <Route path="external-transfer" element={<AgentExternalTransferPage />} />
         <Route path="transfers/close" element={<AgentTransferClosurePage />} />
         <Route path="onboarding" element={<AgentOnboardingPage />} />
+        <Route path="assistants-guide" element={<AssistantsGuidePage />} />
       </Route>
 
       <Route path="/me/qr" element={<MyQrPage />} />
