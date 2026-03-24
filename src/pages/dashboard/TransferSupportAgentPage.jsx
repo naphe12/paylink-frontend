@@ -24,14 +24,21 @@ function SummaryCard({ summary }) {
         Demande suivie
       </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <Metric label="Client" value={summary.user_name} />
+        <Metric label="Contact client" value={summary.user_email || summary.user_phone} />
         <Metric label="Reference" value={summary.reference_code} />
+        <Metric label="ID demande" value={summary.transfer_id} />
+        <Metric label="ID transaction" value={summary.transaction_id} />
         <Metric label="Statut demande" value={summary.transfer_status} />
         <Metric label="Statut transaction" value={summary.transaction_status} />
         <Metric label="Montant" value={`${summary.amount || "-"} ${summary.currency || ""}`.trim()} />
         <Metric label="Beneficiaire" value={summary.recipient_name} />
+        <Metric label="Telephone beneficiaire" value={summary.recipient_phone} />
         <Metric label="Partenaire" value={summary.partner_name} />
+        <Metric label="Pays" value={summary.country_destination} />
         <Metric label="Prochaine etape" value={summary.next_step} />
         <Metric label="Cree le" value={summary.created_at ? new Date(summary.created_at).toLocaleString() : "-"} />
+        <Metric label="Traite le" value={summary.processed_at ? new Date(summary.processed_at).toLocaleString() : "-"} />
       </div>
       {summary.review_reasons?.length ? (
         <div className="mt-4 flex flex-wrap gap-2">
@@ -195,6 +202,11 @@ export default function TransferSupportAgentPage() {
               <p className="mt-2 max-w-2xl text-sm text-slate-600">
                 Suis une demande existante et comprends precisement pourquoi elle est pending, approved, terminee ou bloquee.
               </p>
+              {isAdmin && targetUserId ? (
+                <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-rose-700">
+                  Mode admin cible sur un client specifique
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm text-slate-700 shadow-sm">
