@@ -175,4 +175,3 @@ export default function UnbalancedJournalsPage() {
     </div>
   );
 }
-import DirectionBadge from "@/components/DirectionBadge";

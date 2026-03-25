@@ -159,7 +159,7 @@ export default function AdminSettingsPage() {
               >
                 <div>
                   <p className="font-semibold">
-                    {fx.origin_currency} -> {fx.destination_currency}
+                    {fx.origin_currency} {"->"} {fx.destination_currency}
                   </p>
                   <p className="text-slate-500">Source: {fx.source || "custom"}</p>
                 </div>
