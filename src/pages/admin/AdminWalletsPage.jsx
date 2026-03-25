@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "@/services/api";
+import DirectionBadge from "@/components/DirectionBadge";
 import { formatWalletOperationLabel, inferWalletEntryIsCredit } from "@/utils/walletHistory";
 
 const DEFAULT_HISTORY_FILTERS = { limit: 25, search: "" };
@@ -418,15 +419,7 @@ export default function AdminWalletsPage() {
                             <div className="text-xs text-slate-500">{entry.description}</div>
                           </td>
                           <td className="p-2">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                isCredit
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-red-100 text-red-700"
-                              }`}
-                            >
-                              {isCredit ? "Crédit" : "Débit"}
-                            </span>
+                            <DirectionBadge value={isCredit ? "credit" : "debit"} />
                           </td>
                           <td
                             className={`p-2 font-semibold ${

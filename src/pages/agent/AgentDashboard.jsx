@@ -13,6 +13,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import QuickActions from "@/components/QuickActions";
+import DirectionBadge from "@/components/DirectionBadge";
 
 const MetricCard = ({ label, value, icon: Icon, accent }) => (
   <div
@@ -216,7 +217,7 @@ export default function AgentDashboard() {
                   {dashboard?.recent?.length ? (
                     dashboard.recent.map((tx) => (
                       <tr key={tx.transaction_id} className="border-t">
-                        <td className="p-3 capitalize">{tx.direction}</td>
+                        <td className="p-3"><DirectionBadge value={tx.direction} /></td>
                         <td className="p-3 font-semibold text-slate-900">
                           {tx.amount.toLocaleString()} BIF
                         </td>

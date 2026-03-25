@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import DirectionBadge from "@/components/DirectionBadge";
 import api from "@/services/api";
 
 const statusColors = {
@@ -191,7 +192,7 @@ export default function AgentHistoryPage() {
                       {op.client_phone || "—"}
                     </div>
                   </td>
-                  <td className="p-3 capitalize">{op.direction}</td>
+                  <td className="p-3"><DirectionBadge value={op.direction} /></td>
                   <td className="p-3 font-semibold text-slate-900">
                     {op.amount.toLocaleString()} BIF
                   </td>

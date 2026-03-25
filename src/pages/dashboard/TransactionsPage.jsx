@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { RefreshCcw } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
+import DirectionBadge, { isCreditDirection } from "@/components/DirectionBadge";
 import api from "@/services/api";
 
 function normalizeTransactions(rows = []) {
@@ -18,7 +19,7 @@ function normalizeTransactions(rows = []) {
       transaction_id:
         tx.tx_id || tx.transaction_id || crypto.randomUUID?.() || Math.random().toString(36).slice(2),
       created_at: tx.created_at,
-      type: tx.direction === "in" ? "entrante" : tx.direction === "out" ? "sortante" : (tx.type || ""),
+      type: tx.direction || tx.type || "",
       amount,
       status: tx.status || "",
       description: tx.description || "",
@@ -81,8 +82,8 @@ export default function TransactionsPage() {
               {transactions.map((tx) => (
                 <tr key={tx.transaction_id} className="border-t">
                   <td className="p-2">{new Date(tx.created_at).toLocaleString()}</td>
-                  <td className="p-2 capitalize">{tx.type}</td>
-                  <td className={`p-2 font-semibold ${tx.amount < 0 ? "text-red-600" : "text-green-600"}`}>
+                  <td className="p-2"><DirectionBadge value={tx.type} /></td>
+                  <td className={`p-2 font-semibold ${isCreditDirection(tx.type) ? "text-green-600" : "text-red-600"}`}>
                     {tx.amount > 0 ? "+" : ""}
                     {Number(tx.amount).toFixed(2)} EUR
                   </td>

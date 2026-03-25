@@ -8,6 +8,7 @@ import {
   Search,
 } from "lucide-react";
 import api from "@/services/api";
+import DirectionBadge from "@/components/DirectionBadge";
 
 export default function AdminAgentsPage() {
   const [agents, setAgents] = useState([]);
@@ -260,8 +261,8 @@ export default function AdminAgentsPage() {
                       className="p-2 border rounded-lg bg-white"
                     >
                       <div className="flex justify-between">
-                        <span className="font-medium capitalize">
-                          {tx.direction}
+                        <span className="font-medium">
+                          <DirectionBadge value={tx.direction} />
                         </span>
                         <span>{tx.amount.toLocaleString()} BIF</span>
                       </div>

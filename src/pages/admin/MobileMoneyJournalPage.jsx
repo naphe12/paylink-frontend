@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "@/services/api";
 import { Loader2, Filter, RefreshCcw } from "lucide-react";
+import DirectionBadge from "@/components/DirectionBadge";
 
 export default function MobileMoneyJournalPage() {
   const [filters, setFilters] = useState({
@@ -178,7 +179,7 @@ export default function MobileMoneyJournalPage() {
                   <td className="p-3 text-emerald-600">
                     {row.commission.toLocaleString()} BIF
                   </td>
-                  <td className="p-3 capitalize">{row.direction}</td>
+                  <td className="p-3"><DirectionBadge value={row.direction} /></td>
                   <td className="p-3">
                     <span
                       className={`px-2 py-1 rounded-full text-xs ${

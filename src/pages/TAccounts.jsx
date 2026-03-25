@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/services/api";
+import DirectionBadge from "@/components/DirectionBadge";
 
 export default function TAccounts() {
   const [rows, setRows] = useState([]);
@@ -175,15 +176,7 @@ export default function TAccounts() {
                       <td className="px-3 py-2 text-slate-700">{fmtDate(r.occurred_at)}</td>
                       <td className="px-3 py-2 font-medium text-slate-800">{r.account_code}</td>
                       <td className="px-3 py-2">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                            dir === "DEBIT"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-emerald-100 text-emerald-800"
-                          }`}
-                        >
-                          {dir || "-"}
-                        </span>
+                        <DirectionBadge value={dir} />
                       </td>
                       <td className="px-3 py-2 text-right font-semibold text-slate-900">{fmtAmount(r.amount)}</td>
                       <td className="px-3 py-2 text-slate-700">{r.token || "-"}</td>

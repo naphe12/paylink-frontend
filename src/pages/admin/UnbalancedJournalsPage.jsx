@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "@/services/api";
+import DirectionBadge from "@/components/DirectionBadge";
 
 export default function UnbalancedJournalsPage() {
   const [loading, setLoading] = useState(false);
@@ -157,7 +158,7 @@ export default function UnbalancedJournalsPage() {
                               <div className="font-mono">{entry.account_code || "-"}</div>
                               <div className="text-slate-500">{entry.account_name || ""}</div>
                             </td>
-                            <td className="px-3 py-2">{entry.direction}</td>
+                            <td className="px-3 py-2"><DirectionBadge value={entry.direction} /></td>
                             <td className="px-3 py-2 text-right">{Number(entry.amount || 0).toLocaleString()}</td>
                             <td className="px-3 py-2">{entry.currency_code}</td>
                           </tr>
@@ -174,3 +175,4 @@ export default function UnbalancedJournalsPage() {
     </div>
   );
 }
+import DirectionBadge from "@/components/DirectionBadge";

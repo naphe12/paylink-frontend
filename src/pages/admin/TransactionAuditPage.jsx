@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/services/api";
 import { ShieldCheck, RefreshCw, Search, BookOpen, Briefcase, AlertTriangle } from "lucide-react";
+import DirectionBadge from "@/components/DirectionBadge";
 
 const shorten = (val = "", size = 8) => (val ? `${val.slice(0, size)}…` : "");
 
@@ -403,9 +404,6 @@ export default function TransactionAuditPage() {
                   const direction = (row.direction || row.operation_type || "").toLowerCase();
                   const amountAbs = Math.abs(Number(row.amount || 0));
                   const isCredit = direction === "credit" || direction === "in";
-                  const badgeClass = isCredit
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-rose-100 text-rose-700";
                   return (
                     <tr key={`${row.tx_id || row.reference}-${row.created_at}`} className="border-b last:border-0">
                       <td className="px-2 py-2 text-slate-600">
@@ -415,9 +413,7 @@ export default function TransactionAuditPage() {
                         {row.reference || row.operation_type || "Transaction"}
                       </td>
                       <td className="px-2 py-2">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${badgeClass}`}>
-                          {(row.direction || row.operation_type || "").toString().toUpperCase()}
-                        </span>
+                        <DirectionBadge value={row.direction || row.operation_type || ""} />
                       </td>
                       <td className="px-2 py-2 font-semibold text-right text-rose-700">- {amountAbs.toFixed(2)}</td>
                       <td className="px-2 py-2 text-right text-slate-600">
@@ -464,7 +460,7 @@ export default function TransactionAuditPage() {
                         {row.created_at ? new Date(row.created_at).toLocaleString() : "-"}
                       </td>
                       <td className="px-2 py-2 font-medium text-slate-800">
-                        {(row.direction || row.type || "").toString().toUpperCase()}
+                        <DirectionBadge value={row.direction || row.type || ""} />
                       </td>
                       <td className={`px-2 py-2 font-semibold text-right ${isCredit ? "text-emerald-700" : "text-rose-700"}`}>
                         {isCredit ? "+" : "-"} {amountAbs.toFixed(2)}
@@ -513,7 +509,9 @@ export default function TransactionAuditPage() {
                         <div className="font-medium text-slate-800">{row.agent_name || row.agent_id || "-"}</div>
                         {row.agent_email && <div className="text-xs text-slate-500">{row.agent_email}</div>}
                       </td>
-                      <td className="px-2 py-2">{(row.type || row.direction || "").toString().toUpperCase()}</td>
+                      <td className="px-2 py-2">
+                        <DirectionBadge value={row.type || row.direction || ""} />
+                      </td>
                       <td className={`px-2 py-2 font-semibold text-right ${isCredit ? "text-emerald-700" : "text-rose-700"}`}>
                         {isCredit ? "+" : "-"} {amountAbs.toFixed(2)}
                       </td>
