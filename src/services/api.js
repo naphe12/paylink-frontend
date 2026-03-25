@@ -78,6 +78,14 @@ export function getConfiguredApiBases() {
   return [""];
 }
 
+export async function fetchBackendVersion() {
+  const res = await fetchPublicApi("/version", { method: "GET" });
+  if (!res.ok) {
+    throw new Error(`GET /version -> ${res.status}`);
+  }
+  return parseJsonOrThrow(res, "/version", "GET");
+}
+
 function getApiBases() {
   return getConfiguredApiBases();
 }

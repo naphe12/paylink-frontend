@@ -36,6 +36,8 @@ import {
 import { getAccessToken, logout as logoutSession } from "@/services/authStore";
 import QuickActions from "@/components/QuickActions";
 import { getAdminQuickActions } from "@/constants/adminQuickActions";
+import { fetchBackendVersion } from "@/services/api";
+import { getFrontendReleaseInfo } from "@/utils/releaseInfo";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 const OPS_ALERT_MUTE_KEY = "ops_alert_muted_until";
@@ -168,13 +170,29 @@ export default function AdminSidebar() {
   });
   const [nowTs, setNowTs] = useState(Date.now());
   const [collapsedGroups, setCollapsedGroups] = useState(DEFAULT_COLLAPSED_GROUPS);
+  const [backendVersion, setBackendVersion] = useState(null);
   const env = import.meta.env.VITE_APP_ENV || "dev";
   const isOpsMuted = nowTs < Number(opsMutedUntil || 0);
+  const frontendRelease = getFrontendReleaseInfo();
 
   useEffect(() => {
     api("/api/admin/aml/cases?status=OPEN").then((data) => {
       if (Array.isArray(data)) setAmlCount(data.length);
     });
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetchBackendVersion()
+      .then((data) => {
+        if (active) setBackendVersion(data);
+      })
+      .catch(() => {
+        if (active) setBackendVersion(null);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -298,6 +316,14 @@ export default function AdminSidebar() {
           </div>
         )}
         <p className="text-slate-400 text-xs mt-2">Supervision temps-reel & conformite</p>
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-[11px] text-slate-300">
+          <p className="font-semibold text-white">Release</p>
+          <p className="mt-1">Front: {frontendRelease.version}</p>
+          {frontendRelease.releaseSha && <p>SHA front: {String(frontendRelease.releaseSha).slice(0, 7)}</p>}
+          {backendVersion?.version && <p>Back: {backendVersion.version}</p>}
+          {backendVersion?.commit_sha && <p>SHA back: {String(backendVersion.commit_sha).slice(0, 7)}</p>}
+          <p className="mt-1 text-slate-400">Env: {String(backendVersion?.env || env).toUpperCase()}</p>
+        </div>
         <button
           onClick={logout}
           className="mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition"
