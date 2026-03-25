@@ -107,6 +107,9 @@ export default function AgentChatPage() {
   const [userResults, setUserResults] = useState([]);
   const [userLoading, setUserLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [telegramLinkData, setTelegramLinkData] = useState(null);
+  const [telegramLoading, setTelegramLoading] = useState(false);
+  const [telegramCopied, setTelegramCopied] = useState(false);
   const analyzeRequestIdRef = useRef(0);
   const isAdmin = String(window.localStorage.getItem("role") || "").toLowerCase() === "admin";
   const [targetUserId, setTargetUserId] = useState(String(searchParams.get("user") || "").trim());
@@ -264,6 +267,29 @@ export default function AgentChatPage() {
     setUserResults([]);
   };
 
+  const generateTelegramLink = async () => {
+    setTelegramLoading(true);
+    setTelegramCopied(false);
+    setError("");
+    try {
+      const data = await api.post("/telegram/external-transfer/link-token", {});
+      setTelegramLinkData(data);
+    } catch (err) {
+      setError(err?.message || "Impossible de generer le lien Telegram.");
+    } finally {
+      setTelegramLoading(false);
+    }
+  };
+
+  const copyTelegramCommand = async () => {
+    if (!telegramLinkData?.command || !navigator?.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(telegramLinkData.command);
+      setTelegramCopied(true);
+      window.setTimeout(() => setTelegramCopied(false), 1500);
+    } catch {}
+  };
+
   return (
     <div className="space-y-6">
       <section className="rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_#dbeafe,_#ffffff_45%,_#eef2ff_100%)] p-6 shadow-sm">
@@ -281,15 +307,61 @@ export default function AgentChatPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm text-slate-700 shadow-sm">
-            <div className="flex items-center gap-2 font-semibold text-slate-900">
-              <ShieldCheck size={16} />
-              Controle
-            </div>
+        <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm text-slate-700 shadow-sm">
+          <div className="flex items-center gap-2 font-semibold text-slate-900">
+            <ShieldCheck size={16} />
+            Controle
+          </div>
             <p className="mt-1 text-xs text-slate-500">
               {isAdmin ? "Mode admin: choisir un client puis analyser son transfert." : "Confirmation obligatoire avant execution."}
             </p>
           </div>
+        </div>
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm text-slate-700 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold text-slate-900">Telegram</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Lie ce compte au bot pour preparer et confirmer un transfert externe depuis Telegram.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={generateTelegramLink}
+              disabled={telegramLoading}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60"
+            >
+              {telegramLoading ? "Generation..." : "Generer le jeton"}
+            </button>
+          </div>
+          {telegramLinkData?.command ? (
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+              <p className="font-semibold text-slate-900">Commande a envoyer au bot</p>
+              <p className="mt-2 break-all font-mono">{telegramLinkData.command}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={copyTelegramCommand}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  {telegramCopied ? "Commande copiee" : "Copier la commande"}
+                </button>
+                <span className="text-[11px] text-emerald-700">
+                  Jeton genere. Envoie maintenant cette commande au bot.
+                </span>
+              </div>
+              {telegramLinkData.bot_url ? (
+                <a
+                  href={telegramLinkData.bot_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex text-sky-700 hover:text-sky-800"
+                >
+                  Ouvrir le bot Telegram
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -464,11 +536,19 @@ export default function AgentChatPage() {
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
                   {(() => {
                     const transferReference = response.transfer.reference_code || response.transfer.transfer_id;
+                    const notificationChannels = Array.isArray(response.notification_channels)
+                      ? response.notification_channels
+                      : [];
                     return (
                       <>
                   <p className="font-semibold">Demande creee</p>
                   <p className="mt-2">Reference : {transferReference}</p>
                   <p>Statut : {response.transfer.status}</p>
+                  {notificationChannels.includes("telegram") ? (
+                    <p className="mt-2 font-medium text-emerald-700">
+                      Notification Telegram preparee pour le suivi du transfert.
+                    </p>
+                  ) : null}
                   <Link
                     to={`/dashboard/client/transfer-support-agent?reference=${encodeURIComponent(transferReference)}`}
                     className="mt-3 inline-flex items-center rounded-lg border border-emerald-300 bg-white px-3 py-2 font-medium text-emerald-800 hover:bg-emerald-100/60"
