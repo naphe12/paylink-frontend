@@ -34,6 +34,14 @@ export default function AgentDashboard() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [creatingClient, setCreatingClient] = useState(false);
+  const [clientForm, setClientForm] = useState({
+    full_name: "",
+    email: "",
+    password: "",
+    phone_e164: "",
+    country_code: "",
+  });
 
   const load = async () => {
     setLoading(true);
@@ -51,6 +59,34 @@ export default function AgentDashboard() {
   useEffect(() => {
     load();
   }, []);
+
+  const handleClientChange = (field, value) => {
+    setClientForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCreateClient = async (e) => {
+    e.preventDefault();
+    setCreatingClient(true);
+    try {
+      await api.createAgentClient({
+        ...clientForm,
+        phone_e164: clientForm.phone_e164 || undefined,
+        country_code: clientForm.country_code.trim().toUpperCase() || undefined,
+      });
+      setClientForm({
+        full_name: "",
+        email: "",
+        password: "",
+        phone_e164: "",
+        country_code: "",
+      });
+      alert("Client cree avec succes");
+    } catch (err) {
+      alert(err?.message || "Creation client impossible");
+    } finally {
+      setCreatingClient(false);
+    }
+  };
 
   const metrics = useMemo(() => {
     if (!dashboard?.metrics) return [];
@@ -108,6 +144,58 @@ export default function AgentDashboard() {
         </div>
       ) : (
         <>
+          <section className="rounded-2xl border bg-white p-5 shadow-sm">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">Nouveau client</h2>
+              <p className="text-sm text-slate-500">
+                Cree un client directement depuis l'espace agent.
+              </p>
+            </div>
+            <form onSubmit={handleCreateClient} className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <input
+                className="rounded-xl border px-3 py-2"
+                placeholder="Nom complet"
+                value={clientForm.full_name}
+                onChange={(e) => handleClientChange("full_name", e.target.value)}
+                required
+              />
+              <input
+                type="email"
+                className="rounded-xl border px-3 py-2"
+                placeholder="Email"
+                value={clientForm.email}
+                onChange={(e) => handleClientChange("email", e.target.value)}
+                required
+              />
+              <input
+                className="rounded-xl border px-3 py-2"
+                placeholder="Telephone (+257...)"
+                value={clientForm.phone_e164}
+                onChange={(e) => handleClientChange("phone_e164", e.target.value)}
+              />
+              <input
+                className="rounded-xl border px-3 py-2 uppercase"
+                placeholder="Pays (BI, FR...)"
+                value={clientForm.country_code}
+                onChange={(e) => handleClientChange("country_code", e.target.value)}
+              />
+              <input
+                className="rounded-xl border px-3 py-2"
+                placeholder="Mot de passe initial"
+                value={clientForm.password}
+                onChange={(e) => handleClientChange("password", e.target.value)}
+                required
+              />
+              <button
+                type="submit"
+                disabled={creatingClient}
+                className="rounded-xl bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800 md:col-span-2 xl:col-span-5"
+              >
+                {creatingClient ? "Creation..." : "Creer le client"}
+              </button>
+            </form>
+          </section>
+
           <QuickActions
             title="Actions rapides"
             subtitle="Raccourcis vers les operations agent les plus utilisees."
