@@ -1,6 +1,6 @@
 // src/components/ProtectedRoute.jsx
 import { Navigate } from "react-router-dom";
-import { getRoleDashboardPath } from "@/utils/roleRoutes";
+import { getRoleDashboardPath, normalizeAppRole } from "@/utils/roleRoutes";
 import useAuth from "@/hooks/useAuth";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
@@ -10,10 +10,10 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
 
   if (allowedRoles?.length) {
-    const normalizedAllowed = allowedRoles.map((r) => r.toLowerCase());
-    const loweredRole = String(role || "client").toLowerCase();
-    if (!normalizedAllowed.includes(loweredRole)) {
-      return <Navigate to={getRoleDashboardPath(loweredRole)} replace />;
+    const normalizedAllowed = allowedRoles.map((r) => normalizeAppRole(r));
+    const normalizedRole = normalizeAppRole(role || "client");
+    if (!normalizedAllowed.includes(normalizedRole)) {
+      return <Navigate to={getRoleDashboardPath(normalizedRole)} replace />;
     }
   }
 

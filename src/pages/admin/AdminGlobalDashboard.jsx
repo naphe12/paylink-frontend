@@ -14,10 +14,13 @@ import {
   AlertTriangle,
   ArrowLeftRight,
   Bell,
+  Briefcase,
   CreditCard,
   Download,
   FileText,
   Scale,
+  Settings,
+  ShieldCheck,
   ShieldAlert,
   Users,
   Wallet,
@@ -65,6 +68,33 @@ function KpiCard({ title, value, subtitle, icon: Icon, tone = "slate" }) {
         ) : null}
       </div>
     </article>
+  );
+}
+
+function BaseEntryCard({ title, value, subtitle, icon: Icon, to, tone = "slate" }) {
+  const tones = {
+    slate: "border-slate-200 bg-white",
+    amber: "border-amber-200 bg-amber-50",
+    blue: "border-blue-200 bg-blue-50",
+    emerald: "border-emerald-200 bg-emerald-50",
+  };
+
+  return (
+    <Link
+      to={to}
+      className={`block rounded-2xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${tones[tone] || tones.slate}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-slate-500">{title}</p>
+          <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
+          <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
+        </div>
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm text-slate-700">
+          <Icon size={20} />
+        </span>
+      </div>
+    </Link>
   );
 }
 
@@ -125,6 +155,15 @@ export default function AdminGlobalDashboard() {
     ],
     [summary]
   );
+
+  const roleCounts = useMemo(() => {
+    const counts = analytics?.role_counts || {};
+    return {
+      users: Number(counts.users || 0),
+      admins: Number(counts.admins || 0),
+      agents: Number(counts.agents || 0),
+    };
+  }, [analytics]);
 
   const exportCsv = async () => {
     const series30d = await api
@@ -278,6 +317,50 @@ export default function AdminGlobalDashboard() {
               Rafraichir
             </button>
           </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Base</p>
+          <h2 className="mt-2 text-2xl font-semibold text-slate-900">Base admin</h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Vue simple des comptes principaux et acces direct a la configuration generale.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <BaseEntryCard
+            title="Users"
+            value={formatNumber(roleCounts.users)}
+            subtitle="Clients standards"
+            icon={Users}
+            to="/dashboard/admin/users"
+            tone="slate"
+          />
+          <BaseEntryCard
+            title="Admin"
+            value={formatNumber(roleCounts.admins)}
+            subtitle="Comptes administrateurs"
+            icon={ShieldCheck}
+            to="/dashboard/admin/users"
+            tone="blue"
+          />
+          <BaseEntryCard
+            title="Agent"
+            value={formatNumber(roleCounts.agents)}
+            subtitle="Comptes agents"
+            icon={Briefcase}
+            to="/dashboard/admin/agents"
+            tone="emerald"
+          />
+          <BaseEntryCard
+            title="General settings"
+            value="FX"
+            subtitle="Frais, devise, coefficient et taux custom"
+            icon={Settings}
+            to="/dashboard/admin/settings"
+            tone="amber"
+          />
         </div>
       </section>
 

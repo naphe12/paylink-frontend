@@ -201,7 +201,7 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="users" replace />} />
+        <Route index element={<Navigate to="overview" replace />} />
         <Route path="overview" element={<AdminGlobalDashboard />} />
         <Route path="overview-lite" element={<AdminGlobalDashboard />} />
         <Route path="aml-cases" element={<AdminAMLPage />} />

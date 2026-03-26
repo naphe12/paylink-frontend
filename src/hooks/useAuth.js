@@ -5,6 +5,7 @@ import {
   logout as logoutSession,
   subscribeAuth,
 } from "@/services/authStore";
+import { normalizeAppRole } from "@/utils/roleRoutes";
 
 export default function useAuth() {
   const [auth, setAuth] = useState(getAuthSnapshot());
@@ -17,7 +18,7 @@ export default function useAuth() {
 
   return {
     user: auth.user,
-    role: auth.user?.role || "client",
+    role: normalizeAppRole(auth.user?.role || "client"),
     isAuthenticated: Boolean(auth.accessToken && auth.user),
     loading: !auth.bootstrapped,
     logout: logoutSession,
