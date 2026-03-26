@@ -626,6 +626,12 @@ const api = {
   async deleteAdminUser(userId) {
     return this.del(`/admin/users/${userId}`);
   },
+  async createAdminClient(payload = {}) {
+    return this.post("/admin/users/clients", payload);
+  },
+  async repairAdminUserFinancialAccounts(userId) {
+    return this.post(`/admin/users/${userId}/repair-financial-accounts`, {});
+  },
   async getBalanceEvents(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
@@ -812,6 +818,9 @@ const api = {
   },
   async agentCashDeposit(payload = {}, idempotencyKey = null) {
     return this.postIdempotent("/agent/cash/deposit", payload, idempotencyKey, "agent-cash-deposit");
+  },
+  async createAgentClient(payload = {}) {
+    return this.post("/agent/clients", payload);
   },
   async getReadyExternalTransfers() {
     return this.get("/agent/external/ready");
