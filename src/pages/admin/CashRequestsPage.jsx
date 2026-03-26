@@ -106,11 +106,7 @@ export default function CashRequestsPage() {
       alert("Selectionnez un user et un montant valide.");
       return;
     }
-    const note = (window.prompt("Ajouter une note admin (obligatoire)") || "").trim();
-    if (!note) {
-      setError("Une note admin est obligatoire pour effectuer un depot direct.");
-      return;
-    }
+    const note = (window.prompt("Ajouter une note admin (optionnel)") || "").trim();
     try {
       if (!directDepositIdemRef.current) {
         directDepositIdemRef.current = api.newIdempotencyKey("admin-cash-deposit");
@@ -135,13 +131,9 @@ export default function CashRequestsPage() {
   const handleDecision = async (requestId, action) => {
     setError("");
     const rawNote = window.prompt(
-      action === "reject" ? "Ajouter une note (obligatoire pour le rejet)" : "Ajouter une note (optionnel)"
+      action === "reject" ? "Ajouter une note (optionnel, un message par defaut sera ajoute sinon)" : "Ajouter une note (optionnel)"
     );
     const note = rawNote?.trim() || undefined;
-    if (action === "reject" && !note) {
-      setError("Une note admin est obligatoire pour rejeter une demande.");
-      return;
-    }
     const decisionScope = `${action}:${requestId}`;
     try {
       if (!decisionIdemRef.current[decisionScope]) {
