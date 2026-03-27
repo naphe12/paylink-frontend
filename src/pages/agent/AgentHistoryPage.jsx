@@ -8,6 +8,23 @@ const statusColors = {
   failed: "text-red-600 bg-red-50",
 };
 
+function getOperationCurrency(operation) {
+  return (
+    String(
+      operation?.currency_code ||
+      operation?.currency ||
+      operation?.local_currency ||
+      ""
+    )
+      .trim()
+      .toUpperCase() || "BIF"
+  );
+}
+
+function formatAmount(value, currency) {
+  return `${Number(value || 0).toLocaleString()} ${currency}`;
+}
+
 export default function AgentHistoryPage() {
   const [filters, setFilters] = useState({
     date_from: "",
@@ -39,38 +56,37 @@ export default function AgentHistoryPage() {
     setFilters((prev) => ({ ...prev, [field]: value }));
   };
 
-  const applyFilters = (e) => {
-    e.preventDefault();
+  const applyFilters = (event) => {
+    event.preventDefault();
     load();
   };
 
-  const totalOperations = useMemo(
-    () => data.operations.length,
-    [data.operations]
-  );
+  const totalOperations = useMemo(() => data.operations.length, [data.operations]);
+  const commissionCurrencyLabel = useMemo(() => {
+    const currencies = [...new Set(data.operations.map((operation) => getOperationCurrency(operation)))];
+    if (!currencies.length) return "BIF";
+    if (currencies.length === 1) return currencies[0];
+    return "multidevise";
+  }, [data.operations]);
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            📚 Historique des opérations
-          </h1>
+          <h1 className="text-2xl font-bold text-slate-900">Historique des operations</h1>
           <p className="text-sm text-slate-500">
-            Suivi détaillé des cash-in / cash-out, filtre par date ou contact.
+            Suivi detaille des cash-in et cash-out, avec la devise reelle de chaque ligne.
           </p>
         </div>
         <div className="flex gap-4">
-          <div className="rounded-xl bg-white shadow border px-4 py-2 text-sm">
-            <p className="text-slate-500">Total opérations</p>
-            <p className="text-lg font-semibold text-slate-900">
-              {totalOperations}
-            </p>
+          <div className="rounded-xl border bg-white px-4 py-2 text-sm shadow">
+            <p className="text-slate-500">Total operations</p>
+            <p className="text-lg font-semibold text-slate-900">{totalOperations}</p>
           </div>
-          <div className="rounded-xl bg-white shadow border px-4 py-2 text-sm">
-            <p className="text-slate-500">Commission cumulée</p>
+          <div className="rounded-xl border bg-white px-4 py-2 text-sm shadow">
+            <p className="text-slate-500">Commission cumulee</p>
             <p className="text-lg font-semibold text-emerald-600">
-              {data.total_commission?.toLocaleString()} BIF
+              {data.total_commission?.toLocaleString()} {commissionCurrencyLabel}
             </p>
           </div>
         </div>
@@ -78,7 +94,7 @@ export default function AgentHistoryPage() {
 
       <form
         onSubmit={applyFilters}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 bg-white border rounded-xl p-4 shadow-sm"
+        className="grid grid-cols-1 gap-4 rounded-xl border bg-white p-4 shadow-sm md:grid-cols-2 lg:grid-cols-5"
       >
         <div>
           <label className="text-xs uppercase text-slate-500">Du</label>
@@ -86,7 +102,7 @@ export default function AgentHistoryPage() {
             type="date"
             className="input w-full"
             value={filters.date_from}
-            onChange={(e) => handleChange("date_from", e.target.value)}
+            onChange={(event) => handleChange("date_from", event.target.value)}
           />
         </div>
         <div>
@@ -95,42 +111,38 @@ export default function AgentHistoryPage() {
             type="date"
             className="input w-full"
             value={filters.date_to}
-            onChange={(e) => handleChange("date_to", e.target.value)}
+            onChange={(event) => handleChange("date_to", event.target.value)}
           />
         </div>
         <div>
-          <label className="text-xs uppercase text-slate-500">Téléphone</label>
+          <label className="text-xs uppercase text-slate-500">Telephone</label>
           <input
             type="text"
             className="input w-full"
             placeholder="+2577..."
             value={filters.phone}
-            onChange={(e) => handleChange("phone", e.target.value)}
+            onChange={(event) => handleChange("phone", event.target.value)}
           />
         </div>
         <div>
-          <label className="text-xs uppercase text-slate-500">
-            Montant min
-          </label>
+          <label className="text-xs uppercase text-slate-500">Montant min</label>
           <input
             type="number"
             className="input w-full"
             value={filters.min_amount}
-            onChange={(e) => handleChange("min_amount", e.target.value)}
+            onChange={(event) => handleChange("min_amount", event.target.value)}
           />
         </div>
         <div>
-          <label className="text-xs uppercase text-slate-500">
-            Montant max
-          </label>
+          <label className="text-xs uppercase text-slate-500">Montant max</label>
           <input
             type="number"
             className="input w-full"
             value={filters.max_amount}
-            onChange={(e) => handleChange("max_amount", e.target.value)}
+            onChange={(event) => handleChange("max_amount", event.target.value)}
           />
         </div>
-        <div className="col-span-1 md:col-span-2 lg:col-span-5 flex gap-3 justify-end">
+        <div className="col-span-1 flex justify-end gap-3 md:col-span-2 lg:col-span-5">
           <button
             type="button"
             onClick={() => {
@@ -143,25 +155,22 @@ export default function AgentHistoryPage() {
               });
               load();
             }}
-            className="px-4 py-2 rounded-lg border text-slate-600"
+            className="rounded-lg border px-4 py-2 text-slate-600"
           >
-            Réinitialiser
+            Reinitialiser
           </button>
-          <button
-            type="submit"
-            className="px-4 py-2 rounded-lg bg-slate-900 text-white"
-          >
+          <button type="submit" className="rounded-lg bg-slate-900 px-4 py-2 text-white">
             Filtrer
           </button>
         </div>
       </form>
 
-      <div className="bg-white rounded-xl shadow border overflow-x-auto">
+      <div className="overflow-x-auto rounded-xl border bg-white shadow">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-slate-600">
             <tr>
               <th className="p-3 text-left">Client</th>
-              <th className="p-3 text-left">Opération</th>
+              <th className="p-3 text-left">Operation</th>
               <th className="p-3 text-left">Montant</th>
               <th className="p-3 text-left">Commission</th>
               <th className="p-3 text-left">Statut</th>
@@ -178,40 +187,36 @@ export default function AgentHistoryPage() {
             ) : data.operations.length === 0 ? (
               <tr>
                 <td colSpan={6} className="p-6 text-center text-slate-500">
-                  Aucune opération trouvée.
+                  Aucune operation trouvee.
                 </td>
               </tr>
             ) : (
-              data.operations.map((op) => (
-                <tr key={op.transaction_id} className="border-t">
-                  <td className="p-3">
-                    <div className="font-medium text-slate-900">
-                      {op.client_name || "Client"}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {op.client_phone || "—"}
-                    </div>
-                  </td>
-                  <td className="p-3"><DirectionBadge value={op.direction} /></td>
-                  <td className="p-3 font-semibold text-slate-900">
-                    {op.amount.toLocaleString()} BIF
-                  </td>
-                  <td className="p-3 text-emerald-600 font-medium">
-                    {op.commission.toLocaleString()} BIF
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${statusColors[op.status] || "bg-slate-100 text-slate-600"
+              data.operations.map((operation) => {
+                const currency = getOperationCurrency(operation);
+                return (
+                  <tr key={operation.transaction_id} className="border-t">
+                    <td className="p-3">
+                      <div className="font-medium text-slate-900">{operation.client_name || "Client"}</div>
+                      <div className="text-xs text-slate-500">{operation.client_phone || "-"}</div>
+                    </td>
+                    <td className="p-3">
+                      <DirectionBadge value={operation.direction} />
+                    </td>
+                    <td className="p-3 font-semibold text-slate-900">{formatAmount(operation.amount, currency)}</td>
+                    <td className="p-3 font-medium text-emerald-600">{formatAmount(operation.commission, currency)}</td>
+                    <td className="p-3">
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs ${
+                          statusColors[operation.status] || "bg-slate-100 text-slate-600"
                         }`}
-                    >
-                      {op.status}
-                    </span>
-                  </td>
-                  <td className="p-3 text-xs text-slate-500">
-                    {new Date(op.created_at).toLocaleString()}
-                  </td>
-                </tr>
-              ))
+                      >
+                        {operation.status}
+                      </span>
+                    </td>
+                    <td className="p-3 text-xs text-slate-500">{new Date(operation.created_at).toLocaleString()}</td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
