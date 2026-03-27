@@ -73,6 +73,8 @@ export default function P2PAgentPage() {
     "pourquoi mon trade p2p est bloque",
     "quelle est la prochaine etape de mon trade",
     "resume mes offres p2p",
+    "suis le trade 00000000-0000-0000-0000-000000000000",
+    "explique pourquoi mon trade est en litige",
   ];
 
   const sendMessage = async (nextMessage = null) => {

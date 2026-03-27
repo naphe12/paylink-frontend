@@ -123,6 +123,9 @@ export default function AgentChatPage() {
     "envoie 100 EUR a Jean via Lumicash au Burundi au +25761234567",
     "transfert 250 usd a Clarisse au Rwanda via Ecocash",
     "envoie 66000 CFA a Jean au Burundi",
+    "envoie 80 EUR a Alice via Lumicash au Burundi au +25761234567",
+    "transfert 150 USD a Patrick via Ecocash au Rwanda au +250788123456",
+    "quelle est ma capacite financiere",
   ];
 
   useEffect(() => {

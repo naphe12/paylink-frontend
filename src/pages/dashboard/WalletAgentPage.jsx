@@ -60,6 +60,10 @@ export default function WalletAgentPage() {
     "quelles sont mes limites",
     "montre mes derniers mouvements",
     "quel est le statut de mon compte",
+    "quelle est la situation de ma ligne de credit",
+    "explique les mouvements wallet du 2026-03-25",
+    "explique la ligne de credit du 2026-03-25",
+    "explique les mouvements wallet et ligne de credit du 2026-03-25",
   ];
 
   const sendMessage = async (nextMessage = null) => {

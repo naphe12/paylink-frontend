@@ -64,6 +64,8 @@ export default function WalletSupportAgentPage() {
     "je ne vois pas mon depot",
     "pourquoi mon retrait est bloque",
     "pourquoi je ne peux plus envoyer",
+    "quel est mon dernier mouvement wallet",
+    "mon compte est-il gele",
   ];
 
   const sendMessage = async (nextMessage = null) => {

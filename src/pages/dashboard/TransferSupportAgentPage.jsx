@@ -120,6 +120,8 @@ export default function TransferSupportAgentPage() {
     "pourquoi mon transfert est pending",
     "suis la reference EXT-1234ABCD",
     "quelle est ma capacite financiere",
+    "explique les statuts pending approved et completed",
+    "pourquoi ma demande est approved mais pas executee",
   ];
   const prefillRef = searchParams.get("reference");
 
