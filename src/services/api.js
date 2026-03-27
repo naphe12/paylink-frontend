@@ -731,6 +731,12 @@ const api = {
     ).toString();
     return this.get(`/admin/wallets/${walletId}/history${query ? `?${query}` : ""}`);
   },
+  async previewAdminWalletCorrection(payload = {}) {
+    return this.post("/admin/wallets/corrections/preview", payload);
+  },
+  async applyAdminWalletCorrection(payload = {}) {
+    return this.post("/admin/wallets/corrections/apply", payload);
+  },
   async getAdminCryptoWalletSummary(userId) {
     return this.get(`/admin/wallets/crypto/${userId}/summary`);
   },

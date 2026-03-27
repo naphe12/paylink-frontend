@@ -53,6 +53,7 @@ import RiskMonitorPage from "@/pages/admin/RiskMonitorPage";
 import AdminWalletsPage from "@/pages/admin/AdminWalletsPage";
 import AdminClientWalletPage from "@/pages/admin/AdminClientWalletPage";
 import AdminWalletAnalysisPage from "@/pages/admin/AdminWalletAnalysisPage";
+import AdminWalletCorrectionPage from "@/pages/admin/AdminWalletCorrectionPage";
 import AdminTransfersPage from "@/pages/admin/AdminTransfersPage";
 import ExternalTransferApprovalsPage from "@/pages/admin/ExternalTransferApprovalsPage";
 import AdminAgentsPage from "@/pages/admin/AdminAgentsPage";
@@ -219,6 +220,7 @@ export default function AppRouter() {
         <Route path="security" element={<SecurityDashboard />} />
         <Route path="wallets" element={<AdminWalletsPage />} />
         <Route path="client-wallets" element={<AdminClientWalletPage />} />
+        <Route path="wallet-corrections" element={<AdminWalletCorrectionPage />} />
         <Route path="wallet-analysis" element={<AdminWalletAnalysisPage />} />
         <Route path="mobilemoney" element={<MobileMoneyJournalPage />} />
         <Route path="transfers" element={<AdminTransfersPage />} />
