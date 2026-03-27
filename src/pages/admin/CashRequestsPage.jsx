@@ -100,18 +100,19 @@ export default function CashRequestsPage() {
     loadUsers();
   }, [userQuery]);
 
-  const handleDirectDeposit = async () => {
+  const handleDirectCashAction = async () => {
     setError("");
     if (!selectedUserId || !Number(depositAmount)) {
       alert("Selectionnez un user et un montant valide.");
       return;
     }
-    const note = (window.prompt("Ajouter une note admin (optionnel)") || "").trim();
+    const isWithdraw = requestType === "withdraw";
+    const note = (window.prompt(`Ajouter une note admin ${isWithdraw ? "pour le retrait" : "pour le depot"} (optionnel)`) || "").trim();
     try {
       if (!directDepositIdemRef.current) {
-        directDepositIdemRef.current = api.newIdempotencyKey("admin-cash-deposit");
+        directDepositIdemRef.current = api.newIdempotencyKey(isWithdraw ? "admin-cash-withdraw" : "admin-cash-deposit");
       }
-      const res = await api.adminCashDeposit(
+      const res = await (isWithdraw ? api.adminCashWithdraw : api.adminCashDeposit)(
         {
           user_id: selectedUserId,
           amount: Number(depositAmount),
@@ -120,11 +121,11 @@ export default function CashRequestsPage() {
         directDepositIdemRef.current
       );
       directDepositIdemRef.current = null;
-      alert(`Depot effectue: ${res.amount} ${res.currency} | nouveau solde: ${res.new_balance}`);
+      alert(`${isWithdraw ? "Retrait" : "Depot"} effectue: ${res.amount} ${res.currency} | nouveau solde: ${res.new_balance}`);
       setDepositAmount("");
       fetchRequests();
     } catch (err) {
-      setError(err?.message || "Depot impossible.");
+      setError(err?.message || `${isWithdraw ? "Retrait" : "Depot"} impossible.`);
     }
   };
 
@@ -215,7 +216,9 @@ export default function CashRequestsPage() {
           </div>
         </div>
         <div className="w-full lg:w-auto lg:min-w-[340px]">
-          <label className="text-xs uppercase tracking-wide text-slate-500">Depot direct user</label>
+          <label className="text-xs uppercase tracking-wide text-slate-500">
+            {requestType === "withdraw" ? "Retrait direct user" : "Depot direct user"}
+          </label>
           <input
             value={userQuery}
             onChange={(e) => setUserQuery(e.target.value)}
@@ -251,10 +254,10 @@ export default function CashRequestsPage() {
               className="border rounded-lg px-3 py-2 text-sm w-full"
             />
             <button
-              onClick={handleDirectDeposit}
+              onClick={handleDirectCashAction}
               className="px-4 py-2 rounded-xl bg-blue-700 text-white text-sm font-medium hover:bg-blue-600"
             >
-              Deposer
+              {requestType === "withdraw" ? "Retirer" : "Deposer"}
             </button>
           </div>
         </div>

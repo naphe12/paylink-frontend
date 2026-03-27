@@ -686,6 +686,9 @@ const api = {
   async adminCashDeposit(payload = {}, idempotencyKey = null) {
     return this.postIdempotent("/admin/cash-requests/deposit", payload, idempotencyKey, "admin-cash-deposit");
   },
+  async adminCashWithdraw(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/admin/cash-requests/withdraw", payload, idempotencyKey, "admin-cash-withdraw");
+  },
   async getAdminCreditHistory(params = {}) {
     const search = new URLSearchParams();
     if (params.user_id) search.append("user_id", params.user_id);

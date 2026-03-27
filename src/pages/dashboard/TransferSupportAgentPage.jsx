@@ -13,6 +13,7 @@ import {
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import AdminAssistantUserPicker from "@/components/admin/AdminAssistantUserPicker";
+import RichAssistantText from "@/components/assistants/RichAssistantText";
 import api from "@/services/api";
 import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
 
@@ -244,7 +245,7 @@ export default function TransferSupportAgentPage() {
                     <Bot size={14} />
                     Assistant support
                   </div>
-                  <p className="mt-2">{response.message}</p>
+                  <RichAssistantText text={response.message} className="mt-2" />
                   <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${getStatusBadgeClass(response.status)}`}>
                     {response.status}
                   </span>
