@@ -530,6 +530,9 @@ export default function AdminSidebar() {
             <NavLink to="balance-events" className={linkClass} onClick={onNavigate}>
               <LineChart size={18} /> Balances clients
             </NavLink>
+            <NavLink to="legacy-transfers" className={linkClass} onClick={onNavigate}>
+              <GitPullRequest size={18} /> Transferts legacy
+            </NavLink>
           </div>
         )}
 

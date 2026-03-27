@@ -74,6 +74,7 @@ import AdminTontineCreatePage from "@/pages/admin/AdminTontineCreatePage";
 import AdminTontineMembersPage from "@/pages/admin/AdminTontineMembersPage";
 import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
 import AdminBalanceEventsPage from "@/pages/admin/AdminBalanceEventsPage";
+import AdminLegacyTransfersPage from "@/pages/admin/AdminLegacyTransfersPage";
 import AdminUserBalanceEventsPage from "@/pages/admin/AdminUserBalanceEventsPage";
 import P2PAdminTrades from "@/pages/admin/P2PAdminTrades";
 import P2PAdminDisputes from "@/pages/admin/P2PAdminDisputes";
@@ -241,6 +242,7 @@ export default function AppRouter() {
         <Route path="microfinance" element={<AdminMicroFinancePage />} />
         <Route path="loan-products" element={<AdminLoanProductsPage />} />
         <Route path="balance-events" element={<AdminBalanceEventsPage />} />
+        <Route path="legacy-transfers" element={<AdminLegacyTransfersPage />} />
         <Route path="users/:user_id/balance-events" element={<AdminUserBalanceEventsPage />} />
         <Route path="escrow" element={<EscrowQueue />} />
         <Route path="escrow/audit" element={<EscrowAuditPage />} />
