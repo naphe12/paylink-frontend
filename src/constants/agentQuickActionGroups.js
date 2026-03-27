@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   BookOpen,
+  Briefcase,
   CheckCircle,
   GraduationCap,
   History,
@@ -56,7 +57,8 @@ export const AGENT_QUICK_ACTION_GROUPS = [
     description: "Retour a l'administration.",
     icon: ShieldCheck,
     className: "border-amber-200 bg-amber-50 hover:bg-amber-100/60",
-    actions: [{ label: "Retour console", to: "/dashboard/admin/users", icon: ShieldCheck, description: "Basculer vers l'admin" }],
+    actions: [
+      { label: "Retour console", to: "/dashboard/admin/users", icon: Briefcase, description: "Basculer vers l'admin" },
+    ],
   },
 ];
-

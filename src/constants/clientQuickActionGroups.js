@@ -111,4 +111,3 @@ export const CLIENT_QUICK_ACTION_GROUPS = [
     actions: [{ label: "Profil", to: "/dashboard/client/profile", icon: User, description: "Parametres du compte" }],
   },
 ];
-

@@ -24,7 +24,7 @@ import {
   Wallet,
 } from "lucide-react";
 
-export const ADMIN_QUICK_ACTION_GROUPS = [
+const ADMIN_QUICK_ACTION_GROUPS = [
   {
     key: "surveillance",
     title: "Surveillance",
