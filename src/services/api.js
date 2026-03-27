@@ -1,5 +1,5 @@
 // src/services/api.js
-import { getAccessToken, refreshAccessToken } from "@/services/authStore";
+import { getAccessToken, redirectToAuth, refreshAccessToken } from "@/services/authStore";
 
 const RAW_API_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
 const RAW_API_FALLBACK_URL = (import.meta.env.VITE_API_FALLBACK_URL || "").trim().replace(/\/+$/, "");
@@ -242,6 +242,11 @@ function formatNetworkError(path, method = "GET", err) {
   return `${method} ${path} -> impossible de joindre l'API: ${tried}${reason}. Verifiez l'URL backend, le CORS et la connectivite reseau.`;
 }
 
+function handleUnauthorizedAfterRefreshFailure() {
+  redirectToAuth("expired");
+  return "Session expiree. Redirection vers la connexion...";
+}
+
 const api = {
   newIdempotencyKey(scope = "request") {
     const rand =
@@ -296,6 +301,7 @@ const api = {
       if (refreshed) {
         return this.get(path, false);
       }
+      throw new Error(handleUnauthorizedAfterRefreshFailure());
     }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "GET"));
     return parseJsonOrThrow(res, path, "GET");
@@ -322,6 +328,7 @@ const api = {
       if (refreshed) {
         return this.post(path, data, false);
       }
+      throw new Error(handleUnauthorizedAfterRefreshFailure());
     }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "POST"));
     return parseJsonOrThrow(res, path, "POST");
@@ -349,6 +356,7 @@ const api = {
       if (refreshed) {
         return this.postWithHeaders(path, data, extraHeaders, false);
       }
+      throw new Error(handleUnauthorizedAfterRefreshFailure());
     }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "POST"));
     return parseJsonOrThrow(res, path, "POST");
@@ -380,6 +388,7 @@ const api = {
       if (refreshed) {
         return this.patch(path, data, false);
       }
+      throw new Error(handleUnauthorizedAfterRefreshFailure());
     }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "PATCH"));
     return parseJsonOrThrow(res, path, "PATCH");
@@ -406,6 +415,7 @@ const api = {
       if (refreshed) {
         return this.put(path, data, false);
       }
+      throw new Error(handleUnauthorizedAfterRefreshFailure());
     }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "PUT"));
     return parseJsonOrThrow(res, path, "PUT");
@@ -429,6 +439,7 @@ const api = {
       if (refreshed) {
         return this.del(path, false);
       }
+      throw new Error(handleUnauthorizedAfterRefreshFailure());
     }
     if (!res.ok) throw new Error(await readErrorMessage(res, path, "DELETE"));
     return parseJsonOrThrow(res, path, "DELETE");

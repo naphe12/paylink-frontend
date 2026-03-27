@@ -1,21 +1,15 @@
 import { useEffect, useState } from "react";
 import api from "@/services/api";
-import { logout as logoutSession } from "@/services/authStore";
 
 export default function AdminLiquidityPage() {
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState("");
-  const [authExpired, setAuthExpired] = useState(false);
 
   useEffect(() => {
     api.get("/api/admin/dashboard/summary")
       .then(setSummary)
       .catch((e) => {
-        if (String(e?.message || "").includes("-> 401")) {
-          setAuthExpired(true);
-          setError("Session expiree. Merci de vous reconnecter.");
-          return;
-        }
+        if (String(e?.message || "").includes("Session expiree.")) return;
         setError(String(e.message || e));
       });
   }, []);
@@ -25,18 +19,6 @@ export default function AdminLiquidityPage() {
       <div style={{ padding: 20 }}>
         <h2>Liquidity & System Health</h2>
         <div style={{ color: "#b91c1c" }}>Erreur de chargement: {error}</div>
-        {authExpired && (
-          <button
-            style={{ marginTop: 12, padding: "8px 12px" }}
-            onClick={() => {
-              logoutSession().finally(() => {
-                window.location.href = "/auth";
-              });
-            }}
-          >
-            Se reconnecter
-          </button>
-        )}
       </div>
     );
   }
