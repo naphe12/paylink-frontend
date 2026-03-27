@@ -33,7 +33,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { getAccessToken, logout as logoutSession } from "@/services/authStore";
+import { getAccessToken, logout as logoutSession, redirectToAuth } from "@/services/authStore";
 import QuickActions from "@/components/QuickActions";
 import { getAdminQuickActionGroups } from "@/constants/adminQuickActionGroups";
 import { fetchBackendVersion } from "@/services/api";
@@ -135,6 +135,10 @@ async function api(url) {
   const res = await fetch(`${API_BASE}${url}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+  if (res.status === 401 || res.status === 403) {
+    redirectToAuth("expired");
+    return null;
+  }
   if (!res.ok) return null;
   return res.json();
 }

@@ -5,6 +5,7 @@ const LEGACY_RAILWAY_API_URL = "https://web-production-448ce.up.railway.app";
 
 const listeners = new Set();
 let refreshPromise = null;
+let authRedirectInFlight = false;
 let state = {
   accessToken: null,
   user: readStoredUser(),
@@ -155,6 +156,20 @@ export function clearSession() {
   };
   persistMetadata(null, null);
   emit();
+}
+
+export function redirectToAuth(reason = "expired") {
+  clearSession();
+  if (typeof window === "undefined" || authRedirectInFlight) return;
+  const currentPath = `${window.location.pathname || ""}${window.location.search || ""}${window.location.hash || ""}`;
+  if (currentPath.startsWith("/auth")) return;
+  authRedirectInFlight = true;
+  try {
+    if (reason) {
+      window.sessionStorage.setItem("auth_redirect_reason", String(reason));
+    }
+  } catch {}
+  window.location.replace("/auth");
 }
 
 async function fetchAuthEndpoint(path, options = {}) {
