@@ -26,6 +26,9 @@ function SummaryCard({ summary }) {
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <Metric label="Client" value={summary.user_name} />
         <Metric label="Contact client" value={summary.user_email || summary.user_phone} />
+        <Metric label="Wallet" value={summary.wallet_available ? `${summary.wallet_available} ${summary.wallet_currency || ""}`.trim() : null} />
+        <Metric label="Credit dispo" value={summary.credit_available ? `${summary.credit_available} ${summary.wallet_currency || ""}`.trim() : null} />
+        <Metric label="Capacite totale" value={summary.total_capacity ? `${summary.total_capacity} ${summary.wallet_currency || ""}`.trim() : null} />
         <Metric label="Reference" value={summary.reference_code} />
         <Metric label="ID demande" value={summary.transfer_id} />
         <Metric label="ID transaction" value={summary.transaction_id} />
@@ -115,6 +118,7 @@ export default function TransferSupportAgentPage() {
     "quel est le statut de ma derniere demande",
     "pourquoi mon transfert est pending",
     "suis la reference EXT-1234ABCD",
+    "quelle est ma capacite financiere",
   ];
   const prefillRef = searchParams.get("reference");
 
