@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/services/api";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
-import { getAccessToken } from "@/services/authStore";
+import { getAccessToken, suspendForAuthRedirect } from "@/services/authStore";
 
 function metricTone(value, warn, danger, invert = false) {
   const n = Number(value || 0);
@@ -84,6 +84,7 @@ export default function OpsDashboardPage() {
     setError("");
     try {
       const token = getAccessToken();
+      if (!token) return suspendForAuthRedirect("expired");
       const q = new URLSearchParams({ window_hours: "24" });
       if (pathPrefix.trim()) q.append("path_prefix", pathPrefix.trim());
       const base = import.meta.env.VITE_API_URL || "";
@@ -91,6 +92,7 @@ export default function OpsDashboardPage() {
       const res = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+      if (res.status === 401 || res.status === 403) return suspendForAuthRedirect("expired");
       if (!res.ok) {
         throw new Error(`Export CSV impossible (${res.status}).`);
       }

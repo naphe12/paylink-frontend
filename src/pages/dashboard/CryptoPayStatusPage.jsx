@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { getAccessToken } from "@/services/authStore";
+import { getAccessToken, suspendForAuthRedirect } from "@/services/authStore";
 
 const ORDER_STEPS = ["CREATED", "FUNDED", "SWAPPED", "PAYOUT_PENDING", "PAID_OUT"];
 const API_URL = import.meta.env.VITE_API_URL || "";
@@ -22,8 +22,7 @@ export default function CryptoPayStatusPage() {
       try {
         const token = getAccessToken();
         if (!token) {
-          setError("Session expiree. Reconnectez-vous.");
-          return;
+          return suspendForAuthRedirect("expired");
         }
         const authHeaders = token
           ? {
@@ -41,6 +40,9 @@ export default function CryptoPayStatusPage() {
             headers: authHeaders,
           }),
         ]);
+        if (orderRes.status === 401 || orderRes.status === 403 || trackingRes.status === 401 || trackingRes.status === 403) {
+          return suspendForAuthRedirect("expired");
+        }
         if (!orderRes.ok) {
           throw new Error("Impossible de charger la transaction");
         }
@@ -127,7 +129,7 @@ export default function CryptoPayStatusPage() {
       setRetrying(true);
       const token = getAccessToken();
       if (!token) {
-        throw new Error("Session expiree. Reconnectez-vous.");
+        return suspendForAuthRedirect("expired");
       }
       const authHeaders = token
         ? {
@@ -140,6 +142,7 @@ export default function CryptoPayStatusPage() {
         credentials: "include",
         headers: authHeaders,
       });
+      if (res.status === 401 || res.status === 403) return suspendForAuthRedirect("expired");
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.detail || "Relance impossible");
@@ -173,7 +176,7 @@ export default function CryptoPayStatusPage() {
       setSandboxActionLoading(true);
       const token = getAccessToken();
       if (!token) {
-        throw new Error("Session expiree. Reconnectez-vous.");
+        return suspendForAuthRedirect("expired");
       }
       const authHeaders = token
         ? {
@@ -186,6 +189,7 @@ export default function CryptoPayStatusPage() {
         credentials: "include",
         headers: authHeaders,
       });
+      if (res.status === 401 || res.status === 403) return suspendForAuthRedirect("expired");
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.detail || "Simulation impossible");

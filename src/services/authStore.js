@@ -172,6 +172,14 @@ export function redirectToAuth(reason = "expired") {
   window.location.replace("/auth");
 }
 
+export function suspendForAuthRedirect(reason = "expired") {
+  redirectToAuth(reason);
+  if (typeof window !== "undefined") {
+    return new Promise(() => {});
+  }
+  return Promise.reject(new Error("Session expiree. Redirection vers la connexion..."));
+}
+
 async function fetchAuthEndpoint(path, options = {}) {
   let lastError = null;
   for (const base of getApiBases()) {

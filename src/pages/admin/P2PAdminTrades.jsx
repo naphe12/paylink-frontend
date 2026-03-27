@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/services/api";
-import { getAccessToken } from "@/services/authStore";
+import { getAccessToken, suspendForAuthRedirect } from "@/services/authStore";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
@@ -243,6 +243,7 @@ export default function P2PAdminTrades() {
   const exportDeposits = async (format) => {
     try {
       const token = getAuthToken();
+      if (!token) return suspendForAuthRedirect("expired");
       const exportSearch = new URLSearchParams({
         status: depositFilter,
         format,
@@ -260,6 +261,7 @@ export default function P2PAdminTrades() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
+      if (res.status === 401 || res.status === 403) return suspendForAuthRedirect("expired");
       if (!res.ok) {
         throw new Error(`Export ${format.toUpperCase()} impossible`);
       }

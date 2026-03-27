@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fetchPublicApi } from "@/services/api";
-import { getAccessToken } from "@/services/authStore";
+import { getAccessToken, suspendForAuthRedirect } from "@/services/authStore";
 
 export default function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -18,6 +18,7 @@ export default function ChangePasswordPage() {
 
     try {
       const token = getAccessToken();
+      if (!token) return suspendForAuthRedirect("expired");
       const res = await fetchPublicApi("/auth/change-password", {
         method: "POST",
         headers: {
@@ -29,6 +30,7 @@ export default function ChangePasswordPage() {
           new_password: newPassword,
         }),
       });
+      if (res.status === 401 || res.status === 403) return suspendForAuthRedirect("expired");
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Erreur");
