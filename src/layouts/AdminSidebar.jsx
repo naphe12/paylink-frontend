@@ -548,6 +548,9 @@ export default function AdminSidebar() {
             <NavLink to="client-wallets" className={linkClass} onClick={onNavigate}>
               <Users size={18} /> Wallets clients
             </NavLink>
+            <NavLink to="wallet-corrections" className={linkClass} onClick={onNavigate}>
+              <Wallet size={18} /> Corrections wallet
+            </NavLink>
             <NavLink to="wallet-analysis" className={linkClass} onClick={onNavigate}>
               <LineChart size={18} /> Analyse wallets
             </NavLink>
