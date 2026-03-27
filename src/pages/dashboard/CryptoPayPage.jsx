@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import { getAccessToken } from "@/services/authStore";
+import { getAccessToken, suspendForAuthRedirect } from "@/services/authStore";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 const USDC_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
@@ -74,8 +74,7 @@ export default function CryptoPayPage() {
     try {
       const token = getAccessToken();
       if (!token) {
-        navigate("/auth");
-        return;
+        return suspendForAuthRedirect("expired");
       }
       const res = await fetch(`${API_URL}/escrow/orders`, {
         method: "POST",
@@ -99,6 +98,7 @@ export default function CryptoPayPage() {
           recipient_phone: recipientPhone,
         }),
       });
+      if (res.status === 401 || res.status === 403) return suspendForAuthRedirect("expired");
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

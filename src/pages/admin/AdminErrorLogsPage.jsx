@@ -65,6 +65,9 @@ export default function AdminErrorLogsPage() {
         current && list.some((item) => item.error_id === current) ? current : list[0]?.error_id || ""
       );
     } catch (err) {
+      if (String(err?.message || "").includes("Session expiree.")) {
+        return;
+      }
       setError(err?.message || "Impossible de charger les erreurs applicatives.");
       setRows([]);
       setSelectedId("");

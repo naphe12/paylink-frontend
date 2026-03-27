@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { getAccessToken } from "@/services/authStore";
+import { getAccessToken, suspendForAuthRedirect } from "@/services/authStore";
 
 async function api(url, options = {}) {
   const token = getAccessToken();
+  if (!token) return suspendForAuthRedirect("expired");
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -10,6 +11,7 @@ async function api(url, options = {}) {
       Authorization: `Bearer ${token}`,
     },
   });
+  if (res.status === 401 || res.status === 403) return suspendForAuthRedirect("expired");
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
