@@ -98,6 +98,9 @@ export default function CreditAgentPage() {
     "combien me reste en credit",
     "si j'envoie 200 usd est-ce que ca passe",
     "pourquoi mon transfert est pending",
+    "quelle est ma capacite financiere",
+    "si j'envoie 50000 bif est-ce que ca passe",
+    "pourquoi ma demande est en attente",
   ];
 
   const sendMessage = async (nextMessage = null) => {

@@ -88,6 +88,8 @@ export default function AgentOnboardingPage() {
   const quickPrompts = [
     "comment faire un cash-in",
     "comment faire un cash-out",
+    "comment scanner un client",
+    "comment faire un transfert externe",
     "nouveau client",
     "client sans kyc",
     "cash-out bloque",

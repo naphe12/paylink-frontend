@@ -72,6 +72,8 @@ export default function EscrowAgentPage() {
     "quel est le statut de mon dernier escrow",
     "pourquoi mon escrow est en attente",
     "quelle est la prochaine etape de mon escrow",
+    "explique l'etape en cours de mon escrow",
+    "que dois-je faire maintenant sur mon escrow",
   ];
 
   const sendMessage = async (nextMessage = null) => {

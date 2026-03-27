@@ -123,6 +123,8 @@ export default function CashAgentPage() {
     "retrait 120 usd via ecocash au +250788123456",
     "quelle est ma capacite cash",
     "quel est le statut de ma derniere demande cash",
+    "retrait 30000 bif via lumicash au +25761234567",
+    "depot 150 eur",
   ];
 
   const sendMessage = async (nextMessage = null) => {

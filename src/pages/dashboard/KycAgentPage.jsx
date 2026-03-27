@@ -98,6 +98,9 @@ export default function KycAgentPage() {
     "quel est mon niveau kyc",
     "quels documents il me manque",
     "si je fais mon kyc qu'est ce qui change",
+    "quelles sont mes limites journalieres et mensuelles",
+    "quel est le statut exact de mon dossier kyc",
+    "pourquoi mon kyc est bloque",
   ];
 
   const sendMessage = async (nextMessage = null) => {
