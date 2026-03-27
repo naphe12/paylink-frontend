@@ -28,7 +28,7 @@ import {
 import { Link } from "react-router-dom";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import QuickActions from "@/components/QuickActions";
-import { getAdminQuickActions } from "@/constants/adminQuickActions";
+import { getAdminQuickActionGroups } from "@/constants/adminQuickActionGroups";
 import api from "@/services/api";
 
 function formatNumber(value) {
@@ -417,8 +417,8 @@ export default function AdminGlobalDashboard() {
 
       <QuickActions
         title="Actions rapides admin"
-        subtitle="Raccourcis vers les operations les plus frequentes depuis le dashboard global."
-        actions={getAdminQuickActions()}
+        subtitle="Les groupes correspondent aux sections du menu admin."
+        groups={getAdminQuickActionGroups()}
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

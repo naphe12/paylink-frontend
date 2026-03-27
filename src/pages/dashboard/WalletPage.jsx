@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, ArrowUp, CreditCard, Globe, MessageSquare, RefreshCcw, Send, Shield, Store, Wallet } from "lucide-react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import WalletCard from "@/components/WalletCard";
 import QuickActions from "@/components/QuickActions";
+import { CLIENT_QUICK_ACTION_GROUPS } from "@/constants/clientQuickActionGroups";
 import WalletHistoryTable from "@/components/wallet/WalletHistoryTable";
 import api from "@/services/api";
 
@@ -119,121 +120,8 @@ export default function WalletPage() {
     <div className="space-y-6">
       <QuickActions
         title="Actions rapides"
-        subtitle="Accedez directement aux operations les plus frequentes."
-        actions={[
-          {
-            label: "Transfert externe",
-            description: "Envoyer vers un partenaire",
-            to: "/dashboard/client/external-transfer",
-            icon: Globe,
-            className: "border-emerald-200 bg-emerald-50 hover:bg-emerald-100/60",
-          },
-          {
-            label: "Transfert interne",
-            description: "Envoyer a un autre utilisateur",
-            to: "/dashboard/client/transfer",
-            icon: Send,
-            className: "border-blue-200 bg-blue-50 hover:bg-blue-100/60",
-          },
-          {
-            label: "Depot cash",
-            description: "Soumettre une demande de depot",
-            to: "/dashboard/client/deposit",
-            icon: ArrowDown,
-            className: "border-cyan-200 bg-cyan-50 hover:bg-cyan-100/60",
-          },
-          {
-            label: "Retrait cash",
-            description: "Demander un retrait BIF",
-            to: "/dashboard/client/withdraw/bif",
-            icon: ArrowUp,
-            className: "border-rose-200 bg-rose-50 hover:bg-rose-100/60",
-          },
-          {
-            label: "Assistant cash",
-            description: "Demander depot, retrait ou capacite",
-            to: "/dashboard/client/cash-agent",
-            icon: MessageSquare,
-            className: "border-emerald-200 bg-emerald-50 hover:bg-emerald-100/60",
-          },
-          {
-            label: "Transactions",
-            description: "Voir les mouvements applicatifs",
-            to: "/dashboard/client/transactions",
-            icon: RefreshCcw,
-            className: "border-slate-200 bg-slate-50 hover:bg-white",
-          },
-          {
-            label: "Escrow crypto",
-            description: "Paiement crypto securise",
-            to: "/dashboard/client/crypto-pay",
-            icon: Shield,
-            className: "border-violet-200 bg-violet-50 hover:bg-violet-100/60",
-          },
-          {
-            label: "P2P market",
-            description: "Acheter ou vendre via P2P",
-            to: "/app/p2p",
-            icon: Store,
-            className: "border-indigo-200 bg-indigo-50 hover:bg-indigo-100/60",
-          },
-          {
-            label: "Assistant escrow",
-            description: "Comprendre un statut escrow ou la prochaine etape",
-            to: "/dashboard/client/escrow-agent",
-            icon: MessageSquare,
-            className: "border-cyan-200 bg-cyan-50 hover:bg-cyan-100/60",
-          },
-          {
-            label: "Assistant P2P",
-            description: "Suivre un trade ou vos offres",
-            to: "/dashboard/client/p2p-agent",
-            icon: MessageSquare,
-            className: "border-emerald-200 bg-emerald-50 hover:bg-emerald-100/60",
-          },
-          {
-            label: "Ligne de credit",
-            description: "Consulter votre capacite",
-            to: "/dashboard/client/credit-line",
-            icon: CreditCard,
-            className: "border-amber-200 bg-amber-50 hover:bg-amber-100/60",
-          },
-          {
-            label: "Assistant credit",
-            description: "Simuler si un montant peut passer",
-            to: "/dashboard/client/credit-agent",
-            icon: CreditCard,
-            className: "border-amber-200 bg-amber-50 hover:bg-amber-100/60",
-          },
-          {
-            label: "Assistant KYC",
-            description: "Verifier statut, documents et plafonds",
-            to: "/dashboard/client/kyc-agent",
-            icon: Shield,
-            className: "border-teal-200 bg-teal-50 hover:bg-teal-100/60",
-          },
-          {
-            label: "Support transfert",
-            description: "Suivre et comprendre une demande existante",
-            to: "/dashboard/client/transfer-support-agent",
-            icon: MessageSquare,
-            className: "border-rose-200 bg-rose-50 hover:bg-rose-100/60",
-          },
-          {
-            label: "Assistant wallet",
-            description: "Comprendre solde, plafonds et mouvements",
-            to: "/dashboard/client/wallet-agent",
-            icon: Wallet,
-            className: "border-sky-200 bg-sky-50 hover:bg-sky-100/60",
-          },
-          {
-            label: "Support wallet",
-            description: "Comprendre un blocage ou un mouvement manquant",
-            to: "/dashboard/client/wallet-support-agent",
-            icon: Shield,
-            className: "border-amber-200 bg-amber-50 hover:bg-amber-100/60",
-          },
-        ]}
+        subtitle="Les groupes reprennent les ensembles du menu client."
+        groups={CLIENT_QUICK_ACTION_GROUPS}
       />
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">

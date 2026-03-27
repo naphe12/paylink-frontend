@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/services/api";
+import { getCurrentRole } from "@/services/authStore";
 import {
   ArrowDownCircle,
   ArrowUpCircle,
@@ -9,11 +10,10 @@ import {
   Activity,
   RefreshCcw,
   Loader2,
-  Send,
-  CheckCircle,
 } from "lucide-react";
 import QuickActions from "@/components/QuickActions";
 import DirectionBadge from "@/components/DirectionBadge";
+import { AGENT_QUICK_ACTION_GROUPS } from "@/constants/agentQuickActionGroups";
 
 const MetricCard = ({ label, value, icon: Icon, accent }) => (
   <div
@@ -31,6 +31,7 @@ const MetricCard = ({ label, value, icon: Icon, accent }) => (
 
 export default function AgentDashboard() {
   const navigate = useNavigate();
+  const isAdmin = String(getCurrentRole() || "agent").toLowerCase() === "admin";
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -198,51 +199,8 @@ export default function AgentDashboard() {
 
           <QuickActions
             title="Actions rapides"
-            subtitle="Raccourcis vers les operations agent les plus utilisees."
-            actions={[
-              {
-                label: "Cash-In direct",
-                description: "Crediter un client",
-                to: "/dashboard/agent/cash-in",
-                icon: ArrowDownCircle,
-                className: "border-cyan-200 bg-cyan-50 hover:bg-cyan-100/60",
-              },
-              {
-                label: "Cash-Out direct",
-                description: "Debiter un client",
-                to: "/dashboard/agent/cash-out",
-                icon: ArrowUpCircle,
-                className: "border-rose-200 bg-rose-50 hover:bg-rose-100/60",
-              },
-              {
-                label: "Transfert externe",
-                description: "Assister un client",
-                to: "/dashboard/agent/external-transfer",
-                icon: Send,
-                className: "border-emerald-200 bg-emerald-50 hover:bg-emerald-100/60",
-              },
-              {
-                label: "Operation client",
-                description: "Cash guide sur place",
-                to: "/dashboard/agent/operation",
-                icon: Wallet,
-                className: "border-blue-200 bg-blue-50 hover:bg-blue-100/60",
-              },
-              {
-                label: "Scan QR",
-                description: "Encaisser rapidement",
-                to: "/dashboard/agent/scan",
-                icon: QrCode,
-                className: "border-violet-200 bg-violet-50 hover:bg-violet-100/60",
-              },
-              {
-                label: "Cloture transferts",
-                description: "Finaliser les dossiers",
-                to: "/dashboard/agent/transfers/close",
-                icon: CheckCircle,
-                className: "border-amber-200 bg-amber-50 hover:bg-amber-100/60",
-              },
-            ]}
+            subtitle="Chaque groupe reprend les items reels du menu agent."
+            groups={isAdmin ? AGENT_QUICK_ACTION_GROUPS : AGENT_QUICK_ACTION_GROUPS.filter((group) => group.key !== "admin")}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">

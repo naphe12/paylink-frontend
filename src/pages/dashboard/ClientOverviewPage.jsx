@@ -9,9 +9,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ArrowDownToLine, CreditCard, Gift, MessageSquare, ShieldAlert, Wallet } from "lucide-react";
+import { CreditCard, Gift, ShieldAlert, Wallet } from "lucide-react";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import QuickActions from "@/components/QuickActions";
+import { CLIENT_QUICK_ACTION_GROUPS } from "@/constants/clientQuickActionGroups";
 import api from "@/services/api";
 
 function formatAmount(value, currency = "EUR", maximumFractionDigits = 2) {
@@ -131,93 +132,8 @@ export default function ClientOverviewPage() {
 
       <QuickActions
         title="Acces rapides"
-        subtitle="Actions utiles depuis la synthese."
-        actions={[
-          {
-            label: "Transfert externe",
-            description: "Envoyer via partenaire",
-            to: "/dashboard/client/external-transfer",
-            icon: ArrowDownToLine,
-            className: "border-emerald-200 bg-emerald-50 hover:bg-emerald-100/60",
-          },
-          {
-            label: "Depot cash",
-            description: "Soumettre un depot",
-            to: "/dashboard/client/deposit",
-            icon: Wallet,
-            className: "border-cyan-200 bg-cyan-50 hover:bg-cyan-100/60",
-          },
-          {
-            label: "Assistant cash",
-            description: "Depot, retrait ou capacite cash",
-            to: "/dashboard/client/cash-agent",
-            icon: MessageSquare,
-            className: "border-emerald-200 bg-emerald-50 hover:bg-emerald-100/60",
-          },
-          {
-            label: "Ligne de credit",
-            description: "Voir la capacite disponible",
-            to: "/dashboard/client/credit-line",
-            icon: CreditCard,
-            className: "border-amber-200 bg-amber-50 hover:bg-amber-100/60",
-          },
-          {
-            label: "Assistant credit",
-            description: "Verifier si un montant peut passer",
-            to: "/dashboard/client/credit-agent",
-            icon: CreditCard,
-            className: "border-amber-200 bg-amber-50 hover:bg-amber-100/60",
-          },
-          {
-            label: "Assistant KYC",
-            description: "Verifier statut, limites et documents",
-            to: "/dashboard/client/kyc-agent",
-            icon: ShieldAlert,
-            className: "border-teal-200 bg-teal-50 hover:bg-teal-100/60",
-          },
-          {
-            label: "Support transfert",
-            description: "Suivre une demande et comprendre son statut",
-            to: "/dashboard/client/transfer-support-agent",
-            icon: MessageSquare,
-            className: "border-rose-200 bg-rose-50 hover:bg-rose-100/60",
-          },
-          {
-            label: "Assistant wallet",
-            description: "Solde, limites et mouvements recents",
-            to: "/dashboard/client/wallet-agent",
-            icon: Wallet,
-            className: "border-sky-200 bg-sky-50 hover:bg-sky-100/60",
-          },
-          {
-            label: "Support wallet",
-            description: "Diagnostiquer un blocage ou un mouvement",
-            to: "/dashboard/client/wallet-support-agent",
-            icon: ShieldAlert,
-            className: "border-amber-200 bg-amber-50 hover:bg-amber-100/60",
-          },
-          {
-            label: "Assistant escrow",
-            description: "Suivre un paiement crypto securise",
-            to: "/dashboard/client/escrow-agent",
-            icon: MessageSquare,
-            className: "border-cyan-200 bg-cyan-50 hover:bg-cyan-100/60",
-          },
-          {
-            label: "Assistant P2P",
-            description: "Suivre un trade ou vos offres actives",
-            to: "/dashboard/client/p2p-agent",
-            icon: MessageSquare,
-            className: "border-emerald-200 bg-emerald-50 hover:bg-emerald-100/60",
-          },
-          {
-            label: "Bonus",
-            description: "Consulter vos bonus",
-            to: "/dashboard/client/bonus",
-            icon: Gift,
-            className: "border-violet-200 bg-violet-50 hover:bg-violet-100/60",
-          },
-        ]}
+        subtitle="Chaque ensemble reprend exactement les items du menu client."
+        groups={CLIENT_QUICK_ACTION_GROUPS}
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

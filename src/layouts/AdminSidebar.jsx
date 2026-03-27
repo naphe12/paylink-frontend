@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { getAccessToken, logout as logoutSession } from "@/services/authStore";
 import QuickActions from "@/components/QuickActions";
-import { getAdminQuickActions } from "@/constants/adminQuickActions";
+import { getAdminQuickActionGroups } from "@/constants/adminQuickActionGroups";
 import { fetchBackendVersion } from "@/services/api";
 import { getFrontendReleaseInfo } from "@/utils/releaseInfo";
 
@@ -744,8 +744,8 @@ export default function AdminSidebar() {
             </div>
             <QuickActions
               title="Actions rapides admin"
-              subtitle="Disponible sur toutes les pages admin."
-              actions={getAdminQuickActions()}
+              subtitle="Les groupes reprennent la structure complete du menu admin."
+              groups={getAdminQuickActionGroups()}
             />
           </div>
           <Outlet />
