@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
+import RichAssistantText from "@/components/assistants/RichAssistantText";
 import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
 import api from "@/services/api";
 
@@ -421,7 +422,7 @@ export default function AgentChatPage() {
                     <Bot size={14} />
                     Assistant
                   </div>
-                  <p className="mt-2">{response.message}</p>
+                  <RichAssistantText text={response.message} className="mt-2" />
                   <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${getStatusBadgeClass(response.status)}`}>
                     {response.status}
                   </span>
