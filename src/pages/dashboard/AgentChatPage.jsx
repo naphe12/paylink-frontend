@@ -87,6 +87,50 @@ function DraftCard({ draft, missingFields = [], executable = false, assumptions 
   );
 }
 
+function BeneficiaryCandidatesCard({ candidates = [], selectedIndex = null, onSelect }) {
+  if (!candidates.length) return null;
+  return (
+    <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+      <div className="flex items-center gap-2 text-sm font-semibold text-blue-900">
+        <User size={16} />
+        Beneficiaires possibles
+      </div>
+      <p className="mt-2 text-xs text-blue-800">
+        Selectionne l'entree correcte avant de confirmer la demande.
+      </p>
+      <div className="mt-3 space-y-2">
+        {candidates.map((candidate, index) => {
+          const isSelected = selectedIndex === index;
+          return (
+            <button
+              key={`${candidate.recipient_name || "candidate"}-${candidate.partner_name || ""}-${candidate.recipient_phone || ""}-${index}`}
+              type="button"
+              onClick={() => onSelect(index)}
+              className={`w-full rounded-xl border px-3 py-3 text-left text-sm ${
+                isSelected
+                  ? "border-blue-500 bg-white text-blue-900"
+                  : "border-blue-200 bg-white/80 text-slate-700 hover:bg-white"
+              }`}
+            >
+              <p className="font-semibold text-slate-900">
+                {index + 1}. {candidate.recipient_name || "Beneficiaire"}
+              </p>
+              <p className="mt-1">
+                {candidate.partner_name || "-"} {candidate.recipient_phone ? `• ${candidate.recipient_phone}` : ""}
+              </p>
+              {candidate.account_ref || candidate.recipient_email ? (
+                <p className="mt-1 text-xs text-slate-500">
+                  Compte: {candidate.account_ref || candidate.recipient_email}
+                </p>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Field({ label, value }) {
   return (
     <div className="rounded-xl border border-slate-100 bg-white px-3 py-3">
@@ -262,6 +306,19 @@ export default function AgentChatPage() {
     } catch (err) {
       setError(err?.message || "Impossible d'annuler la demande.");
     }
+  };
+
+  const selectBeneficiaryCandidate = (index) => {
+    setResponse((current) => {
+      if (!current?.data) return current;
+      return {
+        ...current,
+        data: {
+          ...current.data,
+          selected_beneficiary_index: index,
+        },
+      };
+    });
   };
 
   const chooseUser = (user) => {
@@ -517,6 +574,12 @@ export default function AgentChatPage() {
                 missingFields={response?.missing_fields || []}
                 executable={!!response?.executable}
                 assumptions={response?.assumptions || []}
+              />
+
+              <BeneficiaryCandidatesCard
+                candidates={response?.data?.beneficiary_candidates || []}
+                selectedIndex={response?.data?.selected_beneficiary_index ?? null}
+                onSelect={selectBeneficiaryCandidate}
               />
 
               {response?.suggestions?.length ? (
