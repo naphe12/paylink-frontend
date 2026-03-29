@@ -298,7 +298,7 @@ export default function AdminAiSynonymsPage() {
         <StatCard label="Langues" value={stats.languages} />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <SectionCard title={editingId ? "Modifier un synonyme" : "Ajouter un synonyme"}>
           <form onSubmit={editingId ? saveEdit : submit} className="space-y-4">
             <label className="block">

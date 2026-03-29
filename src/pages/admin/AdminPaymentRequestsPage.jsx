@@ -8,7 +8,8 @@ export default function AdminPaymentRequestsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [identifier, setIdentifier] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [clientFilter, setClientFilter] = useState("");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("credit");
   const [creating, setCreating] = useState(false);
@@ -44,8 +45,21 @@ export default function AdminPaymentRequestsPage() {
     fetchDebtors();
   }, [status]);
 
+  const filteredDebtors = debtors.filter((debtor) => {
+    const haystack = [
+      debtor.full_name,
+      debtor.email,
+      debtor.paytag,
+      debtor.username,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(clientFilter.trim().toLowerCase());
+  });
+
   const createRequest = async () => {
-    if (!identifier || !amount) {
+    if (!selectedUserId || !amount) {
       setCreateMsg("Renseignez le client et le montant.");
       return;
     }
@@ -53,12 +67,12 @@ export default function AdminPaymentRequestsPage() {
     setCreateMsg("");
     try {
       await api.createAdminPaymentRequest({
-        user_identifier: identifier,
+        user_identifier: selectedUserId,
         amount: Number(amount),
         reason,
       });
       setCreateMsg("Demande envoyee.");
-      setIdentifier("");
+      setSelectedUserId("");
       setAmount("");
       fetchData();
     } catch (err) {
@@ -100,13 +114,29 @@ export default function AdminPaymentRequestsPage() {
           <Send size={16} /> Envoyer une demande
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <input
-            type="text"
-            placeholder="Client (email/username/paytag/tel)"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            className="border rounded-lg px-3 py-2"
-          />
+          <div className="space-y-2 md:col-span-2">
+            <input
+              type="text"
+              placeholder="Filtrer les clients"
+              value={clientFilter}
+              onChange={(e) => setClientFilter(e.target.value)}
+              className="border rounded-lg px-3 py-2 w-full"
+            />
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="border rounded-lg px-3 py-2 w-full"
+            >
+              <option value="">Selectionner un client</option>
+              {filteredDebtors.map((debtor) => (
+                <option key={debtor.user_id} value={debtor.user_id}>
+                  {debtor.full_name || debtor.email || debtor.paytag || debtor.username || debtor.user_id}
+                  {" · "}
+                  {debtor.email || debtor.paytag || debtor.username || debtor.user_id}
+                </option>
+              ))}
+            </select>
+          </div>
           <input
             type="number"
             placeholder="Montant"
@@ -176,7 +206,10 @@ export default function AdminPaymentRequestsPage() {
                     </td>
                     <td className="px-3 py-2">
                       <button
-                        onClick={() => setIdentifier(d.email || d.paytag || d.username || "")}
+                        onClick={() => {
+                          setSelectedUserId(d.user_id);
+                          setClientFilter(d.full_name || d.email || d.paytag || d.username || "");
+                        }}
                         className="text-indigo-600 hover:underline text-sm"
                       >
                         Pre-remplir
