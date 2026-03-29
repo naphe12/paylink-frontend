@@ -15,6 +15,7 @@ import {
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import RichAssistantText from "@/components/assistants/RichAssistantText";
+import AdminAssistantPromptHint from "@/components/admin/AdminAssistantPromptHint";
 import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
 import api from "@/services/api";
 
@@ -500,6 +501,7 @@ export default function AgentChatPage() {
               className="mt-3 w-full rounded-3xl border border-slate-200 px-4 py-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
               placeholder="Ex: envoie 100 EUR a Jean via Lumicash au Burundi au +25761234567"
             />
+            {isAdmin ? <AdminAssistantPromptHint /> : null}
             <div className="mt-3 flex flex-wrap gap-3">
               <button
                 onClick={() => sendMessage()}

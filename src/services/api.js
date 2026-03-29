@@ -1050,6 +1050,27 @@ const api = {
   async repayAdminClientDebt(userId, amount) {
     return this.post(`/admin/credit-lines/users/${userId}/repay`, { amount });
   },
+  async getAdminAiAuditLogs(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/ai/audit-logs${query ? `?${query}` : ""}`);
+  },
+  async getAdminAiAuditLog(auditLogId) {
+    return this.get(`/admin/ai/audit-logs/${auditLogId}`);
+  },
+  async annotateAdminAiAuditLog(auditLogId, payload = {}) {
+    return this.post(`/admin/ai/audit-logs/${auditLogId}/annotate`, payload);
+  },
+  async getAdminAiFeedbackSuggestions(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/ai/feedback/suggestions${query ? `?${query}` : ""}`);
+  },
+  async applyAdminAiFeedbackSuggestion(suggestionId) {
+    return this.post(`/admin/ai/feedback/suggestions/${suggestionId}/apply`, {});
+  },
 };
 
 export default api;

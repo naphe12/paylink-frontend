@@ -18,6 +18,7 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   TrendingUp,
   UserCheck,
   Users,
@@ -67,6 +68,7 @@ const ADMIN_QUICK_ACTION_GROUPS = [
       { label: "Support wallet", to: "/dashboard/admin/wallet-support-agent", icon: BookOpen, description: "Incidents wallet" },
       { label: "Assistant escrow", to: "/dashboard/admin/escrow-agent", icon: BookOpen, description: "Suivi escrow" },
       { label: "Assistant P2P", to: "/dashboard/admin/p2p-agent", icon: BookOpen, description: "Suivi P2P" },
+      { label: "Feedback IA", to: "/dashboard/admin/ai-feedback", icon: Sparkles, description: "Audit et apprentissage" },
     ],
   },
   {

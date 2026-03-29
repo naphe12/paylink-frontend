@@ -92,6 +92,7 @@ import IdempotencyScopesPage from "@/pages/admin/IdempotencyScopesPage";
 import OpsDashboardPage from "@/pages/admin/OpsDashboardPage";
 import OnChainSimulatorPage from "@/pages/admin/OnChainSimulatorPage";
 import AdminErrorLogsPage from "@/pages/admin/AdminErrorLogsPage";
+import AdminAiFeedbackPage from "@/pages/admin/AdminAiFeedbackPage";
 
 import AgentOperationPage from "@/pages/agent/AgentOperationPage";
 import AgentDashboard from "@/pages/agent/AgentDashboard";
@@ -253,6 +254,7 @@ export default function AppRouter() {
         <Route path="ledger/unbalanced-journals" element={<UnbalancedJournalsPage />} />
         <Route path="ledger/idempotency-scopes" element={<IdempotencyScopesPage />} />
         <Route path="ops/errors" element={<AdminErrorLogsPage />} />
+        <Route path="ai-feedback" element={<AdminAiFeedbackPage />} />
         <Route path="ops-dashboard" element={<OpsDashboardPage />} />
         <Route path="onchain-simulator" element={<OnChainSimulatorPage />} />
         <Route path="webhooks" element={<WebhookLogs />} />

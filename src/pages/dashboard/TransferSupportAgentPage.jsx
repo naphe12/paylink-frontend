@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
+import AdminAssistantPromptHint from "@/components/admin/AdminAssistantPromptHint";
 import AdminAssistantUserPicker from "@/components/admin/AdminAssistantUserPicker";
 import RichAssistantText from "@/components/assistants/RichAssistantText";
 import api from "@/services/api";
@@ -265,6 +266,7 @@ export default function TransferSupportAgentPage() {
               className="mt-3 w-full rounded-3xl border border-slate-200 px-4 py-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-300"
               placeholder="Ex: pourquoi mon transfert est pending"
             />
+            {isAdmin ? <AdminAssistantPromptHint /> : null}
             <div className="mt-3 flex flex-wrap gap-3">
               <button
                 onClick={() => sendMessage()}
