@@ -95,6 +95,8 @@ import OnChainSimulatorPage from "@/pages/admin/OnChainSimulatorPage";
 import AdminErrorLogsPage from "@/pages/admin/AdminErrorLogsPage";
 import AdminAiFeedbackPage from "@/pages/admin/AdminAiFeedbackPage";
 import AdminAiSynonymsPage from "@/pages/admin/AdminAiSynonymsPage";
+import AdminDisputeCodesPage from "@/pages/admin/AdminDisputeCodesPage";
+import AdminOpsUrgenciesPage from "@/pages/admin/AdminOpsUrgenciesPage";
 
 import AgentOperationPage from "@/pages/agent/AgentOperationPage";
 import AgentDashboard from "@/pages/agent/AgentDashboard";
@@ -259,7 +261,9 @@ export default function AppRouter() {
         <Route path="ops/errors" element={<AdminErrorLogsPage />} />
         <Route path="ai-feedback" element={<AdminAiFeedbackPage />} />
         <Route path="ai-synonyms" element={<AdminAiSynonymsPage />} />
+        <Route path="dispute-codes" element={<AdminDisputeCodesPage />} />
         <Route path="ops-dashboard" element={<OpsDashboardPage />} />
+        <Route path="ops-urgencies" element={<AdminOpsUrgenciesPage />} />
         <Route path="onchain-simulator" element={<OnChainSimulatorPage />} />
         <Route path="webhooks" element={<WebhookLogs />} />
         <Route path="risk" element={<RiskMonitoring />} />

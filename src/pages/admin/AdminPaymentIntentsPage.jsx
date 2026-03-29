@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { RefreshCcw } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
+import AdminOperatorWorkflowPanel from "@/components/admin/AdminOperatorWorkflowPanel";
+import AdminStepUpBadge from "@/components/admin/AdminStepUpBadge";
+import AdminStepUpDialog from "@/components/admin/AdminStepUpDialog";
+import useAdminStepUp from "@/hooks/useAdminStepUp";
 import api from "@/services/api";
+import { getCurrentUser } from "@/services/authStore";
+import { formatAgeShort, isOlderThanHours } from "@/utils/opsSla";
 
 function fmtDate(value) {
   if (!value) return "-";
@@ -17,7 +24,23 @@ function statusClass(status) {
 }
 
 export default function AdminPaymentIntentsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const {
+    stepUpOpen,
+    stepUpLoading,
+    stepUpError,
+    stepUpActionLabel,
+    closeStepUp,
+    confirmStepUp,
+    runWithStepUp,
+    stepUpStatus,
+    loadStepUpStatus,
+  } = useAdminStepUp();
   const [rows, setRows] = useState([]);
+  const [queueView, setQueueView] = useState(() => {
+    const initial = searchParams.get("queue");
+    return initial || "all";
+  });
   const [selectedIntentId, setSelectedIntentId] = useState("");
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -28,6 +51,69 @@ export default function AdminPaymentIntentsPage() {
   const [status, setStatus] = useState("");
   const [providerCode, setProviderCode] = useState("");
   const [query, setQuery] = useState("");
+  const [operatorStatusFilter, setOperatorStatusFilter] = useState("all");
+  const [ownerFilter, setOwnerFilter] = useState("");
+  const [opsView, setOpsView] = useState("all");
+
+  const filteredRows = rows.filter((row) => {
+    const me = getCurrentUser();
+    const myUserId = String(me?.user_id || "");
+    const myName = String(me?.full_name || me?.email || "").toLowerCase();
+    const normalizedStatus = String(row.status || "").toLowerCase();
+    const workflow = row.operator_workflow || {};
+    const operatorStatus =
+      workflow.operator_status ||
+      (["pending_provider", "settled", "failed"].includes(normalizedStatus) ? "needs_follow_up" : "watching");
+    const ownerLabel =
+      workflow.owner_name || workflow.owner_user_id || row.provider_channel || row.provider_code || "";
+    const ownerUserId = String(workflow.owner_user_id || "");
+    const hasOwner = Boolean(ownerLabel || ownerUserId);
+    if (operatorStatusFilter !== "all" && operatorStatus !== operatorStatusFilter) return false;
+    if (ownerFilter.trim() && !String(ownerLabel).toLowerCase().includes(ownerFilter.trim().toLowerCase())) {
+      return false;
+    }
+    if (opsView === "mine") {
+      const matchesMine =
+        (myUserId && ownerUserId === myUserId) ||
+        (myName && String(ownerLabel).toLowerCase() === myName);
+      if (!matchesMine) return false;
+    }
+    if (opsView === "unassigned" && hasOwner) return false;
+    if (opsView === "blocked_only" && operatorStatus !== "blocked") return false;
+    if (queueView === "actionable") return !["credited", "cancelled"].includes(normalizedStatus);
+    if (queueView === "attention") return ["pending_provider", "failed", "settled"].includes(normalizedStatus);
+    if (queueView === "credited") return normalizedStatus === "credited";
+    if (queueView === "failed") return normalizedStatus === "failed";
+    if (
+      queueView === "stale" &&
+      !(
+        ["pending_provider", "settled", "failed"].includes(normalizedStatus) &&
+        isOlderThanHours(row.updated_at || row.created_at, 2)
+      )
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const queueCounts = rows.reduce(
+    (acc, row) => {
+      const normalizedStatus = String(row.status || "").toLowerCase();
+      acc.all += 1;
+      if (!["credited", "cancelled"].includes(normalizedStatus)) acc.actionable += 1;
+      if (["pending_provider", "failed", "settled"].includes(normalizedStatus)) acc.attention += 1;
+      if (normalizedStatus === "credited") acc.credited += 1;
+      if (normalizedStatus === "failed") acc.failed += 1;
+      if (
+        ["pending_provider", "settled", "failed"].includes(normalizedStatus) &&
+        isOlderThanHours(row.updated_at || row.created_at, 2)
+      ) {
+        acc.stale += 1;
+      }
+      return acc;
+    },
+    { all: 0, actionable: 0, attention: 0, credited: 0, failed: 0, stale: 0 }
+  );
 
   const load = async () => {
     setLoading(true);
@@ -49,6 +135,17 @@ export default function AdminPaymentIntentsPage() {
 
   useEffect(() => {
     load();
+  }, []);
+
+  useEffect(() => {
+    const requestedQueue = searchParams.get("queue") || "all";
+    if (requestedQueue !== queueView) {
+      setQueueView(requestedQueue);
+    }
+  }, [searchParams, queueView]);
+
+  useEffect(() => {
+    loadStepUpStatus();
   }, []);
 
   const loadDetail = async (intentId) => {
@@ -76,10 +173,17 @@ export default function AdminPaymentIntentsPage() {
     setReconciling(true);
     setError("");
     try {
-      const data = await api.manualReconcileAdminPaymentIntent(selectedIntentId, {
+      const payload = {
         provider_reference: providerReference || null,
         note: note || null,
+      };
+      const data = await runWithStepUp({
+        action: "payment_manual_reconcile",
+        actionLabel: "Confirmer la reconciliation manuelle du paiement",
+        execute: (stepUpToken) =>
+          api.manualReconcileAdminPaymentIntent(selectedIntentId, payload, stepUpToken),
       });
+      if (!data) return;
       setDetail(data || null);
       await load();
     } catch (err) {
@@ -95,10 +199,17 @@ export default function AdminPaymentIntentsPage() {
     setStatusUpdating(true);
     setError("");
     try {
-      const data = await api.adminPaymentIntentStatusAction(selectedIntentId, {
+      const payload = {
         action,
         note: note || null,
+      };
+      const data = await runWithStepUp({
+        action: "payment_status_action",
+        actionLabel: "Confirmer la modification de statut du paiement",
+        execute: (stepUpToken) =>
+          api.adminPaymentIntentStatusAction(selectedIntentId, payload, stepUpToken),
       });
+      if (!data) return;
       setDetail(data || null);
       await load();
     } catch (err) {
@@ -110,12 +221,27 @@ export default function AdminPaymentIntentsPage() {
 
   return (
     <div className="space-y-6">
+      <AdminStepUpDialog
+        open={stepUpOpen}
+        loading={stepUpLoading}
+        error={stepUpError}
+        actionLabel={stepUpActionLabel}
+        onClose={closeStepUp}
+        onConfirm={confirmStepUp}
+      />
       <header className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Depots mobile money BIF</h1>
           <p className="text-sm text-slate-500">
             Suivi des intents de paiement mobile money locaux Burundi, distincts des depots bancaires EUR.
           </p>
+          <div className="mt-3">
+            <AdminStepUpBadge
+              enabled={stepUpStatus?.enabled}
+              expiresInSeconds={stepUpStatus?.token_expires_in_seconds}
+              headerFallbackEnabled={stepUpStatus?.header_fallback_enabled}
+            />
+          </div>
         </div>
         <button
           onClick={load}
@@ -165,6 +291,29 @@ export default function AdminPaymentIntentsPage() {
             <option value="failed">Failed</option>
           </select>
         </div>
+        <div>
+          <label className="text-xs uppercase tracking-wide text-slate-500">Workflow operateur</label>
+          <select
+            value={operatorStatusFilter}
+            onChange={(e) => setOperatorStatusFilter(e.target.value)}
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+          >
+            <option value="all">Tous</option>
+            <option value="needs_follow_up">Needs follow-up</option>
+            <option value="blocked">Blocked</option>
+            <option value="watching">Watching</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-wide text-slate-500">Owner operateur</label>
+          <input
+            value={ownerFilter}
+            onChange={(e) => setOwnerFilter(e.target.value)}
+            placeholder="Filtrer par owner..."
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+          />
+        </div>
         <div className="flex items-end">
           <button
             onClick={load}
@@ -173,6 +322,55 @@ export default function AdminPaymentIntentsPage() {
             Appliquer
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {[
+          ["all", "Tous OPS"],
+          ["mine", "Mes dossiers"],
+          ["unassigned", "Non assignes"],
+          ["blocked_only", "Blocked only"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setOpsView(value)}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium border ${
+              opsView === value
+                ? "border-blue-700 bg-blue-700 text-white"
+                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+        {[
+          ["all", "Tous"],
+          ["actionable", "Actionnables"],
+          ["attention", "Attention"],
+          ["stale", "Stale"],
+          ["credited", "Credites"],
+          ["failed", "Failed"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => {
+              setQueueView(value);
+              const next = new URLSearchParams(searchParams);
+              if (value === "all") next.delete("queue");
+              else next.set("queue", value);
+              setSearchParams(next, { replace: true });
+            }}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium border ${
+              queueView === value
+                ? "border-slate-900 bg-slate-900 text-white"
+                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            {label} ({queueCounts[value] || 0})
+          </button>
+        ))}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
@@ -186,13 +384,14 @@ export default function AdminPaymentIntentsPage() {
                 <th className="px-4 py-3 text-left">Montant</th>
                 <th className="px-4 py-3 text-left">Canal</th>
                 <th className="px-4 py-3 text-left">Payeur</th>
+                <th className="px-4 py-3 text-left">Age</th>
                 <th className="px-4 py-3 text-left">Statut</th>
                 <th className="px-4 py-3 text-left">Cree le</th>
                 <th className="px-4 py-3 text-left">Credite le</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {filteredRows.map((row) => (
                 <tr
                   key={row.intent_id}
                   className={`border-t cursor-pointer hover:bg-slate-50 ${
@@ -213,18 +412,47 @@ export default function AdminPaymentIntentsPage() {
                   <td className="px-4 py-3 text-slate-600">
                     {row.payer_identifier || row.target_instructions?.merchant_number || "-"}
                   </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span>{formatAgeShort(row.updated_at || row.created_at)}</span>
+                      {["pending_provider", "settled", "failed"].includes(String(row.status || "").toLowerCase()) &&
+                      isOlderThanHours(row.updated_at || row.created_at, 2) ? (
+                        <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                          SLA
+                        </span>
+                      ) : null}
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusClass(row.status)}`}>
                       {row.status}
                     </span>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+                        {row.operator_workflow?.operator_status ||
+                          (["pending_provider", "settled", "failed"].includes(String(row.status || "").toLowerCase())
+                            ? "needs_follow_up"
+                            : "watching")}
+                      </span>
+                      {row.operator_workflow?.owner_name || row.operator_workflow?.owner_user_id ? (
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                          {row.operator_workflow?.owner_name || row.operator_workflow?.owner_user_id}
+                        </span>
+                      ) : null}
+                      {row.operator_workflow?.follow_up_at ? (
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                          Follow-up
+                        </span>
+                      ) : null}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-slate-500">{fmtDate(row.created_at)}</td>
                   <td className="px-4 py-3 text-slate-500">{fmtDate(row.credited_at)}</td>
                 </tr>
               ))}
-              {rows.length === 0 && (
+              {filteredRows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan={9} className="px-4 py-8 text-center text-slate-500">
                     {loading ? "Chargement..." : "Aucun intent de depot mobile money pour ce filtre."}
                   </td>
                 </tr>
@@ -335,6 +563,11 @@ export default function AdminPaymentIntentsPage() {
                       <div className="mt-2 text-xs text-slate-500">
                         {fmtDate(event.created_at)} | external_event_id: {event.external_event_id || "-"} | reason: {event.reason_code || "-"}
                       </div>
+                      {event.payload?.step_up_method ? (
+                        <div className="mt-1 text-xs text-slate-500">
+                          Validation admin: {event.payload.step_up_method === "token" ? "Step-up token" : "Header fallback"}
+                        </div>
+                      ) : null}
                       <pre className="mt-2 overflow-x-auto rounded-lg bg-slate-50 p-3 text-xs text-slate-700">
                         {JSON.stringify(event.payload || {}, null, 2)}
                       </pre>
@@ -345,6 +578,25 @@ export default function AdminPaymentIntentsPage() {
                   )}
                 </div>
               </div>
+
+              <AdminOperatorWorkflowPanel
+                title="Workflow operateur paiement"
+                entityType="payment_intent"
+                entityId={detail.intent?.intent_id}
+                workflow={detail.intent?.operator_workflow || null}
+                fallbackStatus={
+                  ["failed", "pending_provider", "settled"].includes(String(detail.intent?.status || "").toLowerCase())
+                    ? "needs_follow_up"
+                    : "watching"
+                }
+                fallbackOwnerLabel={
+                  detail.intent?.provider_channel || detail.intent?.provider_code || "Payments"
+                }
+                onSaved={async () => {
+                  await load();
+                  await loadDetail(detail.intent.intent_id);
+                }}
+              />
             </div>
           )}
         </div>

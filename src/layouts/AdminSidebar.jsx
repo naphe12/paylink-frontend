@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { getAccessToken, logout as logoutSession, redirectToAuth } from "@/services/authStore";
 import QuickActions from "@/components/QuickActions";
+import AdminOperatorPrioritiesPanel from "@/components/admin/AdminOperatorPrioritiesPanel";
 import { getAdminQuickActionGroups } from "@/constants/adminQuickActionGroups";
 import { fetchBackendVersion } from "@/services/api";
 import { getFrontendReleaseInfo } from "@/utils/releaseInfo";
@@ -76,6 +77,7 @@ function getGroupForPath(pathname = "") {
       pathname.includes("/assistants-guide") ||
       pathname.includes("/ai-feedback") ||
       pathname.includes("/ai-synonyms") ||
+      pathname.includes("/dispute-codes") ||
       pathname.includes("/agent-chat") ||
     pathname.includes("/cash-agent") ||
     pathname.includes("/credit-agent") ||
@@ -122,7 +124,8 @@ function getGroupForPath(pathname = "") {
     pathname.includes("/cash-requests") ||
     pathname.includes("/payment-requests") ||
     pathname.includes("/ops/liquidity-bif") ||
-    pathname.includes("/ops/errors")
+    pathname.includes("/ops/errors") ||
+    pathname.includes("/ops-urgencies")
   ) {
     return "operations";
   }
@@ -465,6 +468,9 @@ export default function AdminSidebar() {
             <NavLink to="/dashboard/admin/ai-synonyms" className={linkClass} onClick={onNavigate}>
               <BookOpen size={18} /> Synonymes IA
             </NavLink>
+            <NavLink to="/dashboard/admin/dispute-codes" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Codes litiges
+            </NavLink>
             <NavLink to="/dashboard/admin/agent-chat" className={linkClass} onClick={onNavigate}>
               <BookOpen size={18} /> Assistant transfert
             </NavLink>
@@ -587,6 +593,9 @@ export default function AdminSidebar() {
             </NavLink>
             <NavLink to="payment-requests" className={linkClass} onClick={onNavigate}>
               <HandCoins size={18} /> Demandes de paiement
+            </NavLink>
+            <NavLink to="ops-urgencies" className={linkClass} onClick={onNavigate}>
+              <ShieldAlert size={18} /> Urgences OPS
             </NavLink>
             <NavLink to="ops/liquidity-bif" className={linkClass} onClick={onNavigate}>
               <Droplets size={18} /> Liquidite BIF (OPS)
@@ -761,6 +770,7 @@ export default function AdminSidebar() {
             </button>
           </div>
           <div className="mb-6 space-y-3">
+            <AdminOperatorPrioritiesPanel />
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">
               UI marker: admin-global-quick-actions-layout-v1
             </div>

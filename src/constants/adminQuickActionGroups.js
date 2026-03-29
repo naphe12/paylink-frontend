@@ -48,6 +48,7 @@ const ADMIN_QUICK_ACTION_GROUPS = [
       { label: "Audit Log", to: "/backoffice/audit", icon: FileSearch, description: "Audit complet" },
       { label: "Monitoring", to: "/backoffice/monitoring", icon: BarChart3, description: "Monitoring backoffice" },
       { label: "Ops Dashboard", to: "/dashboard/admin/ops-dashboard", icon: Activity, description: "Operations et monitoring" },
+      { label: "Urgences OPS", to: "/dashboard/admin/ops-urgencies", icon: ShieldAlert, description: "File transversale urgente" },
       { label: "Monitoring risque", to: "/dashboard/admin/risk", icon: ShieldAlert, description: "Surveillance risque" },
     ],
   },
@@ -70,6 +71,7 @@ const ADMIN_QUICK_ACTION_GROUPS = [
       { label: "Assistant P2P", to: "/dashboard/admin/p2p-agent", icon: BookOpen, description: "Suivi P2P" },
       { label: "Feedback IA", to: "/dashboard/admin/ai-feedback", icon: Sparkles, description: "Audit et apprentissage" },
       { label: "Synonymes IA", to: "/dashboard/admin/ai-synonyms", icon: Sparkles, description: "Gestion des alias" },
+      { label: "Codes litiges", to: "/dashboard/admin/dispute-codes", icon: Sparkles, description: "Reference des codes" },
     ],
   },
   {

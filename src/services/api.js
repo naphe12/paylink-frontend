@@ -201,13 +201,15 @@ async function parseJsonOrThrow(res, path, method = "GET") {
   );
 }
 
-async function readErrorMessage(res, path, method = "GET") {
+async function buildApiError(res, path, method = "GET") {
   const requestIdHeader = res.headers.get("x-request-id") || res.headers.get("X-Request-Id");
   const statusPrefix = `${method} ${path} -> ${res.status}`;
   const contentType = res.headers.get("content-type") || "";
+  let payload = null;
+  let message = `${statusPrefix}`;
   if (contentType.includes("application/json")) {
     try {
-      const payload = normalizeApiPayload(await res.json());
+      payload = normalizeApiPayload(await res.json());
       const requestIdPayload = payload?.request_id;
       const requestId = requestIdPayload || requestIdHeader;
       const requestIdSuffix = requestId ? ` [request_id=${requestId}]` : "";
@@ -216,24 +218,33 @@ async function readErrorMessage(res, path, method = "GET") {
         const msg = detail
           .map((d) => (typeof d === "string" ? d : d?.msg || JSON.stringify(d)))
           .join(" | ");
-        return `${statusPrefix}: ${msg}${requestIdSuffix}`;
+        message = `${statusPrefix}: ${msg}${requestIdSuffix}`;
+      } else if (typeof detail === "string" && detail.trim()) {
+        message = `${statusPrefix}: ${detail}${requestIdSuffix}`;
+      } else {
+        const fallback = payload?.error || payload?.message;
+        if (typeof fallback === "string" && fallback.trim()) {
+          message = `${statusPrefix}: ${fallback}${requestIdSuffix}`;
+        } else {
+          message = `${statusPrefix}${requestIdSuffix}`;
+        }
       }
-      if (typeof detail === "string" && detail.trim()) {
-        return `${statusPrefix}: ${detail}${requestIdSuffix}`;
-      }
-      const fallback = payload?.error || payload?.message;
-      if (typeof fallback === "string" && fallback.trim()) {
-        return `${statusPrefix}: ${fallback}${requestIdSuffix}`;
-      }
-      return `${statusPrefix}${requestIdSuffix}`;
     } catch {
       const requestIdSuffix = requestIdHeader ? ` [request_id=${requestIdHeader}]` : "";
-      return `${statusPrefix}${requestIdSuffix}`;
+      message = `${statusPrefix}${requestIdSuffix}`;
     }
+  } else {
+    const text = await res.text();
+    const requestIdSuffix = requestIdHeader ? ` [request_id=${requestIdHeader}]` : "";
+    message = `${statusPrefix}${text ? `: ${text.slice(0, 200)}` : ""}${requestIdSuffix}`;
   }
-  const text = await res.text();
-  const requestIdSuffix = requestIdHeader ? ` [request_id=${requestIdHeader}]` : "";
-  return `${statusPrefix}${text ? `: ${text.slice(0, 200)}` : ""}${requestIdSuffix}`;
+
+  const error = new Error(message);
+  error.status = res.status;
+  error.payload = payload;
+  error.detail = payload?.detail;
+  error.requestId = payload?.request_id || requestIdHeader || null;
+  return error;
 }
 
 function formatNetworkError(path, method = "GET", err) {
@@ -302,7 +313,7 @@ const api = {
       }
       return handleUnauthorizedAfterRefreshFailure();
     }
-    if (!res.ok) throw new Error(await readErrorMessage(res, path, "GET"));
+    if (!res.ok) throw await buildApiError(res, path, "GET");
     return parseJsonOrThrow(res, path, "GET");
   },
 
@@ -329,7 +340,7 @@ const api = {
       }
       return handleUnauthorizedAfterRefreshFailure();
     }
-    if (!res.ok) throw new Error(await readErrorMessage(res, path, "POST"));
+    if (!res.ok) throw await buildApiError(res, path, "POST");
     return parseJsonOrThrow(res, path, "POST");
   },
 
@@ -357,7 +368,7 @@ const api = {
       }
       return handleUnauthorizedAfterRefreshFailure();
     }
-    if (!res.ok) throw new Error(await readErrorMessage(res, path, "POST"));
+    if (!res.ok) throw await buildApiError(res, path, "POST");
     return parseJsonOrThrow(res, path, "POST");
   },
 
@@ -389,7 +400,7 @@ const api = {
       }
       return handleUnauthorizedAfterRefreshFailure();
     }
-    if (!res.ok) throw new Error(await readErrorMessage(res, path, "PATCH"));
+    if (!res.ok) throw await buildApiError(res, path, "PATCH");
     return parseJsonOrThrow(res, path, "PATCH");
   },
 
@@ -416,7 +427,7 @@ const api = {
       }
       return handleUnauthorizedAfterRefreshFailure();
     }
-    if (!res.ok) throw new Error(await readErrorMessage(res, path, "PUT"));
+    if (!res.ok) throw await buildApiError(res, path, "PUT");
     return parseJsonOrThrow(res, path, "PUT");
   },
   async del(path, allowRefresh = true) {
@@ -440,7 +451,7 @@ const api = {
       }
       return handleUnauthorizedAfterRefreshFailure();
     }
-    if (!res.ok) throw new Error(await readErrorMessage(res, path, "DELETE"));
+    if (!res.ok) throw await buildApiError(res, path, "DELETE");
     return parseJsonOrThrow(res, path, "DELETE");
   },
 
@@ -777,6 +788,12 @@ const api = {
     ).toString();
     return this.get(`/admin/payment-requests${query ? `?${query}` : ""}`);
   },
+  async getAdminP2PDisputeDetail(disputeId) {
+    return this.get(`/api/admin/p2p/disputes/detail/${disputeId}`);
+  },
+  async getAdminDisputeCodes() {
+    return this.get("/api/admin/p2p/disputes/codes");
+  },
   async getAdminPaymentIntents(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
@@ -786,11 +803,19 @@ const api = {
   async getAdminPaymentIntentDetail(intentId) {
     return this.get(`/admin/payments/intents/${intentId}`);
   },
-  async manualReconcileAdminPaymentIntent(intentId, payload = {}) {
-    return this.post(`/admin/payments/intents/${intentId}/manual-reconcile`, payload);
+  async manualReconcileAdminPaymentIntent(intentId, payload = {}, stepUpToken = null) {
+    return this.postWithHeaders(
+      `/admin/payments/intents/${intentId}/manual-reconcile`,
+      payload,
+      stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
+    );
   },
-  async adminPaymentIntentStatusAction(intentId, payload = {}) {
-    return this.post(`/admin/payments/intents/${intentId}/status-action`, payload);
+  async adminPaymentIntentStatusAction(intentId, payload = {}, stepUpToken = null) {
+    return this.postWithHeaders(
+      `/admin/payments/intents/${intentId}/status-action`,
+      payload,
+      stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
+    );
   },
   async getAdminDebtors(limit = 200) {
     const search = new URLSearchParams();
@@ -849,6 +874,27 @@ const api = {
   },
   async escrowSandboxUsdcWebhook(payload = {}) {
     return this.post("/backoffice/webhooks/sandbox/usdc", payload);
+  },
+  async requestEscrowRefund(orderId, payload = {}, stepUpToken = null) {
+    return this.postWithHeaders(
+      `/escrow/orders/${orderId}/refund/request`,
+      payload,
+      stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
+    );
+  },
+  async confirmEscrowRefund(orderId, payload = {}, stepUpToken = null) {
+    return this.postWithHeaders(
+      `/escrow/orders/${orderId}/refund/confirm`,
+      payload,
+      stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
+    );
+  },
+  async resolveP2PDispute(tradeId, payload = {}, stepUpToken = null) {
+    return this.postWithHeaders(
+      `/api/p2p/trades/${tradeId}/dispute/resolve`,
+      payload,
+      stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
+    );
   },
   async getPendingExternalTransfers() {
     return this.get("/agent/external/pending");
@@ -1109,6 +1155,27 @@ const api = {
   },
   async setAdminAiSynonymStatus(synonymId, isActive) {
     return this.post(`/admin/ai/synonyms/${synonymId}/status?is_active=${isActive ? "true" : "false"}`, {});
+  },
+  async issueAdminStepUp(payload = {}) {
+    return this.post("/auth/admin-step-up", payload);
+  },
+  async getAdminStepUpStatus() {
+    return this.get("/auth/admin-step-up/status");
+  },
+  async getAdminOperatorWorkItem(entityType, entityId) {
+    return this.get(`/admin/ops/work-items/${entityType}/${entityId}`);
+  },
+  async getAdminOperatorWorkflowSummary() {
+    return this.get("/admin/ops/work-items/summary");
+  },
+  async getAdminOpsUrgencies(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "" && v !== "all")
+    ).toString();
+    return this.get(`/admin/ops/work-items/urgencies${query ? `?${query}` : ""}`);
+  },
+  async updateAdminOperatorWorkItem(entityType, entityId, payload = {}) {
+    return this.put(`/admin/ops/work-items/${entityType}/${entityId}`, payload);
   },
 };
 
