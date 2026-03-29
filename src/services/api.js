@@ -1104,8 +1104,11 @@ const api = {
   async createAdminAiSynonym(payload = {}) {
     return this.post("/admin/ai/synonyms", payload);
   },
-  async deleteAdminAiSynonym(synonymId) {
-    return this.del(`/admin/ai/synonyms/${synonymId}`);
+  async updateAdminAiSynonym(synonymId, payload = {}) {
+    return this.put(`/admin/ai/synonyms/${synonymId}`, payload);
+  },
+  async setAdminAiSynonymStatus(synonymId, isActive) {
+    return this.post(`/admin/ai/synonyms/${synonymId}/status?is_active=${isActive ? "true" : "false"}`, {});
   },
 };
 
