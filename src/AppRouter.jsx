@@ -69,6 +69,7 @@ import AdminCreditRepayPage from "@/pages/admin/AdminCreditRepayPage";
 import TransactionAuditPage from "@/pages/admin/TransactionAuditPage";
 import TransferGainsPage from "@/pages/admin/TransferGainsPage";
 import AdminPaymentRequestsPage from "@/pages/admin/AdminPaymentRequestsPage";
+import AdminPaymentIntentsPage from "@/pages/admin/AdminPaymentIntentsPage";
 import AdminMicroFinancePage from "@/pages/admin/AdminMicroFinancePage";
 import AdminLoanProductsPage from "@/pages/admin/AdminLoanProductsPage";
 import AdminTontineCreatePage from "@/pages/admin/AdminTontineCreatePage";
@@ -243,6 +244,7 @@ export default function AppRouter() {
         <Route path="credit-lines/repay" element={<AdminCreditRepayPage />} />
         <Route path="transactions-audit" element={<TransactionAuditPage />} />
         <Route path="payment-requests" element={<AdminPaymentRequestsPage />} />
+        <Route path="payment-intents" element={<AdminPaymentIntentsPage />} />
         <Route path="microfinance" element={<AdminMicroFinancePage />} />
         <Route path="loan-products" element={<AdminLoanProductsPage />} />
         <Route path="balance-events" element={<AdminBalanceEventsPage />} />

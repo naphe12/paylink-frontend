@@ -560,6 +560,15 @@ const api = {
   async requestCashDeposit(payload, idempotencyKey = null) {
     return this.postIdempotent("/wallet/cash/deposit", payload, idempotencyKey, "wallet-cash-deposit");
   },
+  async createMobileMoneyDepositIntent(payload = {}) {
+    return this.post("/wallet/payments/deposit-intents/mobile-money", payload);
+  },
+  async getPaymentIntents(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/wallet/payments/intents${query ? `?${query}` : ""}`);
+  },
   async requestCashWithdraw(payload, idempotencyKey = null) {
     return this.postIdempotent("/wallet/cash/withdraw", payload, idempotencyKey, "wallet-cash-withdraw");
   },
@@ -767,6 +776,21 @@ const api = {
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
     ).toString();
     return this.get(`/admin/payment-requests${query ? `?${query}` : ""}`);
+  },
+  async getAdminPaymentIntents(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/payments/intents${query ? `?${query}` : ""}`);
+  },
+  async getAdminPaymentIntentDetail(intentId) {
+    return this.get(`/admin/payments/intents/${intentId}`);
+  },
+  async manualReconcileAdminPaymentIntent(intentId, payload = {}) {
+    return this.post(`/admin/payments/intents/${intentId}/manual-reconcile`, payload);
+  },
+  async adminPaymentIntentStatusAction(intentId, payload = {}) {
+    return this.post(`/admin/payments/intents/${intentId}/status-action`, payload);
   },
   async getAdminDebtors(limit = 200) {
     const search = new URLSearchParams();

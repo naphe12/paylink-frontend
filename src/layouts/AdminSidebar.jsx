@@ -115,6 +115,7 @@ function getGroupForPath(pathname = "") {
     pathname.includes("/client-wallets") ||
     pathname.includes("/wallet-analysis") ||
     pathname.includes("/mobilemoney") ||
+    pathname.includes("/payment-intents") ||
     pathname.includes("/transfers") ||
     pathname.includes("/transfer-approvals") ||
     pathname.includes("/transfer-gains") ||
@@ -580,6 +581,9 @@ export default function AdminSidebar() {
             </NavLink>
             <NavLink to="cash-requests" className={linkClass} onClick={onNavigate}>
               <Coins size={18} /> Cash in/out
+            </NavLink>
+            <NavLink to="payment-intents" className={linkClass} onClick={onNavigate}>
+              <HandCoins size={18} /> Depots mobile money BIF
             </NavLink>
             <NavLink to="payment-requests" className={linkClass} onClick={onNavigate}>
               <HandCoins size={18} /> Demandes de paiement

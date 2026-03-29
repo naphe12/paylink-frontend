@@ -117,6 +117,7 @@ const ADMIN_QUICK_ACTION_GROUPS = [
       { label: "Validations transferts", to: "/dashboard/admin/transfer-approvals", icon: GitPullRequest, description: "Approvals" },
       { label: "Gains transferts", to: "/dashboard/admin/transfer-gains", icon: TrendingUp, description: "Marge transferts" },
       { label: "Cash in/out", to: "/dashboard/admin/cash-requests", icon: Coins, description: "Depots et retraits" },
+      { label: "Depots mobile money BIF", to: "/dashboard/admin/payment-intents", icon: HandCoins, description: "Intents mobile money" },
       { label: "Demandes de paiement", to: "/dashboard/admin/payment-requests", icon: HandCoins, description: "Paiements a traiter" },
       { label: "Liquidite BIF (OPS)", to: "/dashboard/admin/ops/liquidity-bif", icon: Droplets, description: "Pilotage BIF" },
       { label: "Erreurs API", to: "/dashboard/admin/ops/errors", icon: Activity, description: "Erreurs et incidents" },
