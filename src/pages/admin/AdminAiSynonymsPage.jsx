@@ -4,6 +4,53 @@ import { Languages, Plus, RefreshCw, Trash2 } from "lucide-react";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api from "@/services/api";
 
+const DOMAIN_OPTIONS = [
+  { value: "intent", label: "intent" },
+  { value: "network", label: "network" },
+];
+
+const CANONICAL_OPTIONS_BY_DOMAIN = {
+  intent: [
+    "agent_onboarding.guide",
+    "agent_onboarding.scenario",
+    "beneficiary.add",
+    "beneficiary.list",
+    "cash.capacity",
+    "cash.deposit",
+    "cash.request_status",
+    "cash.withdraw",
+    "credit.capacity",
+    "credit.pending_reason",
+    "credit.simulate_capacity",
+    "escrow.status",
+    "help.explain_block_reason",
+    "kyc.status",
+    "p2p.offers_summary",
+    "p2p.trade_status",
+    "transfer.create",
+    "transfer.status",
+    "wallet.balance",
+    "wallet.block_reason",
+    "wallet.limits",
+  ],
+  network: ["Lumicash", "Ecocash", "eNoti", "MTN"],
+};
+
+const LANGUAGE_OPTIONS = [
+  { value: "fr", label: "fr" },
+  { value: "en", label: "en" },
+  { value: "ki", label: "ki" },
+  { value: "sw", label: "sw" },
+];
+
+function toApiLanguageCode(value) {
+  return value === "ki" ? "rn" : value;
+}
+
+function fromApiLanguageCode(value) {
+  return value === "rn" ? "ki" : value;
+}
+
 function SectionCard({ title, action = null, children }) {
   return (
     <section className="rounded-2xl border bg-white p-4 shadow-sm">
@@ -39,17 +86,24 @@ export default function AdminAiSynonymsPage() {
   });
   const [form, setForm] = useState({
     domain: "intent",
-    canonical_value: "",
+    canonical_value: CANONICAL_OPTIONS_BY_DOMAIN.intent[0],
     synonym: "",
     language_code: "fr",
   });
+
+  const canonicalOptions = CANONICAL_OPTIONS_BY_DOMAIN[form.domain] || [];
+  const filterCanonicalOptions = CANONICAL_OPTIONS_BY_DOMAIN[filters.domain] || [];
 
   const loadSynonyms = async (nextFilters = filters) => {
     setLoading(true);
     setError("");
     try {
-      const data = await api.getAdminAiSynonyms({
+      const normalizedFilters = {
         ...nextFilters,
+        language_code: toApiLanguageCode(nextFilters.language_code || ""),
+      };
+      const data = await api.getAdminAiSynonyms({
+        ...normalizedFilters,
         limit: 500,
       });
       setRows(Array.isArray(data) ? data : []);
@@ -81,7 +135,10 @@ export default function AdminAiSynonymsPage() {
     setSaving(true);
     setError("");
     try {
-      await api.createAdminAiSynonym(form);
+      await api.createAdminAiSynonym({
+        ...form,
+        language_code: toApiLanguageCode(form.language_code),
+      });
       setForm((prev) => ({ ...prev, synonym: "" }));
       await loadSynonyms();
     } catch (err) {
@@ -124,18 +181,51 @@ export default function AdminAiSynonymsPage() {
             placeholder="Recherche libre"
             className="rounded-xl border px-3 py-2 text-sm"
           />
-          <input
+          <select
             value={filters.domain}
-            onChange={(event) => setFilters((prev) => ({ ...prev, domain: event.target.value }))}
-            placeholder="domain ex: intent"
+            onChange={(event) =>
+              setFilters((prev) => ({
+                ...prev,
+                domain: event.target.value,
+                canonical_value: "",
+              }))
+            }
             className="rounded-xl border px-3 py-2 text-sm"
-          />
-          <input
+          >
+            <option value="">Tous les domaines</option>
+            {DOMAIN_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <select
             value={filters.language_code}
             onChange={(event) => setFilters((prev) => ({ ...prev, language_code: event.target.value }))}
-            placeholder="langue ex: fr"
             className="rounded-xl border px-3 py-2 text-sm"
-          />
+          >
+            <option value="">Toutes les langues</option>
+            {LANGUAGE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filters.canonical_value}
+            onChange={(event) => setFilters((prev) => ({ ...prev, canonical_value: event.target.value }))}
+            className="rounded-xl border px-3 py-2 text-sm"
+            disabled={!filters.domain}
+          >
+            <option value="">
+              {filters.domain ? "Toutes les valeurs canoniques" : "Choisir un domaine"}
+            </option>
+            {filterCanonicalOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
           <button
             type="button"
             onClick={() => loadSynonyms(filters)}
@@ -163,21 +253,39 @@ export default function AdminAiSynonymsPage() {
               <span className="text-sm text-slate-600">Domaine</span>
               <select
                 value={form.domain}
-                onChange={(event) => setForm((prev) => ({ ...prev, domain: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => {
+                    const nextDomain = event.target.value;
+                    const nextCanonicalOptions = CANONICAL_OPTIONS_BY_DOMAIN[nextDomain] || [];
+                    return {
+                      ...prev,
+                      domain: nextDomain,
+                      canonical_value: nextCanonicalOptions[0] || "",
+                    };
+                  })
+                }
                 className="mt-1 w-full rounded-xl border px-3 py-2"
               >
-                <option value="intent">intent</option>
-                <option value="network">network</option>
+                {DOMAIN_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="block">
               <span className="text-sm text-slate-600">Valeur canonique</span>
-              <input
+              <select
                 value={form.canonical_value}
                 onChange={(event) => setForm((prev) => ({ ...prev, canonical_value: event.target.value }))}
-                placeholder="transfer.create ou Lumicash"
                 className="mt-1 w-full rounded-xl border px-3 py-2"
-              />
+              >
+                {canonicalOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="block">
               <span className="text-sm text-slate-600">Synonyme</span>
@@ -195,10 +303,11 @@ export default function AdminAiSynonymsPage() {
                 onChange={(event) => setForm((prev) => ({ ...prev, language_code: event.target.value }))}
                 className="mt-1 w-full rounded-xl border px-3 py-2"
               >
-                <option value="fr">fr</option>
-                <option value="en">en</option>
-                <option value="rn">rn</option>
-                <option value="sw">sw</option>
+                {LANGUAGE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
             <button
@@ -239,7 +348,7 @@ export default function AdminAiSynonymsPage() {
                       <td className="px-3 py-2 text-slate-700">{row.domain}</td>
                       <td className="px-3 py-2 text-slate-700">{row.canonical_value}</td>
                       <td className="px-3 py-2 font-medium text-slate-900">{row.synonym}</td>
-                      <td className="px-3 py-2 text-slate-700">{row.language_code}</td>
+                      <td className="px-3 py-2 text-slate-700">{fromApiLanguageCode(row.language_code)}</td>
                       <td className="px-3 py-2 text-right">
                         <button
                           type="button"
