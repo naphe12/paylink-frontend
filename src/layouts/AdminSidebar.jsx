@@ -72,9 +72,10 @@ function computeOpsLevel(metrics) {
 
 function getGroupForPath(pathname = "") {
   if (pathname.startsWith("/dashboard/agent")) return "modeAgent";
-    if (
+  if (
       pathname.includes("/assistants-guide") ||
       pathname.includes("/ai-feedback") ||
+      pathname.includes("/ai-synonyms") ||
       pathname.includes("/agent-chat") ||
     pathname.includes("/cash-agent") ||
     pathname.includes("/credit-agent") ||
@@ -459,6 +460,9 @@ export default function AdminSidebar() {
             </NavLink>
             <NavLink to="/dashboard/admin/ai-feedback" className={linkClass} onClick={onNavigate}>
               <BookOpen size={18} /> Feedback IA
+            </NavLink>
+            <NavLink to="/dashboard/admin/ai-synonyms" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Synonymes IA
             </NavLink>
             <NavLink to="/dashboard/admin/agent-chat" className={linkClass} onClick={onNavigate}>
               <BookOpen size={18} /> Assistant transfert

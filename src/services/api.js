@@ -1071,6 +1071,18 @@ const api = {
   async applyAdminAiFeedbackSuggestion(suggestionId) {
     return this.post(`/admin/ai/feedback/suggestions/${suggestionId}/apply`, {});
   },
+  async getAdminAiSynonyms(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/ai/synonyms${query ? `?${query}` : ""}`);
+  },
+  async createAdminAiSynonym(payload = {}) {
+    return this.post("/admin/ai/synonyms", payload);
+  },
+  async deleteAdminAiSynonym(synonymId) {
+    return this.del(`/admin/ai/synonyms/${synonymId}`);
+  },
 };
 
 export default api;
