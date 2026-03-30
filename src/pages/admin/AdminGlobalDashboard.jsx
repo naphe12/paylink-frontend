@@ -27,8 +27,6 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
-import QuickActions from "@/components/QuickActions";
-import { getAdminQuickActionGroups } from "@/constants/adminQuickActionGroups";
 import api from "@/services/api";
 
 function formatNumber(value) {
@@ -273,9 +271,6 @@ export default function AdminGlobalDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-fuchsia-300 bg-fuchsia-50 px-4 py-3 text-sm font-semibold text-fuchsia-900">
-        UI marker: admin-dashboard-quick-actions-v2
-      </div>
       <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6 text-white shadow-xl">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div>
@@ -414,12 +409,6 @@ export default function AdminGlobalDashboard() {
           </Link>
         </div>
       </section>
-
-      <QuickActions
-        title="Actions rapides admin"
-        subtitle="Les groupes correspondent aux sections du menu admin."
-        groups={getAdminQuickActionGroups()}
-      />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-2">
