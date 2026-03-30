@@ -69,6 +69,7 @@ import AdminCreditRepayPage from "@/pages/admin/AdminCreditRepayPage";
 import TransactionAuditPage from "@/pages/admin/TransactionAuditPage";
 import TransferGainsPage from "@/pages/admin/TransferGainsPage";
 import AdminPaymentRequestsPage from "@/pages/admin/AdminPaymentRequestsPage";
+import AdminPaymentIntentsPage from "@/pages/admin/AdminPaymentIntentsPage";
 import AdminMicroFinancePage from "@/pages/admin/AdminMicroFinancePage";
 import AdminLoanProductsPage from "@/pages/admin/AdminLoanProductsPage";
 import AdminTontineCreatePage from "@/pages/admin/AdminTontineCreatePage";
@@ -77,6 +78,7 @@ import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
 import AdminBalanceEventsPage from "@/pages/admin/AdminBalanceEventsPage";
 import AdminLegacyTransfersPage from "@/pages/admin/AdminLegacyTransfersPage";
 import AdminUserBalanceEventsPage from "@/pages/admin/AdminUserBalanceEventsPage";
+import AdminUserLimitsPage from "@/pages/admin/AdminUserLimitsPage";
 import P2PAdminTrades from "@/pages/admin/P2PAdminTrades";
 import P2PAdminDisputes from "@/pages/admin/P2PAdminDisputes";
 import P2PAdminRisk from "@/pages/admin/P2PAdminRisk";
@@ -92,6 +94,10 @@ import IdempotencyScopesPage from "@/pages/admin/IdempotencyScopesPage";
 import OpsDashboardPage from "@/pages/admin/OpsDashboardPage";
 import OnChainSimulatorPage from "@/pages/admin/OnChainSimulatorPage";
 import AdminErrorLogsPage from "@/pages/admin/AdminErrorLogsPage";
+import AdminAiFeedbackPage from "@/pages/admin/AdminAiFeedbackPage";
+import AdminAiSynonymsPage from "@/pages/admin/AdminAiSynonymsPage";
+import AdminDisputeCodesPage from "@/pages/admin/AdminDisputeCodesPage";
+import AdminOpsUrgenciesPage from "@/pages/admin/AdminOpsUrgenciesPage";
 
 import AgentOperationPage from "@/pages/agent/AgentOperationPage";
 import AgentDashboard from "@/pages/agent/AgentDashboard";
@@ -213,6 +219,7 @@ export default function AppRouter() {
         <Route path="kill-switch" element={<AdminKillSwitch />} />
         <Route path="ops/liquidity-bif" element={<LiquidityBifPage />} />
         <Route path="users" element={<AdminUsersList />} />
+        <Route path="users/limits" element={<AdminUserLimitsPage />} />
         <Route path="users/:user_id" element={<AdminUserProfilePanel />} />
         <Route path="agents" element={<AdminAgentsPage />} />
         <Route path="notifications" element={<SecurityDashboard />} />
@@ -241,6 +248,7 @@ export default function AppRouter() {
         <Route path="credit-lines/repay" element={<AdminCreditRepayPage />} />
         <Route path="transactions-audit" element={<TransactionAuditPage />} />
         <Route path="payment-requests" element={<AdminPaymentRequestsPage />} />
+        <Route path="payment-intents" element={<AdminPaymentIntentsPage />} />
         <Route path="microfinance" element={<AdminMicroFinancePage />} />
         <Route path="loan-products" element={<AdminLoanProductsPage />} />
         <Route path="balance-events" element={<AdminBalanceEventsPage />} />
@@ -253,7 +261,11 @@ export default function AppRouter() {
         <Route path="ledger/unbalanced-journals" element={<UnbalancedJournalsPage />} />
         <Route path="ledger/idempotency-scopes" element={<IdempotencyScopesPage />} />
         <Route path="ops/errors" element={<AdminErrorLogsPage />} />
+        <Route path="ai-feedback" element={<AdminAiFeedbackPage />} />
+        <Route path="ai-synonyms" element={<AdminAiSynonymsPage />} />
+        <Route path="dispute-codes" element={<AdminDisputeCodesPage />} />
         <Route path="ops-dashboard" element={<OpsDashboardPage />} />
+        <Route path="ops-urgencies" element={<AdminOpsUrgenciesPage />} />
         <Route path="onchain-simulator" element={<OnChainSimulatorPage />} />
         <Route path="webhooks" element={<WebhookLogs />} />
         <Route path="risk" element={<RiskMonitoring />} />

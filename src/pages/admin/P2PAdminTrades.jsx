@@ -38,6 +38,7 @@ export default function P2PAdminTrades() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [disputesOnly, setDisputesOnly] = useState(false);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -137,6 +138,7 @@ export default function P2PAdminTrades() {
     const q = query.trim().toLowerCase();
     return trades.filter((t) => {
       if (statusFilter !== "all" && String(t.status || "-") !== statusFilter) return false;
+      if (disputesOnly && Number(t.disputes_count || 0) <= 0) return false;
       if (!q) return true;
       const hay = [
         t.trade_id,
@@ -153,7 +155,7 @@ export default function P2PAdminTrades() {
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [trades, statusFilter, query]);
+  }, [trades, statusFilter, disputesOnly, query]);
 
   const openDetail = async (tradeId) => {
     setDetailLoading(true);
@@ -164,6 +166,36 @@ export default function P2PAdminTrades() {
       setSelected(null);
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const exportTrades = async (format) => {
+    try {
+      const token = getAuthToken();
+      if (!token) return suspendForAuthRedirect("expired");
+      const exportSearch = new URLSearchParams({ format });
+      if (statusFilter !== "all") exportSearch.append("status", statusFilter);
+      const res = await fetch(`${API_URL}/api/admin/p2p/trades/export?${exportSearch.toString()}`, {
+        headers: {
+          Accept: format === "csv" ? "text/csv" : "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (res.status === 401 || res.status === 403) return suspendForAuthRedirect("expired");
+      if (!res.ok) {
+        throw new Error(`Export ${format.toUpperCase()} des trades impossible`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `p2p_trades_${statusFilter === "all" ? "all" : String(statusFilter).toLowerCase()}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e?.message || "Impossible d'exporter les trades");
     }
   };
 
@@ -303,6 +335,13 @@ export default function P2PAdminTrades() {
     return "bg-emerald-100 text-emerald-700";
   };
 
+  const disputeBadgeClass = (count) => {
+    const n = Number(count || 0);
+    if (n >= 2) return "bg-rose-100 text-rose-700";
+    if (n === 1) return "bg-amber-100 text-amber-700";
+    return "bg-slate-100 text-slate-700";
+  };
+
   const confidenceBadgeClass = (score) => {
     const s = Number(score || 0);
     if (s >= autoAssignMinScore) return "bg-emerald-100 text-emerald-700";
@@ -357,19 +396,35 @@ export default function P2PAdminTrades() {
               Vue admin des transactions P2P avec risque, montants et contreparties.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={load}
-            className="px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-700 hover:bg-slate-50"
-          >
-            {loading ? "Chargement..." : "Rafraichir"}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => exportTrades("json")}
+              className="px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              Export JSON
+            </button>
+            <button
+              type="button"
+              onClick={() => exportTrades("csv")}
+              className="px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              Export CSV
+            </button>
+            <button
+              type="button"
+              onClick={load}
+              className="px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              {loading ? "Chargement..." : "Rafraichir"}
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
           <input
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            placeholder="Rechercher ID, buyer, seller..."
+            placeholder="Rechercher ID, acheteur, vendeur..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -385,8 +440,19 @@ export default function P2PAdminTrades() {
               </option>
             ))}
           </select>
+          <label className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={disputesOnly}
+              onChange={(e) => setDisputesOnly(e.target.checked)}
+            />
+            Disputes only
+          </label>
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-1 gap-3">
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-            {filtered.length} trade(s)
+            {filtered.length} trade(s){disputesOnly ? " litigieux" : ""}
           </div>
         </div>
 
@@ -403,8 +469,8 @@ export default function P2PAdminTrades() {
                 <tr>
                   <th className="text-left px-3 py-2 font-medium">Date</th>
                   <th className="text-left px-3 py-2 font-medium">Trade ID</th>
-                  <th className="text-left px-3 py-2 font-medium">Buyer</th>
-                  <th className="text-left px-3 py-2 font-medium">Seller</th>
+                  <th className="text-left px-3 py-2 font-medium">Acheteur</th>
+                  <th className="text-left px-3 py-2 font-medium">Vendeur</th>
                   <th className="text-left px-3 py-2 font-medium">Montant</th>
                   <th className="text-left px-3 py-2 font-medium">BIF</th>
                   <th className="text-left px-3 py-2 font-medium">Status</th>
@@ -417,7 +483,9 @@ export default function P2PAdminTrades() {
                   <tr
                     key={t.trade_id}
                     onClick={() => openDetail(t.trade_id)}
-                    className="border-t border-slate-200 hover:bg-slate-50 cursor-pointer"
+                    className={`border-t border-slate-200 hover:bg-slate-50 cursor-pointer ${
+                      Number(t.disputes_count || 0) > 0 ? "bg-rose-50/40" : ""
+                    }`}
                   >
                     <td className="px-3 py-2 whitespace-nowrap">{fmtDate(t.created_at)}</td>
                     <td className="px-3 py-2 font-mono text-xs">{t.trade_id}</td>
@@ -441,7 +509,11 @@ export default function P2PAdminTrades() {
                         {t.risk_score ?? 0}
                       </span>
                     </td>
-                    <td className="px-3 py-2">{t.disputes_count ?? 0}</td>
+                    <td className="px-3 py-2">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${disputeBadgeClass(t.disputes_count)}`}>
+                        {t.disputes_count ?? 0}
+                      </span>
+                    </td>
                   </tr>
                 ))}
                 {!loading && filtered.length === 0 ? (
@@ -901,14 +973,19 @@ export default function P2PAdminTrades() {
               <p><b>Expires:</b> {fmtDate(selected.expires_at)}</p>
             </div>
             <div className="rounded-lg border border-slate-200 p-3">
-              <p><b>Buyer:</b> {selected.buyer_name || selected.buyer_user_id || "-"}</p>
-              <p><b>Seller:</b> {selected.seller_name || selected.seller_user_id || "-"}</p>
+              <p><b>Acheteur:</b> {selected.buyer_name || selected.buyer_user_id || "-"}</p>
+              <p><b>Vendeur:</b> {selected.seller_name || selected.seller_user_id || "-"}</p>
               <p><b>Offer owner:</b> {selected.offer_owner_name || selected.offer_owner_user_id || "-"}</p>
               <p><b>Token amount:</b> {fmtAmount(selected.token_amount, selected.token, 8)}</p>
               <p><b>Price:</b> {fmtAmount(selected.price_bif_per_usd, "BIF/USD", 6)}</p>
               <p><b>BIF amount:</b> {fmtAmount(selected.bif_amount, "BIF", 2)}</p>
               <p><b>Risk score:</b> {selected.risk_score ?? 0}</p>
-              <p><b>Disputes:</b> {selected.disputes_count ?? 0}</p>
+              <p>
+                <b>Disputes:</b>{" "}
+                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${disputeBadgeClass(selected.disputes_count)}`}>
+                  {selected.disputes_count ?? 0}
+                </span>
+              </p>
             </div>
             <div className="rounded-lg border border-slate-200 p-3 md:col-span-2">
               <p><b>Escrow network:</b> {selected.escrow_network || "-"}</p>

@@ -225,6 +225,12 @@ export default function AdminUsersList() {
                     Profil
                   </Link>
                   <Link
+                    to={`/dashboard/admin/users/limits`}
+                    className="hover:underline"
+                  >
+                    Limites
+                  </Link>
+                  <Link
                     to={`/dashboard/admin/users/${u.user_id}/balance-events`}
                     className="hover:underline"
                   >

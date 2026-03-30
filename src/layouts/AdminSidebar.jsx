@@ -29,12 +29,14 @@ import {
   Activity,
   Droplets,
   Power,
+  SlidersHorizontal,
   Wifi,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
 import { getAccessToken, logout as logoutSession, redirectToAuth } from "@/services/authStore";
 import QuickActions from "@/components/QuickActions";
+import AdminOperatorPrioritiesPanel from "@/components/admin/AdminOperatorPrioritiesPanel";
 import { getAdminQuickActionGroups } from "@/constants/adminQuickActionGroups";
 import { fetchBackendVersion } from "@/services/api";
 import { getFrontendReleaseInfo } from "@/utils/releaseInfo";
@@ -73,8 +75,11 @@ function computeOpsLevel(metrics) {
 function getGroupForPath(pathname = "") {
   if (pathname.startsWith("/dashboard/agent")) return "modeAgent";
   if (
-    pathname.includes("/assistants-guide") ||
-    pathname.includes("/agent-chat") ||
+      pathname.includes("/assistants-guide") ||
+      pathname.includes("/ai-feedback") ||
+      pathname.includes("/ai-synonyms") ||
+      pathname.includes("/dispute-codes") ||
+      pathname.includes("/agent-chat") ||
     pathname.includes("/cash-agent") ||
     pathname.includes("/credit-agent") ||
     pathname.includes("/kyc-agent") ||
@@ -113,13 +118,15 @@ function getGroupForPath(pathname = "") {
     pathname.includes("/client-wallets") ||
     pathname.includes("/wallet-analysis") ||
     pathname.includes("/mobilemoney") ||
+    pathname.includes("/payment-intents") ||
     pathname.includes("/transfers") ||
     pathname.includes("/transfer-approvals") ||
     pathname.includes("/transfer-gains") ||
     pathname.includes("/cash-requests") ||
     pathname.includes("/payment-requests") ||
     pathname.includes("/ops/liquidity-bif") ||
-    pathname.includes("/ops/errors")
+    pathname.includes("/ops/errors") ||
+    pathname.includes("/ops-urgencies")
   ) {
     return "operations";
   }
@@ -346,6 +353,9 @@ export default function AdminSidebar() {
             <NavLink to="users" className={linkClass} onClick={onNavigate}>
               <Users size={18} /> Utilisateurs
             </NavLink>
+            <NavLink to="users/limits" className={linkClass} onClick={onNavigate}>
+              <SlidersHorizontal size={18} /> Limites clients
+            </NavLink>
             <NavLink to="agents" className={linkClass} onClick={onNavigate}>
               <Briefcase size={18} /> Gestion agents
             </NavLink>
@@ -455,6 +465,15 @@ export default function AdminSidebar() {
           <div className="space-y-2">
             <NavLink to="/dashboard/admin/assistants-guide" className={linkClass} onClick={onNavigate}>
               <BookOpen size={18} /> Guide assistants
+            </NavLink>
+            <NavLink to="/dashboard/admin/ai-feedback" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Feedback IA
+            </NavLink>
+            <NavLink to="/dashboard/admin/ai-synonyms" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Synonymes IA
+            </NavLink>
+            <NavLink to="/dashboard/admin/dispute-codes" className={linkClass} onClick={onNavigate}>
+              <BookOpen size={18} /> Codes litiges
             </NavLink>
             <NavLink to="/dashboard/admin/agent-chat" className={linkClass} onClick={onNavigate}>
               <BookOpen size={18} /> Assistant transfert
@@ -573,8 +592,14 @@ export default function AdminSidebar() {
             <NavLink to="cash-requests" className={linkClass} onClick={onNavigate}>
               <Coins size={18} /> Cash in/out
             </NavLink>
+            <NavLink to="payment-intents" className={linkClass} onClick={onNavigate}>
+              <HandCoins size={18} /> Depots mobile money BIF
+            </NavLink>
             <NavLink to="payment-requests" className={linkClass} onClick={onNavigate}>
               <HandCoins size={18} /> Demandes de paiement
+            </NavLink>
+            <NavLink to="ops-urgencies" className={linkClass} onClick={onNavigate}>
+              <ShieldAlert size={18} /> Urgences OPS
             </NavLink>
             <NavLink to="ops/liquidity-bif" className={linkClass} onClick={onNavigate}>
               <Droplets size={18} /> Liquidite BIF (OPS)
@@ -749,6 +774,7 @@ export default function AdminSidebar() {
             </button>
           </div>
           <div className="mb-6 space-y-3">
+            <AdminOperatorPrioritiesPanel />
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">
               UI marker: admin-global-quick-actions-layout-v1
             </div>

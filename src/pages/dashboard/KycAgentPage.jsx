@@ -13,6 +13,7 @@ import {
 import { Link } from "react-router-dom";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
+import AdminAssistantPromptHint from "@/components/admin/AdminAssistantPromptHint";
 import AdminAssistantUserPicker from "@/components/admin/AdminAssistantUserPicker";
 import api from "@/services/api";
 import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
@@ -224,6 +225,7 @@ export default function KycAgentPage() {
               className="mt-3 w-full rounded-3xl border border-slate-200 px-4 py-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-300"
               placeholder="Ex: quels documents il me manque"
             />
+            {isAdmin ? <AdminAssistantPromptHint /> : null}
             <div className="mt-3 flex flex-wrap gap-3">
               <button
                 onClick={() => sendMessage()}

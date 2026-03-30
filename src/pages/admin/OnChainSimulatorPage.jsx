@@ -451,8 +451,8 @@ export default function OnChainSimulatorPage() {
                   <p><b>ID:</b> <span className="font-mono">{selectedEscrowDetail.id || orderId}</span></p>
                   <p><b>Status:</b> {selectedEscrowDetail.status || "-"}</p>
                   <p><b>Sandbox:</b> {isSandboxOrder(selectedEscrowDetail) ? "Oui" : "Non"}</p>
-                  <p><b>User:</b> <span className="font-mono">{selectedEscrowDetail.user_id || "-"}</span></p>
-                  <p><b>Trader:</b> <span className="font-mono">{selectedEscrowDetail.trader_id || "-"}</span></p>
+                  <p><b>Deposant:</b> <span className="font-mono">{selectedEscrowDetail.user_id || "-"}</span></p>
+                  <p><b>Operateur payout:</b> <span className="font-mono">{selectedEscrowDetail.trader_id || "-"}</span></p>
                   <p><b>USDC attendu/recu:</b> {fmtAmount(selectedEscrowDetail.usdc_expected, "USDC")} / {fmtAmount(selectedEscrowDetail.usdc_received, "USDC")}</p>
                   <p><b>USDT cible/recu:</b> {fmtAmount(selectedEscrowDetail.usdt_target, "USDT")} / {fmtAmount(selectedEscrowDetail.usdt_received, "USDT")}</p>
                   <p><b>BIF cible/paye:</b> {fmtAmount(selectedEscrowDetail.bif_target, "BIF")} / {fmtAmount(selectedEscrowDetail.bif_paid, "BIF")}</p>
