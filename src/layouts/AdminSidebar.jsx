@@ -29,6 +29,7 @@ import {
   Activity,
   Droplets,
   Power,
+  SlidersHorizontal,
   Wifi,
   ChevronDown,
   ChevronRight,
@@ -351,6 +352,9 @@ export default function AdminSidebar() {
           <div className="space-y-2">
             <NavLink to="users" className={linkClass} onClick={onNavigate}>
               <Users size={18} /> Utilisateurs
+            </NavLink>
+            <NavLink to="users/limits" className={linkClass} onClick={onNavigate}>
+              <SlidersHorizontal size={18} /> Limites clients
             </NavLink>
             <NavLink to="agents" className={linkClass} onClick={onNavigate}>
               <Briefcase size={18} /> Gestion agents

@@ -78,6 +78,7 @@ import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
 import AdminBalanceEventsPage from "@/pages/admin/AdminBalanceEventsPage";
 import AdminLegacyTransfersPage from "@/pages/admin/AdminLegacyTransfersPage";
 import AdminUserBalanceEventsPage from "@/pages/admin/AdminUserBalanceEventsPage";
+import AdminUserLimitsPage from "@/pages/admin/AdminUserLimitsPage";
 import P2PAdminTrades from "@/pages/admin/P2PAdminTrades";
 import P2PAdminDisputes from "@/pages/admin/P2PAdminDisputes";
 import P2PAdminRisk from "@/pages/admin/P2PAdminRisk";
@@ -218,6 +219,7 @@ export default function AppRouter() {
         <Route path="kill-switch" element={<AdminKillSwitch />} />
         <Route path="ops/liquidity-bif" element={<LiquidityBifPage />} />
         <Route path="users" element={<AdminUsersList />} />
+        <Route path="users/limits" element={<AdminUserLimitsPage />} />
         <Route path="users/:user_id" element={<AdminUserProfilePanel />} />
         <Route path="agents" element={<AdminAgentsPage />} />
         <Route path="notifications" element={<SecurityDashboard />} />

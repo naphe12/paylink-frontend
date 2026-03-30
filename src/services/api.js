@@ -1069,11 +1069,20 @@ const api = {
   },
 
   // ----------- USERS -----------
-  async getUsers(query = "") {
-    return this.get(`/admin/users${query ? `?q=${query}` : ""}`);
+  async getUsers(params = {}) {
+    if (typeof params === "string") {
+      return this.get(`/admin/users${params ? `?q=${params}` : ""}`);
+    }
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/users${query ? `?${query}` : ""}`);
   },
   async getUser(userId) {
     return this.get(`/admin/users/${userId}`);
+  },
+  async updateAdminUserLimits(userId, payload = {}) {
+    return this.patch(`/admin/users/${userId}/limits`, payload);
   },
   async getAdminTontineMembers(tontineId) {
     return this.get(`/admin/tontines/${tontineId}/members`);
