@@ -719,6 +719,12 @@ const api = {
   async adminCashWithdraw(payload = {}, idempotencyKey = null) {
     return this.postIdempotent("/admin/cash-requests/withdraw", payload, idempotencyKey, "admin-cash-withdraw");
   },
+  async getAdminCashDeposits(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/cash-requests/admin-deposits${query ? `?${query}` : ""}`);
+  },
   async getAdminCreditHistory(params = {}) {
     const search = new URLSearchParams();
     if (params.user_id) search.append("user_id", params.user_id);
