@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { RefreshCcw, Save, Search, SlidersHorizontal, UserRound } from "lucide-react";
+import { RefreshCcw, Save, Search, SlidersHorizontal } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api from "@/services/api";
@@ -16,6 +16,7 @@ export default function AdminUserLimitsPage() {
   const [query, setQuery] = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedUserDetail, setSelectedUserDetail] = useState(null);
+  const [selectSearch, setSelectSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -29,6 +30,14 @@ export default function AdminUserLimitsPage() {
     () => users.find((user) => String(user.user_id) === String(selectedUserId)) || null,
     [users, selectedUserId]
   );
+  const filteredUsers = useMemo(() => {
+    const normalizedQuery = selectSearch.trim().toLowerCase();
+    if (!normalizedQuery) return users;
+    return users.filter((user) => {
+      const haystack = `${user.full_name || ""} ${user.email || ""} ${user.phone || ""}`.toLowerCase();
+      return haystack.includes(normalizedQuery);
+    });
+  }, [users, selectSearch]);
 
   const loadUsers = async (search = query) => {
     setLoading(true);
@@ -150,69 +159,67 @@ export default function AdminUserLimitsPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <form onSubmit={handleSearchSubmit} className="space-y-4">
-            <label className="grid gap-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Recherche client</span>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Nom, email ou telephone"
-                  className="w-full rounded-2xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-slate-400"
-                />
-              </div>
-            </label>
-            <button
-              type="submit"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Rechercher
-            </button>
-          </form>
+      <section className="space-y-6">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.2fr)_280px]">
+            <form onSubmit={handleSearchSubmit} className="space-y-4">
+              <label className="grid gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Recherche client</span>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Nom, email ou telephone"
+                    className="w-full rounded-2xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-slate-400"
+                  />
+                </div>
+              </label>
+              <button
+                type="submit"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Rechercher
+              </button>
+            </form>
 
-          <div className="mt-5 space-y-2">
-            {loading ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
-                Chargement des clients...
-              </div>
-            ) : users.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
-                Aucun client trouve.
-              </div>
-            ) : (
-              users.map((user) => {
-                const active = String(user.user_id) === String(selectedUserId);
-                return (
-                  <button
-                    key={user.user_id}
-                    type="button"
-                    onClick={() => setSelectedUserId(String(user.user_id))}
-                    className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
-                      active
-                        ? "border-slate-900 bg-slate-900 text-white"
-                        : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`rounded-2xl p-2 ${active ? "bg-white/10" : "bg-slate-100"}`}>
-                        <UserRound size={16} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold">{user.full_name || "Sans nom"}</p>
-                        <p className={`truncate text-xs ${active ? "text-slate-300" : "text-slate-500"}`}>
-                          {user.email || user.phone || "-"}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })
-            )}
+            <div className="space-y-4">
+              <label className="grid gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Selectionner un client</span>
+                <select
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-slate-400"
+                  value={selectedUserId}
+                  onChange={(event) => setSelectedUserId(event.target.value)}
+                  disabled={loading || filteredUsers.length === 0}
+                >
+                  <option value="">-- selectionner un client --</option>
+                  {filteredUsers.map((user) => (
+                    <option key={user.user_id} value={user.user_id}>
+                      {user.full_name || "Sans nom"} - {user.email || user.phone || "-"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Filtrer le select</span>
+                <input
+                  value={selectSearch}
+                  onChange={(event) => setSelectSearch(event.target.value)}
+                  placeholder="Filtrer par nom, email ou telephone"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-slate-400"
+                />
+              </label>
+            </div>
+
+            <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-4 text-sm text-slate-500">
+              {loading
+                ? "Chargement des clients..."
+                : users.length === 0
+                  ? "Aucun client trouve."
+                  : `${filteredUsers.length} client(s) affiches sur ${users.length}.`}
+            </div>
           </div>
-        </aside>
+        </div>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           {selectedUser ? (

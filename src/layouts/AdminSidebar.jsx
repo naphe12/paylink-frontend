@@ -592,6 +592,9 @@ export default function AdminSidebar() {
             <NavLink to="cash-requests" className={linkClass} onClick={onNavigate}>
               <Coins size={18} /> Cash in/out
             </NavLink>
+            <NavLink to="cash-deposits" className={linkClass} onClick={onNavigate}>
+              <Coins size={18} /> Depots admin
+            </NavLink>
             <NavLink to="payment-intents" className={linkClass} onClick={onNavigate}>
               <HandCoins size={18} /> Depots mobile money BIF
             </NavLink>
