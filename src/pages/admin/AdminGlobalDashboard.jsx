@@ -33,6 +33,41 @@ function formatNumber(value) {
   return new Intl.NumberFormat("fr-FR").format(Number(value || 0));
 }
 
+function formatAmount(value) {
+  return new Intl.NumberFormat("fr-FR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
+function formatCurrencyBreakdown(map, limit = 3) {
+  const entries = Object.entries(map || {})
+    .filter(([, amount]) => Number(amount || 0) !== 0)
+    .sort((a, b) => Math.abs(Number(b[1] || 0)) - Math.abs(Number(a[1] || 0)));
+  if (!entries.length) return "0";
+  return entries
+    .slice(0, limit)
+    .map(([currency, amount]) => `${formatAmount(amount)} ${currency}`)
+    .join(" · ");
+}
+
+function formatAnalyticsAmountCard(map) {
+  const entries = Object.entries(map || {})
+    .filter(([, amount]) => Number(amount || 0) !== 0)
+    .sort((a, b) => Math.abs(Number(b[1] || 0)) - Math.abs(Number(a[1] || 0)));
+  if (!entries.length) {
+    return { value: "0", subtitle: "Aucun montant sur la periode." };
+  }
+  if (entries.length === 1) {
+    const [currency, amount] = entries[0];
+    return { value: `${formatAmount(amount)} ${currency}`, subtitle: "Montant cumule." };
+  }
+  return {
+    value: `${entries.length} devises`,
+    subtitle: formatCurrencyBreakdown(Object.fromEntries(entries)),
+  };
+}
+
 function downloadBlob(filename, content, mimeType) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -163,6 +198,15 @@ export default function AdminGlobalDashboard() {
     };
   }, [analytics]);
 
+  const tx24hDisplay = useMemo(
+    () => formatAnalyticsAmountCard(analytics?.transactions_24h_by_currency),
+    [analytics]
+  );
+  const tx7dBreakdown = useMemo(
+    () => formatCurrencyBreakdown(analytics?.transactions_7d_by_currency),
+    [analytics]
+  );
+
   const exportCsv = async () => {
     const series30d = await api
       .getAdminDashboardTimeseries30d()
@@ -173,6 +217,14 @@ export default function AdminGlobalDashboard() {
       ["active_today", analytics?.active_today ?? 0],
       ["transactions_24h", analytics?.transactions_24h ?? 0],
       ["transactions_7d", analytics?.transactions_7d ?? 0],
+      [
+        "transactions_24h_by_currency",
+        JSON.stringify(analytics?.transactions_24h_by_currency || {}),
+      ],
+      [
+        "transactions_7d_by_currency",
+        JSON.stringify(analytics?.transactions_7d_by_currency || {}),
+      ],
       ["negative_wallets", analytics?.negative_wallets ?? 0],
       ["aml_open_cases", summary?.aml_open_cases ?? 0],
       ["aml_hits_24h", summary?.aml_hits_24h ?? 0],
@@ -233,7 +285,7 @@ export default function AdminGlobalDashboard() {
           <p class="muted">Export genere le ${new Date().toLocaleString("fr-FR")}</p>
           <div class="grid">
             <div class="card"><strong>Utilisateurs</strong><div>${formatNumber(analytics?.total_users)}</div></div>
-            <div class="card"><strong>Transactions 24h</strong><div>${formatNumber(analytics?.transactions_24h)}</div></div>
+            <div class="card"><strong>Transactions 24h</strong><div>${tx24hDisplay.value}</div><div class="muted">${tx24hDisplay.subtitle}</div></div>
             <div class="card"><strong>Cas AML ouverts</strong><div>${formatNumber(summary?.aml_open_cases)}</div></div>
             <div class="card"><strong>Depots pending</strong><div>${formatNumber(summary?.pending_deposits)}</div></div>
             <div class="card"><strong>Retraits pending</strong><div>${formatNumber(summary?.pending_withdraws)}</div></div>
@@ -375,8 +427,8 @@ export default function AdminGlobalDashboard() {
         <div className="space-y-2">
           <KpiCard
             title="Transactions 24h"
-            value={formatNumber(analytics?.transactions_24h)}
-            subtitle={`${formatNumber(analytics?.transactions_7d)} sur 7 jours`}
+            value={tx24hDisplay.value}
+            subtitle={tx7dBreakdown ? `7 jours: ${tx7dBreakdown}` : tx24hDisplay.subtitle}
             icon={ArrowLeftRight}
             tone="blue"
           />
