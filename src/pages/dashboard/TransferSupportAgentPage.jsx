@@ -14,6 +14,8 @@ import {
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import AdminAssistantPromptHint from "@/components/admin/AdminAssistantPromptHint";
 import AdminAssistantUserPicker from "@/components/admin/AdminAssistantUserPicker";
+import AssistantContextPanel from "@/components/assistants/AssistantContextPanel";
+import AssistantQuickActions from "@/components/assistants/AssistantQuickActions";
 import RichAssistantText from "@/components/assistants/RichAssistantText";
 import api from "@/services/api";
 import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
@@ -307,6 +309,8 @@ export default function TransferSupportAgentPage() {
 
         <div className="space-y-6">
           <SummaryCard summary={response?.summary} />
+          <AssistantContextPanel summary={response?.summary} />
+          <AssistantQuickActions assistantKey="transfer_support" summary={response?.summary} onPick={sendMessage} />
 
           <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
