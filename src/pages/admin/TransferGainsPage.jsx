@@ -10,7 +10,7 @@ const PERIODS = [
 ];
 
 export default function TransferGainsPage() {
-  const [period, setPeriod] = useState("day");
+  const [period, setPeriod] = useState("month");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [data, setData] = useState({ charge_rate: 0, totals: {}, rows: [] });
