@@ -18,6 +18,23 @@ import AssistantQuickActions from "@/components/assistants/AssistantQuickActions
 import api from "@/services/api";
 import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
 
+function labelDossierType(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "review") return "En revue";
+  if (raw === "refund") return "Refund";
+  if (raw === "failed") return "En echec";
+  if (raw === "standard") return "Standard";
+  return value || "-";
+}
+
+function labelActor(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "depositor") return "Deposant";
+  if (raw === "operations") return "Operations";
+  if (raw === "none") return "Aucune action attendue";
+  return value || "-";
+}
+
 function Metric({ label, value }) {
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
@@ -33,12 +50,16 @@ function Metric({ label, value }) {
 
 function SummaryCard({ summary }) {
   if (!summary) return null;
+  const escrowStatus = summary.status || summary.escrow_status;
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Suivi escrow</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <Metric label="Commande" value={summary.order_id} />
-        <Metric label="Statut" value={summary.status} />
+        <Metric label="Statut" value={escrowStatus} />
+        <Metric label="Type de dossier" value={labelDossierType(summary.dossier_type)} />
+        <Metric label="Acteur attendu" value={labelActor(summary.who_must_act_now)} />
+        <Metric label="Blocage principal" value={summary.primary_blocker} />
         <Metric label="Reseau" value={summary.network} />
         <Metric label="Payout" value={summary.payout_provider || "-"} />
         <Metric label="USDC attendu" value={summary.usdc_expected ? `${summary.usdc_expected} USDC` : "-"} />
@@ -249,7 +270,7 @@ export default function EscrowAgentPage() {
 
         <div className="space-y-6">
           <SummaryCard summary={response?.summary} />
-          <AssistantContextPanel summary={response?.summary} />
+          <AssistantContextPanel assistantKey="escrow" summary={response?.summary} onPick={sendMessage} />
           <AssistantQuickActions assistantKey="escrow" summary={response?.summary} onPick={sendMessage} />
           <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
@@ -265,10 +286,15 @@ export default function EscrowAgentPage() {
                   </div>
                   <div className="mt-3 space-y-2">
                     {response.suggestions.map((item) => (
-                      <div key={item} className="flex items-start gap-2 text-sm text-cyan-800">
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => sendMessage(item)}
+                        className="flex w-full items-start gap-2 rounded-xl border border-cyan-200 bg-white/70 px-3 py-2 text-left text-sm text-cyan-800 hover:bg-white"
+                      >
                         <ChevronRight size={15} className="mt-0.5 shrink-0" />
                         <span>{item}</span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>

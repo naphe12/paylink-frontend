@@ -19,12 +19,33 @@ import AssistantQuickActions from "@/components/assistants/AssistantQuickActions
 import api from "@/services/api";
 import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
 
+function labelDossierType(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "account_review") return "Compte en revue";
+  if (raw === "withdraw_blocked") return "Retrait bloque";
+  if (raw === "send_blocked") return "Envoi bloque";
+  if (raw === "deposit_follow_up") return "Suivi depot";
+  if (raw === "standard") return "Standard";
+  return value || "-";
+}
+
+function labelActor(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "operations") return "Operations";
+  if (raw === "client") return "Client";
+  if (raw === "none") return "Aucune action attendue";
+  return value || "-";
+}
+
 function SummaryCard({ summary }) {
   if (!summary) return null;
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Diagnostic wallet</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <Metric label="Type de dossier" value={labelDossierType(summary.dossier_type)} />
+        <Metric label="Acteur attendu" value={labelActor(summary.who_must_act_now)} />
+        <Metric label="Blocage principal" value={summary.primary_blocker} />
         <Metric label="Solde" value={`${summary.wallet_available} ${summary.wallet_currency}`} />
         <Metric label="Compte" value={summary.account_status} />
         <Metric label="KYC" value={summary.kyc_status} />
@@ -41,7 +62,7 @@ function Metric({ label, value }) {
       {label === "Compte" || label === "KYC" ? (
         <span className={`mt-1 inline-flex rounded-full px-2 py-1 text-sm font-bold ${getStatusBadgeClass(value)}`}>{value || "-"}</span>
       ) : (
-        <p className={`mt-1 text-sm ${getMetricValueClass(label === "Limite jour" ? "warning" : "success")}`}>{value || "-"}</p>
+        <p className={`mt-1 text-sm ${getMetricValueClass(label === "Limite jour" || label === "Blocage principal" ? "warning" : "success")}`}>{value || "-"}</p>
       )}
     </div>
   );
@@ -232,7 +253,7 @@ export default function WalletSupportAgentPage() {
 
         <div className="space-y-6">
           <SummaryCard summary={response?.summary} />
-          <AssistantContextPanel summary={response?.summary} />
+          <AssistantContextPanel assistantKey="wallet_support" summary={response?.summary} onPick={sendMessage} />
           <AssistantQuickActions assistantKey="wallet_support" summary={response?.summary} onPick={sendMessage} />
           <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
@@ -248,10 +269,15 @@ export default function WalletSupportAgentPage() {
                   </div>
                   <div className="mt-3 space-y-2">
                     {response.suggestions.map((item) => (
-                      <div key={item} className="flex items-start gap-2 text-sm text-amber-800">
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => sendMessage(item)}
+                        className="flex w-full items-start gap-2 rounded-xl border border-amber-200 bg-white/70 px-3 py-2 text-left text-sm text-amber-800 hover:bg-white"
+                      >
                         <ChevronRight size={15} className="mt-0.5 shrink-0" />
                         <span>{item}</span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
