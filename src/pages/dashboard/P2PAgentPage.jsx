@@ -18,6 +18,25 @@ import AssistantQuickActions from "@/components/assistants/AssistantQuickActions
 import api from "@/services/api";
 import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
 
+function labelDossierType(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "dispute") return "Litige";
+  if (raw === "completed") return "Termine";
+  if (raw === "cancelled") return "Annule";
+  if (raw === "standard") return "Standard";
+  return value || "-";
+}
+
+function labelActor(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "buyer") return "Acheteur";
+  if (raw === "seller") return "Vendeur";
+  if (raw === "operations") return "Operations";
+  if (raw === "platform") return "Plateforme";
+  if (raw === "none") return "Aucune action attendue";
+  return value || "-";
+}
+
 function Metric({ label, value }) {
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
@@ -33,12 +52,17 @@ function Metric({ label, value }) {
 
 function SummaryCard({ summary }) {
   if (!summary) return null;
+  const tradeStatus = summary.status || summary.trade_status;
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Suivi P2P</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <Metric label="Trade" value={summary.trade_id} />
-        <Metric label="Statut" value={summary.status} />
+        <Metric label="Statut" value={tradeStatus} />
+        <Metric label="Type de dossier" value={labelDossierType(summary.dossier_type)} />
+        <Metric label="Acteur attendu" value={labelActor(summary.who_must_act_now)} />
+        <Metric label="Role courant" value={labelActor(summary.current_user_role)} />
+        <Metric label="Blocage principal" value={summary.primary_blocker} />
         <Metric label="Montant token" value={summary.token_amount ? `${summary.token_amount} ${summary.token}` : "-"} />
         <Metric label="Montant BIF" value={summary.bif_amount ? `${summary.bif_amount} BIF` : "-"} />
         <Metric label="Paiement" value={summary.payment_method} />
@@ -250,7 +274,7 @@ export default function P2PAgentPage() {
 
         <div className="space-y-6">
           <SummaryCard summary={response?.summary} />
-          <AssistantContextPanel summary={response?.summary} />
+          <AssistantContextPanel assistantKey="p2p" summary={response?.summary} onPick={sendMessage} />
           <AssistantQuickActions assistantKey="p2p" summary={response?.summary} onPick={sendMessage} />
           <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
@@ -266,10 +290,15 @@ export default function P2PAgentPage() {
                   </div>
                   <div className="mt-3 space-y-2">
                     {response.suggestions.map((item) => (
-                      <div key={item} className="flex items-start gap-2 text-sm text-emerald-800">
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => sendMessage(item)}
+                        className="flex w-full items-start gap-2 rounded-xl border border-emerald-200 bg-white/70 px-3 py-2 text-left text-sm text-emerald-800 hover:bg-white"
+                      >
                         <ChevronRight size={15} className="mt-0.5 shrink-0" />
                         <span>{item}</span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>

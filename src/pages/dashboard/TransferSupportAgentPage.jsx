@@ -20,6 +20,24 @@ import RichAssistantText from "@/components/assistants/RichAssistantText";
 import api from "@/services/api";
 import { getMetricValueClass, getStatusBadgeClass } from "@/components/assistants/tone";
 
+function labelDossierType(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "funding") return "Financement requis";
+  if (raw === "review") return "En revue";
+  if (raw === "failed") return "En echec";
+  if (raw === "completed") return "Termine";
+  if (raw === "standard") return "Standard";
+  return value || "-";
+}
+
+function labelActor(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "operations") return "Operations";
+  if (raw === "client") return "Client";
+  if (raw === "none") return "Aucune action attendue";
+  return value || "-";
+}
+
 function SummaryCard({ summary }) {
   if (!summary) return null;
   return (
@@ -28,6 +46,9 @@ function SummaryCard({ summary }) {
         Demande suivie
       </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <Metric label="Type de dossier" value={labelDossierType(summary.dossier_type)} />
+        <Metric label="Acteur attendu" value={labelActor(summary.who_must_act_now)} />
+        <Metric label="Blocage principal" value={summary.primary_blocker} />
         <Metric label="Client" value={summary.user_name} />
         <Metric label="Contact client" value={summary.user_email || summary.user_phone} />
         <Metric label="Wallet" value={summary.wallet_available ? `${summary.wallet_available} ${summary.wallet_currency || ""}`.trim() : null} />
@@ -67,7 +88,7 @@ function Metric({ label, value }) {
       {label.toLowerCase().includes("statut") ? (
         <span className={`mt-1 inline-flex rounded-full px-2 py-1 text-sm font-bold ${getStatusBadgeClass(value)}`}>{value || "-"}</span>
       ) : (
-        <p className={`mt-1 text-sm ${getMetricValueClass(label === "Montant" ? "success" : label === "Prochaine etape" ? "warning" : "info")}`}>{value || "-"}</p>
+        <p className={`mt-1 text-sm ${getMetricValueClass(label === "Montant" ? "success" : label === "Prochaine etape" || label === "Blocage principal" ? "warning" : "info")}`}>{value || "-"}</p>
       )}
     </div>
   );
@@ -309,7 +330,7 @@ export default function TransferSupportAgentPage() {
 
         <div className="space-y-6">
           <SummaryCard summary={response?.summary} />
-          <AssistantContextPanel summary={response?.summary} />
+          <AssistantContextPanel assistantKey="transfer_support" summary={response?.summary} onPick={sendMessage} />
           <AssistantQuickActions assistantKey="transfer_support" summary={response?.summary} onPick={sendMessage} />
 
           <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
@@ -327,10 +348,15 @@ export default function TransferSupportAgentPage() {
                   </div>
                   <div className="mt-3 space-y-2">
                     {response.suggestions.map((item) => (
-                      <div key={item} className="flex items-start gap-2 text-sm text-rose-800">
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => sendMessage(item)}
+                        className="flex w-full items-start gap-2 rounded-xl border border-rose-200 bg-white/70 px-3 py-2 text-left text-sm text-rose-800 hover:bg-white"
+                      >
                         <ChevronRight size={15} className="mt-0.5 shrink-0" />
                         <span>{item}</span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
