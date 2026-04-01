@@ -87,6 +87,7 @@ export default function ExternalTransferPage() {
   const [countries, setCountries] = useState([]);
   const [recentTransfers, setRecentTransfers] = useState([]);
   const [sourceCurrency, setSourceCurrency] = useState("EUR");
+  const [creditCurrency, setCreditCurrency] = useState("EUR");
   const [form, setForm] = useState({
     recipient_name: "",
     recipient_phone: "",
@@ -110,7 +111,13 @@ export default function ExternalTransferPage() {
   const [selectedBeneficiary, setSelectedBeneficiary] = useState("");
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [submitIdempotencyKey, setSubmitIdempotencyKey] = useState("");
-  const totalAvailable = availableBalance + creditAvailable;
+  const isBifWallet = sourceCurrency === "BIF";
+  const sameFundingCurrency = sourceCurrency === creditCurrency;
+  const totalAvailable = isBifWallet
+    ? creditAvailable
+    : sameFundingCurrency
+      ? availableBalance + creditAvailable
+      : availableBalance;
   const destinationOptions = buildDestinationOptions(countries, form.country_destination);
 
   const getDestinationCurrency = (countryName) =>
@@ -223,6 +230,7 @@ export default function ExternalTransferPage() {
       setAvailableBalance(Number(data?.wallet_available || 0));
       setCreditAvailable(Number(data?.credit_available || 0));
       setSourceCurrency(normalizeSourceCurrency(String(data?.wallet_currency || "EUR")));
+      setCreditCurrency(normalizeSourceCurrency(String(data?.credit_currency || data?.wallet_currency || "EUR")));
     } catch (err) {
       setLoadError(err?.message || "Impossible de charger la capacite de transfert.");
     }
@@ -315,7 +323,13 @@ export default function ExternalTransferPage() {
     }
 
     if (requestedAmount + feesAmountSource > totalAvailable) {
-      setError("Montant superieur a votre capacite disponible (wallet + credit disponible).");
+      setError(
+        isBifWallet
+          ? "Montant superieur a votre capacite disponible (ligne de credit disponible uniquement pour wallet BIF)."
+          : sameFundingCurrency
+            ? "Montant superieur a votre capacite disponible (wallet + credit disponible)."
+            : "Montant superieur a votre capacite disponible dans la devise du wallet."
+      );
       setLoading(false);
       return;
     }
@@ -375,7 +389,11 @@ export default function ExternalTransferPage() {
             Vous pouvez envoyer jusqu'a <span className="font-semibold">{totalAvailable.toFixed(2)} {sourceCurrency}</span>
           </p>
           <p className="text-[13px] text-blue-700">
-            ({availableBalance.toFixed(2)} {sourceCurrency} solde + {creditAvailable.toFixed(2)} {sourceCurrency} credit disponible)
+            {isBifWallet
+              ? `(${creditAvailable.toFixed(2)} ${creditCurrency} ligne de credit disponible, wallet BIF non utilise)`
+              : sameFundingCurrency
+                ? `(${availableBalance.toFixed(2)} ${sourceCurrency} solde + ${creditAvailable.toFixed(2)} ${creditCurrency} credit disponible)`
+                : `(${availableBalance.toFixed(2)} ${sourceCurrency} solde disponible; ligne de credit: ${creditAvailable.toFixed(2)} ${creditCurrency})`}
           </p>
           <p className="text-[13px] text-blue-700 mt-1">
             Taux FX applique: <span className="font-semibold">{rate || "-"}</span> | Frais:{" "}
