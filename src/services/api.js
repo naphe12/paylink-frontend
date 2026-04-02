@@ -1123,6 +1123,12 @@ const api = {
   async decreaseAdminCreditLine(creditLineId, amount) {
     return this.post(`/admin/credit-lines/${creditLineId}/decrease`, { amount });
   },
+  async previewAdminCreditLineCorrection(payload) {
+    return this.post("/admin/credit-lines/corrections/preview", payload);
+  },
+  async applyAdminCreditLineCorrection(payload) {
+    return this.post("/admin/credit-lines/corrections/apply", payload);
+  },
   async listAdminCreditDebtors(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
