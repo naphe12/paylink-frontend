@@ -846,6 +846,9 @@ const api = {
     const query = search.toString();
     return this.get(`/admin/transfers/gains${query ? `?${query}` : ""}`);
   },
+  async simulateAdminExternalTransfer(payload = {}) {
+    return this.post("/admin/transfers/simulate-external", payload);
+  },
   async getAdminTransactionsAudit(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
