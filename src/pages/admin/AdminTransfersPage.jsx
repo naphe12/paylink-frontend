@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import api from "@/services/api";
 
@@ -42,6 +42,8 @@ export default function AdminTransfersPage() {
   const [simulationLoading, setSimulationLoading] = useState(false);
   const [simulationResult, setSimulationResult] = useState(null);
   const [simulationError, setSimulationError] = useState("");
+  const [copyingSimulation, setCopyingSimulation] = useState(false);
+  const simulationCardRef = useRef(null);
   const location = useLocation();
 
   const userId = useMemo(() => {
@@ -123,6 +125,33 @@ export default function AdminTransfersPage() {
       setSimulationError(err?.message || "Simulation impossible.");
     } finally {
       setSimulationLoading(false);
+    }
+  };
+
+  const handleCopySimulationScreenshot = async () => {
+    const node = simulationCardRef.current;
+    if (!node) {
+      setSimulationError("Capture impossible: resultat introuvable.");
+      return;
+    }
+    if (!navigator?.clipboard?.write || typeof window.ClipboardItem === "undefined") {
+      setSimulationError("Copie image non supportee par ce navigateur.");
+      return;
+    }
+
+    setCopyingSimulation(true);
+    setSimulationError("");
+    try {
+      const blob = await renderNodeToPngBlob(node);
+      await navigator.clipboard.write([
+        new window.ClipboardItem({
+          "image/png": blob,
+        }),
+      ]);
+    } catch (err) {
+      setSimulationError(err?.message || "Copie de la capture impossible.");
+    } finally {
+      setCopyingSimulation(false);
     }
   };
 
@@ -372,7 +401,7 @@ export default function AdminTransfersPage() {
 
       {simulationResult ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+          <div ref={simulationCardRef} className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="flex items-start justify-between border-b px-5 py-4">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">
@@ -382,12 +411,21 @@ export default function AdminTransfersPage() {
                   {simulationResult.user?.full_name || "Utilisateur"} {simulationResult.user?.email ? `- ${simulationResult.user.email}` : ""}
                 </p>
               </div>
-              <button
-                onClick={() => setSimulationResult(null)}
-                className="rounded-lg border px-3 py-2 text-sm text-slate-600"
-              >
-                Fermer
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCopySimulationScreenshot}
+                  disabled={copyingSimulation}
+                  className="rounded-lg border px-3 py-2 text-sm text-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {copyingSimulation ? "Copie..." : "Copie ecran"}
+                </button>
+                <button
+                  onClick={() => setSimulationResult(null)}
+                  className="rounded-lg border px-3 py-2 text-sm text-slate-600"
+                >
+                  Fermer
+                </button>
+              </div>
             </div>
 
             <div className="space-y-5 px-5 py-5 text-sm">
@@ -477,4 +515,60 @@ function CapacityCard({ title, data }) {
       </div>
     </div>
   );
+}
+
+async function renderNodeToPngBlob(node) {
+  const rect = node.getBoundingClientRect();
+  const width = Math.max(Math.ceil(rect.width), 1);
+  const height = Math.max(Math.ceil(rect.height), 1);
+  const clonedNode = node.cloneNode(true);
+
+  const wrapper = document.createElement("div");
+  wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+  wrapper.style.width = `${width}px`;
+  wrapper.style.height = `${height}px`;
+  wrapper.style.background = "#ffffff";
+  wrapper.style.padding = "0";
+  wrapper.appendChild(clonedNode);
+
+  const serialized = new XMLSerializer().serializeToString(wrapper);
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+      <foreignObject width="100%" height="100%">${serialized}</foreignObject>
+    </svg>
+  `;
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  try {
+    const image = await loadImage(url);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Canvas indisponible pour la capture.");
+    }
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0);
+    const pngBlob = await new Promise((resolve, reject) => {
+      canvas.toBlob((value) => {
+        if (value) resolve(value);
+        else reject(new Error("Generation PNG impossible."));
+      }, "image/png");
+    });
+    return pngBlob;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Chargement image impossible pour la capture."));
+    image.src = src;
+  });
 }
