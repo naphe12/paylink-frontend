@@ -641,6 +641,12 @@ const api = {
   async getAdminFinancialSummary(userId) {
     return this.get(`/wallet/admin/financial-summary/${userId}`);
   },
+  async getAdminFinancialCapacityTimeline(userId, params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/wallet/admin/financial-capacity-timeline/${userId}${query ? `?${query}` : ""}`);
+  },
   async getAdminDashboardSummary() {
     return this.get("/api/admin/dashboard/summary");
   },
