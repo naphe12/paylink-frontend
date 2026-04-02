@@ -401,7 +401,7 @@ export default function AdminTransfersPage() {
 
       {simulationResult ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
-          <div ref={simulationCardRef} className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="flex items-start justify-between border-b px-5 py-4">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">
@@ -428,7 +428,7 @@ export default function AdminTransfersPage() {
               </div>
             </div>
 
-            <div className="space-y-5 px-5 py-5 text-sm">
+            <div ref={simulationCardRef} className="space-y-5 bg-white px-5 py-5 text-sm">
               <div className={`rounded-xl border px-4 py-3 ${simulationResult.possible ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`}>
                 <p className="font-medium">
                   {simulationResult.possible
