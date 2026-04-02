@@ -77,6 +77,7 @@ export default function AdminClientWalletPage() {
   const [wallets, setWallets] = useState([]);
   const [selectedWalletId, setSelectedWalletId] = useState("");
   const [summary, setSummary] = useState(null);
+  const [capacityTimeline, setCapacityTimeline] = useState(null);
   const [cryptoSummary, setCryptoSummary] = useState(null);
   const [walletsLoading, setWalletsLoading] = useState(false);
   const [cryptoActionLoading, setCryptoActionLoading] = useState("");
@@ -122,6 +123,7 @@ export default function AdminClientWalletPage() {
     if (!selectedUserId) {
       setSelectedUser(null);
       setSummary(null);
+      setCapacityTimeline(null);
       setCryptoSummary(null);
       setWallets([]);
       setSelectedWalletId("");
@@ -135,9 +137,10 @@ export default function AdminClientWalletPage() {
       setWalletsLoading(true);
       setError("");
       try {
-        const [userData, summaryData, walletsData, cryptoData] = await Promise.all([
+        const [userData, summaryData, timelineData, walletsData, cryptoData] = await Promise.all([
           api.getUser(selectedUserId),
           api.getAdminFinancialSummary(selectedUserId),
+          api.getAdminFinancialCapacityTimeline(selectedUserId, { limit: 80 }),
           api.getAdminWallets({ user_id: selectedUserId, limit: 50 }),
           api.getAdminCryptoWalletSummary(selectedUserId),
         ]);
@@ -147,6 +150,7 @@ export default function AdminClientWalletPage() {
         const normalizedWallets = Array.isArray(walletsData) ? walletsData : [];
         setSelectedUser(userData || null);
         setSummary(summaryData || null);
+        setCapacityTimeline(timelineData || null);
         setCryptoSummary(cryptoData || null);
         setWallets(normalizedWallets);
         setSelectedWalletId((current) => {
@@ -163,6 +167,7 @@ export default function AdminClientWalletPage() {
         console.error("Erreur chargement wallets client admin:", err);
         setSelectedUser(null);
         setSummary(null);
+        setCapacityTimeline(null);
         setCryptoSummary(null);
         setWallets([]);
         setSelectedWalletId("");
@@ -379,6 +384,53 @@ export default function AdminClientWalletPage() {
                   icon={Users}
                   tone="emerald"
                 />
+              </div>
+            ) : null}
+
+            {capacityTimeline?.items?.length ? (
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <div className="border-b bg-slate-50 px-4 py-3">
+                  <p className="text-sm font-semibold text-slate-900">Capacite financiere combinee</p>
+                  <p className="text-xs text-slate-500">
+                    Timeline date par date du wallet et du disponible de ligne de credit.
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-slate-50 text-slate-600">
+                      <tr>
+                        <th className="px-4 py-3 text-left">Date</th>
+                        <th className="px-4 py-3 text-left">Type</th>
+                        <th className="px-4 py-3 text-left">Source</th>
+                        <th className="px-4 py-3 text-right">Wallet apres</th>
+                        <th className="px-4 py-3 text-right">Credit apres</th>
+                        <th className="px-4 py-3 text-right">Capacite apres</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {capacityTimeline.items.map((row, index) => (
+                        <tr key={`${row.event_at || index}-${row.event_type}-${index}`} className="border-t border-slate-100">
+                          <td className="px-4 py-3 text-slate-800">{row.event_at ? new Date(row.event_at).toLocaleString() : "-"}</td>
+                          <td className="px-4 py-3 text-slate-700">{row.event_type === "wallet" ? "Wallet" : "Ligne de credit"}</td>
+                          <td className="px-4 py-3 text-slate-600">
+                            {row.description || row.source || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-right tabular-nums text-slate-800">
+                            {Number(row.wallet_after || 0).toLocaleString()} {row.wallet_currency || ""}
+                          </td>
+                          <td className="px-4 py-3 text-right tabular-nums text-slate-800">
+                            {Number(row.credit_after || 0).toLocaleString()} {row.credit_currency || ""}
+                          </td>
+                          <td className="px-4 py-3 text-right tabular-nums font-semibold text-slate-900">
+                            {row.capacity_after !== null && row.capacity_after !== undefined
+                              ? `${Number(row.capacity_after || 0).toLocaleString()} ${row.capacity_currency || ""}`.trim()
+                              : "Devise differente"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             ) : null}
 
