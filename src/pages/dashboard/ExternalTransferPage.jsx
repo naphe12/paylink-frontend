@@ -131,6 +131,10 @@ export default function ExternalTransferPage() {
         ? Number(form.local_amount) / rate
         : 0
       : Number(form.amount || 0);
+  const hasEnteredAmount =
+    (amountMode === "receive_local" && isBifDestination
+      ? Number(form.local_amount || 0)
+      : Number(form.amount || 0)) > 0;
   const totalDebitSourceAmount = effectiveSourceAmount + feesAmountSource;
 
   useEffect(() => {
@@ -396,14 +400,21 @@ export default function ExternalTransferPage() {
                 : `(${availableBalance.toFixed(2)} ${sourceCurrency} solde disponible; ligne de credit: ${creditAvailable.toFixed(2)} ${creditCurrency})`}
           </p>
           <p className="text-[13px] text-blue-700 mt-1">
-            Taux FX applique: <span className="font-semibold">{rate || "-"}</span> | Frais:{" "}
-            <span className="font-semibold">{feesPercent || 0}% ({feesAmountSource.toFixed(2)} {sourceCurrency})</span>
+            Taux FX applique: <span className="font-semibold">{rate || "-"}</span>
+            {hasEnteredAmount ? (
+              <>
+                {" "} | Frais:{" "}
+                <span className="font-semibold">{feesPercent || 0}% ({feesAmountSource.toFixed(2)} {sourceCurrency})</span>
+              </>
+            ) : null}
           </p>
-          <p className="text-[13px] text-blue-700">
-            Montant recu estime: <span className="font-semibold">{recipientAmount.toFixed(2)} </span>
-            {destinationCurrency}
-          </p>
-          {isBifDestination ? (
+          {hasEnteredAmount ? (
+            <p className="text-[13px] text-blue-700">
+              Montant recu estime: <span className="font-semibold">{recipientAmount.toFixed(2)} </span>
+              {destinationCurrency}
+            </p>
+          ) : null}
+          {hasEnteredAmount && isBifDestination ? (
             <p className="text-[13px] text-blue-700">
               {sourceCurrency} necessaires: <span className="font-semibold">{totalDebitSourceAmount.toFixed(2)} {sourceCurrency}</span>
             </p>
