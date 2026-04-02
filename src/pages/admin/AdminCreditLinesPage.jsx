@@ -3,6 +3,13 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import api from "@/services/api";
 
+const CORRECTION_SCENARIOS = [
+  { id: "credit_available_adjustment", label: "Crediter le disponible", needsAmount: true, needsTarget: false },
+  { id: "debit_available_adjustment", label: "Debiter le disponible", needsAmount: true, needsTarget: false },
+  { id: "set_available_balance", label: "Fixer le disponible", needsAmount: false, needsTarget: true },
+  { id: "restore_full_availability", label: "Restaurer le disponible total", needsAmount: false, needsTarget: false },
+];
+
 export default function AdminCreditLinesPage() {
   const [users, setUsers] = useState([]);
   const [userSearch, setUserSearch] = useState("");
@@ -17,6 +24,14 @@ export default function AdminCreditLinesPage() {
   const [increaseAmount, setIncreaseAmount] = useState("");
   const [decreaseAmount, setDecreaseAmount] = useState("");
   const [createAmount, setCreateAmount] = useState("");
+  const [correctionScenario, setCorrectionScenario] = useState("credit_available_adjustment");
+  const [correctionAmount, setCorrectionAmount] = useState("");
+  const [correctionTarget, setCorrectionTarget] = useState("");
+  const [correctionReason, setCorrectionReason] = useState("");
+  const [correctionNote, setCorrectionNote] = useState("");
+  const [correctionPreview, setCorrectionPreview] = useState(null);
+  const [correctionLoading, setCorrectionLoading] = useState(false);
+  const [correctionApplying, setCorrectionApplying] = useState(false);
   const [actionMsg, setActionMsg] = useState("");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -122,6 +137,15 @@ export default function AdminCreditLinesPage() {
     }
   }, [selectedId]);
 
+  useEffect(() => {
+    setCorrectionPreview(null);
+    setCorrectionAmount("");
+    setCorrectionTarget("");
+    setCorrectionReason("");
+    setCorrectionNote("");
+    setCorrectionScenario("credit_available_adjustment");
+  }, [selectedId]);
+
   const selectedLine = useMemo(
     () => lines.find((line) => line.credit_line_id === selectedId),
     [lines, selectedId]
@@ -135,6 +159,24 @@ export default function AdminCreditLinesPage() {
     if (!query) return users;
     return users.filter((user) => String(user.full_name || "").toLowerCase().includes(query));
   }, [users, selectSearch]);
+
+  const selectedCorrectionScenario = useMemo(
+    () => CORRECTION_SCENARIOS.find((item) => item.id === correctionScenario) || CORRECTION_SCENARIOS[0],
+    [correctionScenario]
+  );
+
+  const buildCorrectionPayload = () => ({
+    credit_line_id: selectedId,
+    scenario: correctionScenario,
+    ...(selectedCorrectionScenario.needsAmount && correctionAmount !== ""
+      ? { amount: Number(correctionAmount) }
+      : {}),
+    ...(selectedCorrectionScenario.needsTarget && correctionTarget !== ""
+      ? { target_available: Number(correctionTarget) }
+      : {}),
+    reason: correctionReason,
+    ...(correctionNote.trim() ? { note: correctionNote.trim() } : {}),
+  });
 
   const increaseLimit = async (e) => {
     e.preventDefault();
@@ -194,6 +236,41 @@ export default function AdminCreditLinesPage() {
       setError(err.message || "Echec de creation de la ligne");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const previewCorrection = async (e) => {
+    e.preventDefault();
+    if (!selectedId) return;
+    setError("");
+    setActionMsg("");
+    setCorrectionLoading(true);
+    try {
+      const data = await api.previewAdminCreditLineCorrection(buildCorrectionPayload());
+      setCorrectionPreview(data);
+    } catch (err) {
+      setCorrectionPreview(null);
+      setError(err.message || "Echec de previsualisation de la correction.");
+    } finally {
+      setCorrectionLoading(false);
+    }
+  };
+
+  const applyCorrection = async () => {
+    if (!correctionPreview?.can_apply) return;
+    setError("");
+    setActionMsg("");
+    setCorrectionApplying(true);
+    try {
+      await api.applyAdminCreditLineCorrection(buildCorrectionPayload());
+      setActionMsg("Disponible de ligne de credit corrige.");
+      setCorrectionPreview(null);
+      await loadLines();
+      await loadDetail(selectedId);
+    } catch (err) {
+      setError(err.message || "Echec d'application de la correction.");
+    } finally {
+      setCorrectionApplying(false);
     }
   };
 
@@ -373,6 +450,109 @@ export default function AdminCreditLinesPage() {
                     </button>
                   </form>
                 </div>
+              </div>
+
+              <div className="rounded-2xl border bg-white p-4 shadow-sm">
+                <p className="mb-3 text-sm font-semibold text-slate-800">Correction du disponible</p>
+                <form onSubmit={previewCorrection} className="space-y-3">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <select
+                      value={correctionScenario}
+                      onChange={(e) => setCorrectionScenario(e.target.value)}
+                      className="rounded-lg border px-3 py-2 text-sm"
+                    >
+                      {CORRECTION_SCENARIOS.map((scenario) => (
+                        <option key={scenario.id} value={scenario.id}>
+                          {scenario.label}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedCorrectionScenario.needsAmount ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={correctionAmount}
+                        onChange={(e) => setCorrectionAmount(e.target.value)}
+                        className="rounded-lg border px-3 py-2 text-sm"
+                        placeholder="Montant"
+                        required
+                      />
+                    ) : selectedCorrectionScenario.needsTarget ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={correctionTarget}
+                        onChange={(e) => setCorrectionTarget(e.target.value)}
+                        className="rounded-lg border px-3 py-2 text-sm"
+                        placeholder="Disponible cible"
+                        required
+                      />
+                    ) : (
+                      <div className="rounded-lg border border-dashed px-3 py-2 text-sm text-slate-500">
+                        Aucun montant requis pour ce scenario
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={correctionReason}
+                    onChange={(e) => setCorrectionReason(e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 text-sm"
+                    placeholder="Motif de correction"
+                    required
+                  />
+                  <input
+                    type="text"
+                    value={correctionNote}
+                    onChange={(e) => setCorrectionNote(e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 text-sm"
+                    placeholder="Note optionnelle"
+                  />
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="submit"
+                      disabled={correctionLoading}
+                      className="rounded-lg border px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      {correctionLoading ? "..." : "Previsualiser"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={applyCorrection}
+                      disabled={!correctionPreview?.can_apply || correctionApplying}
+                      className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
+                    >
+                      {correctionApplying ? "..." : "Appliquer la correction"}
+                    </button>
+                  </div>
+                </form>
+
+                {correctionPreview ? (
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+                    <p className="font-semibold text-slate-900">Previsualisation</p>
+                    <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+                      <p className="text-slate-700">
+                        Delta: {Number(correctionPreview.signed_delta || 0).toLocaleString()} {correctionPreview.currency_code}
+                      </p>
+                      <p className="text-slate-700">
+                        Disponible: {Number(correctionPreview.credit_available_before || 0).toLocaleString()} -> {Number(correctionPreview.credit_available_after || 0).toLocaleString()} {correctionPreview.currency_code}
+                      </p>
+                      <p className="text-slate-700">
+                        Utilise: {Number(correctionPreview.credit_used_before || 0).toLocaleString()} -> {Number(correctionPreview.credit_used_after || 0).toLocaleString()} {correctionPreview.currency_code}
+                      </p>
+                      <p className="text-slate-700">
+                        Scenario: {correctionPreview.scenario}
+                      </p>
+                    </div>
+                    {Array.isArray(correctionPreview.warnings) && correctionPreview.warnings.length > 0 ? (
+                      <div className="mt-3 space-y-1 text-amber-700">
+                        {correctionPreview.warnings.map((warning) => (
+                          <p key={warning}>{warning}</p>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
 
               {actionMsg && <p className="text-sm text-green-600">{actionMsg}</p>}

@@ -39,10 +39,9 @@ export default function CashRequestsPage() {
   const [createdFrom, setCreatedFrom] = useState("");
   const [createdTo, setCreatedTo] = useState("");
   const [loading, setLoading] = useState(false);
-  const [userQuery, setUserQuery] = useState("");
+  const [userSearch, setUserSearch] = useState("");
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [selectSearch, setSelectSearch] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [error, setError] = useState("");
   const directDepositIdemRef = useRef(null);
@@ -55,10 +54,14 @@ export default function CashRequestsPage() {
     (item) => item.status === "pending" && getAgeHours(item.created_at) >= 6
   ).length;
   const filteredUsers = useMemo(() => {
-    const query = selectSearch.trim().toLowerCase();
+    const query = userSearch.trim().toLowerCase();
     if (!query) return users;
-    return users.filter((u) => String(u.full_name || "").toLowerCase().includes(query));
-  }, [users, selectSearch]);
+    return users.filter((u) =>
+      [u.full_name, u.email, u.phone_e164]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query))
+    );
+  }, [users, userSearch]);
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -91,14 +94,14 @@ export default function CashRequestsPage() {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const data = await api.searchAdminCashUsers(userQuery, 30);
+        const data = await api.searchAdminCashUsers(userSearch, 30);
         setUsers(Array.isArray(data) ? data : []);
       } catch {
         setUsers([]);
       }
     };
     loadUsers();
-  }, [userQuery]);
+  }, [userSearch]);
 
   const handleDirectCashAction = async () => {
     setError("");
@@ -220,9 +223,9 @@ export default function CashRequestsPage() {
             {requestType === "withdraw" ? "Retrait direct user" : "Depot direct user"}
           </label>
           <input
-            value={userQuery}
-            onChange={(e) => setUserQuery(e.target.value)}
-            placeholder="Rechercher user (nom/email/telephone)"
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            placeholder="Rechercher ou filtrer user (nom/email/telephone)"
             className="mt-1 border rounded-lg px-3 py-2 text-sm w-full"
           />
           <select
@@ -237,12 +240,6 @@ export default function CashRequestsPage() {
               </option>
             ))}
           </select>
-          <input
-            value={selectSearch}
-            onChange={(e) => setSelectSearch(e.target.value)}
-            placeholder="Filtrer le select par full name"
-            className="mt-2 border rounded-lg px-3 py-2 text-sm w-full"
-          />
           <div className="mt-2 flex gap-2">
             <input
               type="number"
