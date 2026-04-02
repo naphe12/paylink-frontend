@@ -13,7 +13,6 @@ const CORRECTION_SCENARIOS = [
 export default function AdminCreditLinesPage() {
   const [users, setUsers] = useState([]);
   const [userSearch, setUserSearch] = useState("");
-  const [selectSearch, setSelectSearch] = useState("");
   const [lines, setLines] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [detail, setDetail] = useState(null);
@@ -155,10 +154,14 @@ export default function AdminCreditLinesPage() {
     [users, targetUserId]
   );
   const filteredUsers = useMemo(() => {
-    const query = selectSearch.trim().toLowerCase();
+    const query = userSearch.trim().toLowerCase();
     if (!query) return users;
-    return users.filter((user) => String(user.full_name || "").toLowerCase().includes(query));
-  }, [users, selectSearch]);
+    return users.filter((user) =>
+      [user.full_name, user.email, user.phone, user.phone_e164]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query))
+    );
+  }, [users, userSearch]);
 
   const selectedCorrectionScenario = useMemo(
     () => CORRECTION_SCENARIOS.find((item) => item.id === correctionScenario) || CORRECTION_SCENARIOS[0],
@@ -288,7 +291,7 @@ export default function AdminCreditLinesPage() {
             type="text"
             value={userSearch}
             onChange={(e) => setUserSearch(e.target.value)}
-            placeholder="Chercher un utilisateur"
+            placeholder="Rechercher ou filtrer un utilisateur"
             className="rounded-lg border px-3 py-2 text-sm"
           />
           <button
@@ -296,7 +299,7 @@ export default function AdminCreditLinesPage() {
             className="rounded-lg border px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
             disabled={loadingUsers}
           >
-            {loadingUsers ? "..." : "Rechercher user"}
+            {loadingUsers ? "..." : "Rechercher"}
           </button>
           <select
             value={targetUserId}
@@ -312,13 +315,6 @@ export default function AdminCreditLinesPage() {
           </select>
           <input
             type="text"
-            value={selectSearch}
-            onChange={(e) => setSelectSearch(e.target.value)}
-            placeholder="Filtrer le select par full name"
-            className="rounded-lg border px-3 py-2 text-sm"
-          />
-          <input
-            type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filtrer nom/email"
@@ -330,7 +326,7 @@ export default function AdminCreditLinesPage() {
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white"
             disabled={loading}
           >
-            {loading ? "..." : "Chercher"}
+            {loading ? "..." : "Appliquer"}
           </button>
           <button
             onClick={() => navigate("/dashboard/admin/credit-lines/repay")}
