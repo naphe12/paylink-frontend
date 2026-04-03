@@ -69,6 +69,23 @@ function SummaryCard({ title, value, subvalue, icon: Icon, tone = "slate" }) {
   );
 }
 
+function computeDisplayCapacity(walletAvailable, walletCurrency, creditAvailable, creditCurrency) {
+  const wallet = Number(walletAvailable || 0);
+  const credit = Math.max(Number(creditAvailable || 0), 0);
+  const normalizedWalletCurrency = String(walletCurrency || "").toUpperCase();
+  const normalizedCreditCurrency = String(creditCurrency || normalizedWalletCurrency).toUpperCase();
+
+  if (normalizedWalletCurrency === "BIF" || wallet < 0) {
+    return { amount: credit, currency: normalizedCreditCurrency };
+  }
+
+  if (normalizedWalletCurrency !== normalizedCreditCurrency) {
+    return { amount: null, currency: null };
+  }
+
+  return { amount: wallet + credit, currency: normalizedWalletCurrency };
+}
+
 export default function AdminClientWalletPage() {
   const [userSearch, setUserSearch] = useState("");
   const [usersLoading, setUsersLoading] = useState(false);
@@ -228,6 +245,16 @@ export default function AdminClientWalletPage() {
   const selectedWallet = wallets.find((wallet) => wallet.wallet_id === selectedWalletId) || null;
   const usdcWallet = cryptoSummary?.wallets?.find((wallet) => wallet.token_symbol === "USDC") || null;
   const usdtWallet = cryptoSummary?.wallets?.find((wallet) => wallet.token_symbol === "USDT") || null;
+  const displayedCapacity = useMemo(
+    () =>
+      computeDisplayCapacity(
+        summary?.wallet_available,
+        summary?.wallet_currency,
+        summary?.credit_available,
+        summary?.credit_currency
+      ),
+    [summary]
+  );
 
   const handleEnsureCryptoWallet = async (tokenSymbol) => {
     if (!selectedUserId) return;
@@ -341,13 +368,30 @@ export default function AdminClientWalletPage() {
             </div>
 
             {summary ? (
-              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                 <SummaryCard
                   title="Solde wallet principal"
                   value={`${Number(summary.wallet_available || 0).toLocaleString()} ${summary.wallet_currency || ""}`.trim()}
                   subvalue={`En attente: ${Number(summary.wallet_pending || 0).toLocaleString()} ${summary.wallet_currency || ""}`.trim()}
                   icon={Wallet}
                   tone="blue"
+                />
+                <SummaryCard
+                  title="Capacite financiere"
+                  value={
+                    displayedCapacity.amount !== null && displayedCapacity.amount !== undefined
+                      ? `${Number(displayedCapacity.amount || 0).toLocaleString()} ${displayedCapacity.currency || ""}`.trim()
+                      : "Devise differente"
+                  }
+                  subvalue={
+                    String(summary.wallet_currency || "").toUpperCase() === "BIF"
+                      ? "Wallet BIF: disponible ligne uniquement"
+                      : Number(summary.wallet_available || 0) < 0
+                        ? "Wallet negatif: disponible ligne uniquement"
+                        : "Wallet positif: wallet + disponible ligne"
+                  }
+                  icon={CreditCard}
+                  tone="emerald"
                 />
                 <SummaryCard
                   title="Wallet USDC"
@@ -373,8 +417,8 @@ export default function AdminClientWalletPage() {
                 />
                 <SummaryCard
                   title="Ligne de credit"
-                  value={`${Number(summary.credit_available || 0).toLocaleString()} EUR`}
-                  subvalue={`Limite: ${Number(summary.credit_limit || 0).toLocaleString()} EUR · Utilise: ${Number(summary.credit_used || 0).toLocaleString()} EUR`}
+                  value={`${Number(summary.credit_available || 0).toLocaleString()} ${summary.credit_currency || summary.wallet_currency || ""}`.trim()}
+                  subvalue={`Limite: ${Number(summary.credit_limit || 0).toLocaleString()} ${summary.credit_currency || summary.wallet_currency || ""} | Utilise: ${Number(summary.credit_used || 0).toLocaleString()} ${summary.credit_currency || summary.wallet_currency || ""}`.trim()}
                   icon={CreditCard}
                   tone="amber"
                 />
@@ -403,6 +447,7 @@ export default function AdminClientWalletPage() {
                         <th className="px-4 py-3 text-left">Date</th>
                         <th className="px-4 py-3 text-left">Type</th>
                         <th className="px-4 py-3 text-left">Source</th>
+                        <th className="px-4 py-3 text-right">Montant operation</th>
                         <th className="px-4 py-3 text-right">Wallet apres</th>
                         <th className="px-4 py-3 text-right">Credit apres</th>
                         <th className="px-4 py-3 text-right">Capacite apres</th>
@@ -415,6 +460,9 @@ export default function AdminClientWalletPage() {
                           <td className="px-4 py-3 text-slate-700">{row.event_type === "wallet" ? "Wallet" : "Ligne de credit"}</td>
                           <td className="px-4 py-3 text-slate-600">
                             {row.description || row.source || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-right tabular-nums text-slate-800">
+                            {Number(row.operation_amount || 0).toLocaleString()} {row.operation_currency || ""}
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums text-slate-800">
                             {Number(row.wallet_after || 0).toLocaleString()} {row.wallet_currency || ""}
