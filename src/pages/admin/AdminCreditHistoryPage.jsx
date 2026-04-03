@@ -13,6 +13,32 @@ function formatDate(value) {
   return new Date(value).toLocaleString();
 }
 
+function computeDebtDelta(entry, financialMode) {
+  const rawAmount = Number(financialMode ? entry.amount_delta : entry.amount);
+  if (!financialMode) return rawAmount;
+
+  const source = String(entry.source || "").toLowerCase();
+  const status = String(entry.status || "").toLowerCase();
+
+  const increasesDebt =
+    status === "used" ||
+    source.includes("external_transfer") ||
+    source.includes("withdraw") ||
+    source.includes("cashout");
+
+  const decreasesDebt =
+    status === "restored" ||
+    status === "completed" ||
+    source.includes("deposit") ||
+    source.includes("cashin") ||
+    source.includes("repay") ||
+    source.includes("refund");
+
+  if (increasesDebt) return Math.abs(rawAmount);
+  if (decreasesDebt) return -Math.abs(rawAmount);
+  return rawAmount;
+}
+
 export default function AdminCreditHistoryPage() {
   const [entries, setEntries] = useState([]);
   const [source, setSource] = useState("events");
@@ -215,7 +241,7 @@ export default function AdminCreditHistoryPage() {
 
           <div className="grid gap-3">
             {entries.map((entry) => {
-              const amount = Number(financialMode ? entry.amount_delta : entry.amount);
+              const amount = computeDebtDelta(entry, financialMode);
               const entryKey = entry.entry_id || entry.event_id;
               const detailsOpen = !!openDetails[entryKey];
               return (
@@ -277,9 +303,9 @@ export default function AdminCreditHistoryPage() {
 
                     <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[420px]">
                       <MetricCard
-                        label={financialMode ? "Delta" : "Montant"}
+                        label={financialMode ? "Delta dette" : "Montant"}
                         value={`${amount >= 0 ? "+" : "-"} ${formatAmount(Math.abs(amount))}`}
-                        tone={amount >= 0 ? "emerald" : "rose"}
+                        tone={amount >= 0 ? "rose" : "emerald"}
                       />
                       <MetricCard
                         label="Devise"
