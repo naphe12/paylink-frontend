@@ -205,7 +205,7 @@ export default function AgentChatPage() {
     const timeoutId = window.setTimeout(async () => {
       setUserLoading(true);
       try {
-        const data = await api.get(`/admin/users?q=${encodeURIComponent(query)}`);
+        const data = await api.get(`/admin/users?q=${encodeURIComponent(query)}&role=client`);
         if (!cancelled) {
           setUserResults(Array.isArray(data) ? data.slice(0, 8) : []);
         }
