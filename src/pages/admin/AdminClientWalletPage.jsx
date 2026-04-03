@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Coins, CreditCard, Search, Users, Wallet } from "lucide-react";
 import api from "@/services/api";
+import useSessionStorageState from "@/hooks/useSessionStorageState";
 import { formatWalletOperationLabel, inferWalletEntryIsCredit } from "@/utils/walletHistory";
 
 const DEFAULT_HISTORY_FILTERS = { limit: 25, search: "" };
@@ -72,7 +73,7 @@ export default function AdminClientWalletPage() {
   const [userSearch, setUserSearch] = useState("");
   const [usersLoading, setUsersLoading] = useState(false);
   const [users, setUsers] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useSessionStorageState("admin-client-wallet:selected-user-id", "");
   const [selectedUser, setSelectedUser] = useState(null);
   const [wallets, setWallets] = useState([]);
   const [selectedWalletId, setSelectedWalletId] = useState("");

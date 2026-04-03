@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "@/services/api";
+import useSessionStorageState from "@/hooks/useSessionStorageState";
+
+const ADMIN_USERS_SELECTED_KEY = "admin-users:selected-user-id";
 
 export default function AdminUsersList() {
   const [users, setUsers] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useSessionStorageState(ADMIN_USERS_SELECTED_KEY, "");
   const [selectSearch, setSelectSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("active");
   const [deleting, setDeleting] = useState(false);
