@@ -42,7 +42,7 @@ export default function AdminTontineCreatePage() {
   const loadUsers = async (query = "") => {
     setLoadingUsers(true);
     try {
-      const data = await api.getUsers(query);
+      const data = await api.getUsers({ q: query, role: "client" });
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);

@@ -74,7 +74,7 @@ export default function AdminWalletCorrectionPage() {
     const timer = setTimeout(async () => {
       setUsersLoading(true);
       try {
-        const data = await api.getUsers(userSearch.trim());
+        const data = await api.getUsers({ q: userSearch.trim(), role: "client" });
         if (!active) return;
         setUsers(Array.isArray(data) ? data : []);
       } catch {

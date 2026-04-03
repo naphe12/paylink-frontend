@@ -41,7 +41,7 @@ export default function AdminCreditLinesPage() {
   const loadUsers = async (query = "") => {
     setLoadingUsers(true);
     try {
-      const data = await api.getUsers(query);
+      const data = await api.getUsers({ q: query, role: "client" });
       const list = Array.isArray(data) ? data : [];
       setUsers((prev) => {
         const merged = [...list];
