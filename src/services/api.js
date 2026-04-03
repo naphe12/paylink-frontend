@@ -739,6 +739,14 @@ const api = {
     const query = search.toString();
     return this.get(`/admin/credit-history${query ? `?${query}` : ""}`);
   },
+  async getAdminCreditHistoryUsers(params = {}) {
+    const search = new URLSearchParams();
+    if (params.mode) search.append("mode", params.mode);
+    if (params.q) search.append("q", params.q);
+    if (params.limit) search.append("limit", params.limit);
+    const query = search.toString();
+    return this.get(`/admin/credit-history/users${query ? `?${query}` : ""}`);
+  },
   async getAdminCreditLineEvents(params = {}) {
     const search = new URLSearchParams();
     if (params.user_id) search.append("user_id", params.user_id);

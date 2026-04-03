@@ -32,10 +32,13 @@ export default function AdminCreditHistoryPage() {
   const [entries, setEntries] = useState([]);
   const [mode, setMode] = useState("history");
   const [userId, setUserId] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [users, setUsers] = useState([]);
   const [limit, setLimit] = useState(200);
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [openDetails, setOpenDetails] = useState({});
 
   const loadHistory = async () => {
@@ -59,6 +62,33 @@ export default function AdminCreditHistoryPage() {
   useEffect(() => {
     loadHistory();
   }, [mode, offset, limit]);
+
+  useEffect(() => {
+    let active = true;
+    const timer = setTimeout(async () => {
+      setLoadingUsers(true);
+      try {
+        const data = await api.getAdminCreditHistoryUsers({
+          mode,
+          q: userSearch.trim() || undefined,
+          limit: 50,
+        });
+        if (!active) return;
+        setUsers(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!active) return;
+        console.error("Erreur chargement users credit history", err);
+        setUsers([]);
+      } finally {
+        if (active) setLoadingUsers(false);
+      }
+    }, 250);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [mode, userSearch]);
 
   const currentPage = Math.floor(offset / limit) + 1;
   const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -89,8 +119,33 @@ export default function AdminCreditHistoryPage() {
             setOffset(0);
             loadHistory();
           }}
-          className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center"
+          className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:flex-wrap"
         >
+          <input
+            type="text"
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            placeholder="Rechercher un user avec historique"
+            className="w-full rounded-lg border px-3 py-2 text-sm lg:w-80"
+          />
+          <select
+            value={userId}
+            onChange={(e) => {
+              setUserId(e.target.value);
+              setOffset(0);
+            }}
+            className="w-full rounded-lg border px-3 py-2 text-sm lg:w-[28rem]"
+          >
+            <option value="">
+              {loadingUsers ? "Chargement users..." : "Tous les users avec historique/evenements"}
+            </option>
+            {users.map((user) => (
+              <option key={user.user_id} value={user.user_id}>
+                {user.full_name || user.email || user.user_id}
+                {user.email ? ` - ${user.email}` : ""}
+              </option>
+            ))}
+          </select>
           <input
             type="text"
             value={userId}
