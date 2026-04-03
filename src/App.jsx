@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import AppRouter from "./AppRouter";
 import { Toaster } from "react-hot-toast";
 import { bootstrapAuth } from "@/services/authStore";
+import AppErrorBoundary from "@/components/AppErrorBoundary";
 
 export default function App() {
   useEffect(() => {
@@ -19,14 +20,16 @@ export default function App() {
   }, []);
 
   return (
-    <>
-      <AppRouter />
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 5000,
-        }}
-      />
-    </>
+    <AppErrorBoundary>
+      <>
+        <AppRouter />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 5000,
+          }}
+        />
+      </>
+    </AppErrorBoundary>
   );
 }
