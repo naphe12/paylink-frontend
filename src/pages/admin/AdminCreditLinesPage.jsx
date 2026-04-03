@@ -542,10 +542,10 @@ export default function AdminCreditLinesPage() {
                         Delta: {Number(correctionPreview.signed_delta || 0).toLocaleString()} {correctionPreview.currency_code}
                       </p>
                       <p className="text-slate-700">
-                        Disponible: {Number(correctionPreview.credit_available_before || 0).toLocaleString()} -> {Number(correctionPreview.credit_available_after || 0).toLocaleString()} {correctionPreview.currency_code}
+                        Disponible: {Number(correctionPreview.credit_available_before || 0).toLocaleString()} {"->"} {Number(correctionPreview.credit_available_after || 0).toLocaleString()} {correctionPreview.currency_code}
                       </p>
                       <p className="text-slate-700">
-                        Utilise: {Number(correctionPreview.credit_used_before || 0).toLocaleString()} -> {Number(correctionPreview.credit_used_after || 0).toLocaleString()} {correctionPreview.currency_code}
+                        Utilise: {Number(correctionPreview.credit_used_before || 0).toLocaleString()} {"->"} {Number(correctionPreview.credit_used_after || 0).toLocaleString()} {correctionPreview.currency_code}
                       </p>
                       <p className="text-slate-700">
                         Scenario: {correctionPreview.scenario}
