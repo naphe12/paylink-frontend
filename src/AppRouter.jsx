@@ -44,6 +44,7 @@ import WalletLedgerPage from "@/pages/wallet/WalletLedgerPage";
 import LoansPage from "@/pages/dashboard/LoansPage";
 
 import SecurityDashboard from "@/pages/admin/SecurityDashboard";
+import AdminAuditSearchPage from "@/pages/admin/AdminAuditSearchPage";
 import AdminSidebar from "@/layouts/AdminSidebar";
 import AdminUsersList from "@/pages/admin/AdminUsersList";
 import AdminUserProfilePanel from "@/pages/admin/AdminUserProfilePanel";
@@ -223,9 +224,10 @@ export default function AppRouter() {
         <Route path="users/limits" element={<AdminUserLimitsPage />} />
         <Route path="users/:user_id" element={<AdminUserProfilePanel />} />
         <Route path="agents" element={<AdminAgentsPage />} />
-        <Route path="notifications" element={<SecurityDashboard />} />
+        <Route path="notifications" element={<Navigate to="../security" replace />} />
         <Route path="aml" element={<AmlEventsPage />} />
         <Route path="security" element={<SecurityDashboard />} />
+        <Route path="audit-search" element={<AdminAuditSearchPage />} />
         <Route path="wallets" element={<AdminWalletsPage />} />
         <Route path="client-wallets" element={<AdminClientWalletPage />} />
         <Route path="wallet-corrections" element={<AdminWalletCorrectionPage />} />
@@ -316,7 +318,7 @@ export default function AppRouter() {
 
       <Route path="/admin" element={<Navigate to="/dashboard/admin/overview" replace />} />
       <Route path="/admin/aml" element={<Navigate to="/dashboard/admin/aml-cases" replace />} />
-      <Route path="/admin/notifications" element={<Navigate to="/dashboard/admin/notifications" replace />} />
+      <Route path="/admin/notifications" element={<Navigate to="/dashboard/admin/security" replace />} />
       <Route path="/admin/liquidity" element={<Navigate to="/dashboard/admin/liquidity" replace />} />
       <Route path="/admin/arbitrage" element={<Navigate to="/dashboard/admin/arbitrage" replace />} />
       <Route path="/admin/risk-heatmap" element={<Navigate to="/dashboard/admin/risk-heatmap" replace />} />
@@ -439,7 +441,7 @@ export default function AppRouter() {
         path="/backoffice/notifications"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
-            <Navigate to="/dashboard/admin/notifications" replace />
+            <Navigate to="/dashboard/admin/security" replace />
           </ProtectedRoute>
         }
       />

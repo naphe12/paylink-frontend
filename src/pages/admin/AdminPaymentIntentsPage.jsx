@@ -50,7 +50,7 @@ export default function AdminPaymentIntentsPage() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [providerCode, setProviderCode] = useState("");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => searchParams.get("target_id") || "");
   const [operatorStatusFilter, setOperatorStatusFilter] = useState("all");
   const [ownerFilter, setOwnerFilter] = useState("");
   const [opsView, setOpsView] = useState("all");
@@ -139,8 +139,12 @@ export default function AdminPaymentIntentsPage() {
 
   useEffect(() => {
     const requestedQueue = searchParams.get("queue") || "all";
+    const requestedTargetId = searchParams.get("target_id") || "";
     if (requestedQueue !== queueView) {
       setQueueView(requestedQueue);
+    }
+    if (requestedTargetId !== query) {
+      setQuery(requestedTargetId);
     }
   }, [searchParams, queueView]);
 
@@ -165,6 +169,15 @@ export default function AdminPaymentIntentsPage() {
       setDetailLoading(false);
     }
   };
+
+  useEffect(() => {
+    const targetId = (searchParams.get("target_id") || "").trim();
+    if (!targetId || !filteredRows.length) return;
+    const match = filteredRows.find((row) => String(row.intent_id || "").trim() === targetId);
+    if (!match) return;
+    if (String(selectedIntentId || "").trim() === targetId) return;
+    loadDetail(match.intent_id);
+  }, [filteredRows, searchParams, selectedIntentId]);
 
   const handleManualReconcile = async () => {
     if (!selectedIntentId) return;

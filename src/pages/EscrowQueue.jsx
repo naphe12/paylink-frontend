@@ -66,7 +66,7 @@ export default function EscrowQueue() {
   const [error, setError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [orders, setOrders] = useState([]);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => searchParams.get("target_id") || "");
   const [operatorStatusFilter, setOperatorStatusFilter] = useState("all");
   const [ownerFilter, setOwnerFilter] = useState("");
   const [opsView, setOpsView] = useState("all");
@@ -137,12 +137,15 @@ export default function EscrowQueue() {
 
   useEffect(() => {
     const requestedQueue = searchParams.get("queue");
+    const requestedTargetId = searchParams.get("target_id") || "";
     if (requestedQueue && requestedQueue in ESCROW_QUEUE_VIEWS && requestedQueue !== queueView) {
       setQueueView(requestedQueue);
-      return;
     }
     if (!requestedQueue && queueView !== "all") {
       setQueueView("all");
+    }
+    if (requestedTargetId !== query) {
+      setQuery(requestedTargetId);
     }
   }, [searchParams, queueView]);
 
@@ -344,6 +347,15 @@ export default function EscrowQueue() {
     setActionMessage("");
     await loadOrderDetail(order.id);
   };
+
+  useEffect(() => {
+    const targetId = (searchParams.get("target_id") || "").trim();
+    if (!targetId || !filtered.length) return;
+    const match = filtered.find((item) => String(item.id || "").trim() === targetId);
+    if (!match) return;
+    if (String(selected?.id || "").trim() === targetId) return;
+    onSelectOrder(match);
+  }, [filtered, searchParams, selected?.id]);
 
   const setOrderPayoutPending = async () => {
     if (!selected?.id) return;

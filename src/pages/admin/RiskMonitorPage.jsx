@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Banknote,
   Loader2,
-  Shield,
   Users,
 } from "lucide-react";
 

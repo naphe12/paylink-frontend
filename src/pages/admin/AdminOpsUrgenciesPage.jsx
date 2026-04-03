@@ -160,23 +160,55 @@ function normalizeOwnerLabel(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function queueLabel(kind) {
+  if (kind === "escrow") return "Escrow";
+  if (kind === "p2p_dispute") return "Litiges P2P";
+  if (kind === "payment_intent") return "Paiements BIF";
+  return kind || "Autre";
+}
+
+function sortIndicator(sortBy, sortDir, current) {
+  if (sortBy !== current) return "";
+  return sortDir === "asc" ? " ↑" : " ↓";
+}
+
 export default function AdminOpsUrgenciesPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
   const [workflowSummary, setWorkflowSummary] = useState(null);
+  const [ownerLoad, setOwnerLoad] = useState([]);
+  const [queueSummary, setQueueSummary] = useState([]);
   const [kindFilter, setKindFilter] = useState("all");
   const [operatorStatusFilter, setOperatorStatusFilter] = useState("all");
   const [opsView, setOpsView] = useState("all");
   const [ownerFocus, setOwnerFocus] = useState("all");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [ownerQuery, setOwnerQuery] = useState("");
   const [ownerOptions, setOwnerOptions] = useState([]);
+  const [batchSaving, setBatchSaving] = useState(false);
+  const [batchError, setBatchError] = useState("");
+  const [batchOwnerQuery, setBatchOwnerQuery] = useState("");
+  const [batchOwnerOptions, setBatchOwnerOptions] = useState([]);
+  const [offset, setOffset] = useState(0);
+  const [limit, setLimit] = useState(25);
+  const [sortBy, setSortBy] = useState("last_action_at");
+  const [sortDir, setSortDir] = useState("desc");
+  const [overdueOnly, setOverdueOnly] = useState(false);
   const [form, setForm] = useState({
     operator_status: "needs_follow_up",
+    blocked_reason: "",
+    notes: "",
+    follow_up_at: "",
+    owner_user_id: "",
+  });
+  const [batchForm, setBatchForm] = useState({
+    operator_status: "",
     blocked_reason: "",
     notes: "",
     follow_up_at: "",
@@ -186,13 +218,14 @@ export default function AdminOpsUrgenciesPage() {
   const me = getCurrentUser();
   const myUserId = String(me?.user_id || "");
   const myOwnerLabel = normalizeOwnerLabel(me?.full_name || me?.email || me?.user_id);
+  const supportsBackendPaging = typeof api.getAdminOpsUrgencies === "function";
 
   const load = async () => {
     setLoading(true);
     setError("");
     try {
       const [backendUrgencies, escrowOrders, disputes, paymentIntents, summary] = await Promise.all([
-        typeof api.getAdminOpsUrgencies === "function"
+        supportsBackendPaging
           ? api
               .getAdminOpsUrgencies({
                 kind: kindFilter,
@@ -200,25 +233,45 @@ export default function AdminOpsUrgenciesPage() {
                 owner_key: ownerFocus,
                 view: opsView,
                 q: query.trim() || undefined,
+                overdue_only: overdueOnly || undefined,
+                limit,
+                offset,
+                sort_by: sortBy,
+                sort_dir: sortDir,
               })
               .catch(() => null)
           : Promise.resolve(null),
         api.get("/backoffice/escrow/orders").catch(() => []),
         api.get("/api/admin/p2p/disputes").catch(() => []),
-        api.getAdminPaymentIntents({ limit: 100 }).catch(() => []),
+        api.getAdminPaymentIntents({ limit: 200 }).catch(() => []),
         typeof api.getAdminOperatorWorkflowSummary === "function"
           ? api.getAdminOperatorWorkflowSummary().catch(() => null)
           : Promise.resolve(null),
       ]);
-      setItems(
-        Array.isArray(backendUrgencies)
-          ? hydrateBackendUrgencies(backendUrgencies)
-          : normalizeUrgencies(
-              Array.isArray(escrowOrders) ? escrowOrders : [],
-              Array.isArray(disputes) ? disputes : [],
-              Array.isArray(paymentIntents) ? paymentIntents : []
-            )
-      );
+
+      if (backendUrgencies && Array.isArray(backendUrgencies.items)) {
+        setItems(hydrateBackendUrgencies(backendUrgencies.items));
+        setTotal(Number(backendUrgencies.total || 0));
+        setOwnerLoad(Array.isArray(backendUrgencies.owner_load) ? backendUrgencies.owner_load : []);
+        setQueueSummary(Array.isArray(backendUrgencies.queue_summary) ? backendUrgencies.queue_summary : []);
+      } else if (Array.isArray(backendUrgencies)) {
+        const hydrated = hydrateBackendUrgencies(backendUrgencies);
+        setItems(hydrated);
+        setTotal(hydrated.length);
+        setOwnerLoad([]);
+        setQueueSummary([]);
+      } else {
+        const normalized = normalizeUrgencies(
+          Array.isArray(escrowOrders) ? escrowOrders : [],
+          Array.isArray(disputes) ? disputes : [],
+          Array.isArray(paymentIntents) ? paymentIntents : []
+        );
+        setItems(normalized);
+        setTotal(normalized.length);
+        setOwnerLoad([]);
+        setQueueSummary([]);
+      }
+
       setWorkflowSummary(summary && typeof summary === "object" ? summary : null);
     } catch (err) {
       setError(err?.message || "Impossible de charger les urgences OPS.");
@@ -229,21 +282,23 @@ export default function AdminOpsUrgenciesPage() {
 
   useEffect(() => {
     load();
-  }, [kindFilter, operatorStatusFilter, opsView, ownerFocus, query]);
+  }, [kindFilter, operatorStatusFilter, opsView, ownerFocus, query, overdueOnly, offset, limit, sortBy, sortDir]);
+
+  useEffect(() => {
+    setOffset(0);
+  }, [kindFilter, operatorStatusFilter, opsView, ownerFocus, query, overdueOnly, sortBy, sortDir, limit]);
 
   const filtered = useMemo(() => {
-    if (items.length && typeof api.getAdminOpsUrgencies === "function") {
-      return items;
-    }
+    if (supportsBackendPaging) return items;
     const q = query.trim().toLowerCase();
     return items.filter((item) => {
       const workflow = item.operatorWorkflow || {};
       const ownerUserId = String(workflow.owner_user_id || "");
       const ownerLabel = normalizeOwnerLabel(item.owner);
       const hasOwner = Boolean(ownerLabel || ownerUserId);
-      const isMine =
-        (myUserId && ownerUserId === myUserId) ||
-        (myOwnerLabel && ownerLabel === myOwnerLabel);
+      const isMine = (myUserId && ownerUserId === myUserId) || (myOwnerLabel && ownerLabel === myOwnerLabel);
+      const followUpAt = workflow.follow_up_at ? new Date(workflow.follow_up_at) : null;
+      const overdue = Boolean(followUpAt && followUpAt.getTime() <= Date.now());
       if (kindFilter !== "all" && item.kind !== kindFilter) return false;
       if (operatorStatusFilter !== "all" && item.operatorStatus !== operatorStatusFilter) return false;
       if (opsView === "mine" && !isMine) return false;
@@ -251,13 +306,22 @@ export default function AdminOpsUrgenciesPage() {
       if (opsView === "unassigned" && hasOwner) return false;
       if (opsView === "blocked_only" && item.operatorStatus !== "blocked") return false;
       if (ownerFocus !== "all" && ownerLabel !== ownerFocus) return false;
+      if (overdueOnly && !overdue) return false;
       if (!q) return true;
       return [item.title, item.subtitle, item.status, item.meta, item.owner]
         .map((value) => String(value || "").toLowerCase())
         .join(" ")
         .includes(q);
     });
-  }, [items, kindFilter, operatorStatusFilter, opsView, ownerFocus, query]);
+  }, [items, supportsBackendPaging, kindFilter, operatorStatusFilter, opsView, ownerFocus, query, overdueOnly, myOwnerLabel, myUserId]);
+
+  const visibleItems = useMemo(() => {
+    if (supportsBackendPaging) return items;
+    const sorted = [...filtered].sort((a, b) => new Date(b.lastActionAt || 0).getTime() - new Date(a.lastActionAt || 0).getTime());
+    return sorted.slice(offset, offset + limit);
+  }, [supportsBackendPaging, items, filtered, offset, limit]);
+
+  const effectiveTotal = supportsBackendPaging ? total : filtered.length;
 
   const summary = useMemo(() => {
     if (workflowSummary && typeof workflowSummary === "object") {
@@ -267,72 +331,47 @@ export default function AdminOpsUrgenciesPage() {
         team: Number(workflowSummary.team || 0),
         unassigned: Number(workflowSummary.unassigned || 0),
         blocked_only: Number(workflowSummary.blocked_only || 0),
+        overdue_follow_up: Number(workflowSummary.overdue_follow_up || 0),
       };
     }
-    const stats = {
-      all: items.length,
-      mine: 0,
-      team: 0,
-      unassigned: 0,
-      blocked_only: 0,
-    };
-    for (const item of items) {
-      const workflow = item.operatorWorkflow || {};
-      const ownerUserId = String(workflow.owner_user_id || "");
-      const ownerLabel = normalizeOwnerLabel(item.owner);
-      const hasOwner = Boolean(ownerLabel || ownerUserId);
-      const isMine =
-        (myUserId && ownerUserId === myUserId) ||
-        (myOwnerLabel && ownerLabel === myOwnerLabel);
-      if (isMine) stats.mine += 1;
-      else stats.team += 1;
-      if (!hasOwner) stats.unassigned += 1;
-      if (item.operatorStatus === "blocked") stats.blocked_only += 1;
-    }
-    return stats;
-  }, [items, workflowSummary]);
+    return { all: effectiveTotal, mine: 0, team: 0, unassigned: 0, blocked_only: 0, overdue_follow_up: 0 };
+  }, [workflowSummary, effectiveTotal]);
 
   const ownerBreakdown = useMemo(() => {
+    if (ownerLoad.length) {
+      return ownerLoad.slice(0, 8).map((owner) => ({
+        key: owner.owner_key || "__unassigned__",
+        label: owner.owner_label || "Non assigne",
+        count: Number(owner.count || 0),
+        critical: Number(owner.critical_count || 0),
+        overdue: Number(owner.overdue_follow_up_count || 0),
+      }));
+    }
     if (workflowSummary?.owner_breakdown?.length) {
-      return workflowSummary.owner_breakdown
-        .map((owner) => ({
-          key: owner.owner_key || "__unassigned__",
-          label: owner.owner_label || "Non assigne",
-          count: Number(owner.count || 0),
-          critical: Number(owner.blocked_count || 0) + Number(owner.overdue_follow_up_count || 0),
-        }))
-        .slice(0, 6);
+      return workflowSummary.owner_breakdown.slice(0, 8).map((owner) => ({
+        key: owner.owner_key || "__unassigned__",
+        label: owner.owner_label || "Non assigne",
+        count: Number(owner.count || 0),
+        critical: Number(owner.blocked_count || 0) + Number(owner.overdue_follow_up_count || 0),
+        overdue: Number(owner.overdue_follow_up_count || 0),
+      }));
     }
-    const counts = new Map();
-    for (const item of items) {
-      const key = normalizeOwnerLabel(item.owner) || "__unassigned__";
-      const label = key === "__unassigned__" ? "Non assigne" : item.owner;
-      const current = counts.get(key) || { key, label, count: 0, critical: 0 };
-      current.count += 1;
-      if (item.priority === "critical" || item.operatorStatus === "blocked") current.critical += 1;
-      counts.set(key, current);
-    }
-    return Array.from(counts.values())
-      .sort((a, b) => {
-        if (b.critical !== a.critical) return b.critical - a.critical;
-        if (b.count !== a.count) return b.count - a.count;
-        return a.label.localeCompare(b.label);
-      })
-      .slice(0, 6);
-  }, [items, workflowSummary]);
+    return [];
+  }, [ownerLoad, workflowSummary]);
 
   useEffect(() => {
-    if (!filtered.length) {
+    if (!visibleItems.length) {
       setSelectedId("");
       return;
     }
-    setSelectedId((current) => (current && filtered.some((item) => item.id === current) ? current : filtered[0].id));
-  }, [filtered]);
+    setSelectedId((current) => (current && visibleItems.some((item) => item.id === current) ? current : visibleItems[0].id));
+  }, [visibleItems]);
 
-  const selectedItem = useMemo(
-    () => filtered.find((item) => item.id === selectedId) || null,
-    [filtered, selectedId]
-  );
+  useEffect(() => {
+    setSelectedIds((current) => current.filter((id) => visibleItems.some((item) => item.id === id)));
+  }, [visibleItems]);
+
+  const selectedItem = useMemo(() => visibleItems.find((item) => item.id === selectedId) || null, [visibleItems, selectedId]);
 
   useEffect(() => {
     if (!selectedItem) return;
@@ -350,31 +389,43 @@ export default function AdminOpsUrgenciesPage() {
 
   useEffect(() => {
     const q = ownerQuery.trim();
-    if (!q || q.length < 2) {
-      setOwnerOptions([]);
-      return;
-    }
-    if (typeof api.getUsers !== "function") {
+    if (!q || q.length < 2 || typeof api.getUsers !== "function") {
       setOwnerOptions([]);
       return;
     }
     let cancelled = false;
     Promise.resolve(api.getUsers(q))
       .then((data) => {
-        if (cancelled) return;
-        setOwnerOptions(Array.isArray(data) ? data.slice(0, 12) : []);
+        if (!cancelled) setOwnerOptions(Array.isArray(data) ? data.slice(0, 12) : []);
       })
       .catch(() => {
-        if (cancelled) return;
-        setOwnerOptions([]);
+        if (!cancelled) setOwnerOptions([]);
       });
     return () => {
       cancelled = true;
     };
   }, [ownerQuery]);
 
+  useEffect(() => {
+    const q = batchOwnerQuery.trim();
+    if (!q || q.length < 2 || typeof api.getUsers !== "function") {
+      setBatchOwnerOptions([]);
+      return;
+    }
+    let cancelled = false;
+    Promise.resolve(api.getUsers(q))
+      .then((data) => {
+        if (!cancelled) setBatchOwnerOptions(Array.isArray(data) ? data.slice(0, 12) : []);
+      })
+      .catch(() => {
+        if (!cancelled) setBatchOwnerOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [batchOwnerQuery]);
+
   const handleAssignToMe = () => {
-    const me = getCurrentUser();
     if (!me?.user_id) return;
     setForm((current) => ({ ...current, owner_user_id: String(me.user_id) }));
     setOwnerQuery(me.full_name || me.email || String(me.user_id));
@@ -384,6 +435,18 @@ export default function AdminOpsUrgenciesPage() {
     setForm((current) => ({ ...current, owner_user_id: String(user.user_id) }));
     setOwnerQuery(user.full_name || user.email || user.user_id);
     setOwnerOptions([]);
+  };
+
+  const handleBatchOwnerPick = (user) => {
+    setBatchForm((current) => ({ ...current, owner_user_id: String(user.user_id) }));
+    setBatchOwnerQuery(user.full_name || user.email || user.user_id);
+    setBatchOwnerOptions([]);
+  };
+
+  const handleBatchAssignToMe = () => {
+    if (!me?.user_id) return;
+    setBatchForm((current) => ({ ...current, owner_user_id: String(me.user_id) }));
+    setBatchOwnerQuery(me.full_name || me.email || String(me.user_id));
   };
 
   const handleSaveWorkflow = async () => {
@@ -406,73 +469,121 @@ export default function AdminOpsUrgenciesPage() {
     }
   };
 
+  const selectedBatchItems = useMemo(() => visibleItems.filter((item) => selectedIds.includes(item.id)), [visibleItems, selectedIds]);
+
+  const handleBatchApply = async () => {
+    if (!selectedBatchItems.length || typeof api.batchAdminOperatorWorkItems !== "function") return;
+    setBatchSaving(true);
+    setBatchError("");
+    try {
+      const payload = {
+        targets: selectedBatchItems.map((item) => ({
+          entity_type: item.entityType,
+          entity_id: item.entityId,
+        })),
+      };
+      if (batchForm.operator_status) payload.operator_status = batchForm.operator_status;
+      if (batchForm.operator_status === "blocked") payload.blocked_reason = batchForm.blocked_reason || null;
+      if (batchForm.notes) payload.notes = batchForm.notes;
+      if (batchForm.follow_up_at) payload.follow_up_at = new Date(batchForm.follow_up_at).toISOString();
+      if (batchForm.owner_user_id) payload.owner_user_id = batchForm.owner_user_id;
+      await api.batchAdminOperatorWorkItems(payload);
+      setSelectedIds([]);
+      await load();
+    } catch (err) {
+      setBatchError(err?.message || "Impossible d'appliquer l'action batch.");
+    } finally {
+      setBatchSaving(false);
+    }
+  };
+
+  const toggleRowSelection = (id) => {
+    setSelectedIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  };
+
+  const toggleAllVisible = () => {
+    const visibleIds = visibleItems.map((item) => item.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
+    setSelectedIds((current) => (allSelected ? current.filter((id) => !visibleIds.includes(id)) : [...new Set([...current, ...visibleIds])]));
+  };
+
+  const changeSort = (nextSortBy) => {
+    if (sortBy === nextSortBy) {
+      setSortDir((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortBy(nextSortBy);
+    setSortDir("desc");
+  };
+
+  const pageStart = effectiveTotal === 0 ? 0 : offset + 1;
+  const pageEnd = Math.min(offset + visibleItems.length, effectiveTotal);
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Urgences OPS</h1>
-          <p className="text-sm text-slate-500">
-            Vue transversale des dossiers a traiter, stale ou bloques.
-          </p>
+          <p className="text-sm text-slate-500">Vue transversale paginee des dossiers a traiter, stale, bloques ou en follow-up depasse.</p>
         </div>
-        <button
-          type="button"
-          onClick={load}
-          className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-        >
+        <button type="button" onClick={load} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
           {loading ? "Chargement..." : "Rafraichir"}
         </button>
       </header>
 
       <ApiErrorAlert message={error} onRetry={load} retryLabel="Recharger les urgences" />
 
-      <div className="grid gap-4 rounded-2xl bg-white p-4 shadow md:grid-cols-4">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher dossier, acteur, meta..."
-          className="rounded-lg border px-3 py-2 text-sm"
-        />
-        <select
-          value={kindFilter}
-          onChange={(e) => setKindFilter(e.target.value)}
-          className="rounded-lg border px-3 py-2 text-sm"
-        >
+      <div className="grid gap-4 rounded-2xl bg-white p-4 shadow md:grid-cols-6">
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher dossier, acteur, meta..." className="rounded-lg border px-3 py-2 text-sm md:col-span-2" />
+        <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className="rounded-lg border px-3 py-2 text-sm">
           <option value="all">Tous les types</option>
           <option value="escrow">Escrow</option>
           <option value="p2p_dispute">Litiges P2P</option>
           <option value="payment_intent">Paiements BIF</option>
         </select>
-        <select
-          value={operatorStatusFilter}
-          onChange={(e) => setOperatorStatusFilter(e.target.value)}
-          className="rounded-lg border px-3 py-2 text-sm"
-        >
+        <select value={operatorStatusFilter} onChange={(e) => setOperatorStatusFilter(e.target.value)} className="rounded-lg border px-3 py-2 text-sm">
           <option value="all">Tous les statuts operateur</option>
           <option value="needs_follow_up">Needs follow-up</option>
           <option value="blocked">Blocked</option>
+          <option value="watching">Watching</option>
+          <option value="resolved">Resolved</option>
         </select>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-          {filtered.length} urgence(s)
-        </div>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="rounded-lg border px-3 py-2 text-sm">
+          <option value="last_action_at">Trier par derniere action</option>
+          <option value="priority">Trier par priorite</option>
+          <option value="follow_up">Trier par follow-up</option>
+          <option value="owner">Trier par owner</option>
+          <option value="kind">Trier par file</option>
+          <option value="status">Trier par statut</option>
+        </select>
+        <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">
+          <input type="checkbox" checked={overdueOnly} onChange={(e) => setOverdueOnly(e.target.checked)} />
+          Overdue follow-up
+        </label>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-6">
         {[
           ["all", "Toutes", summary.all],
           ["mine", "Mes urgences", summary.mine],
           ["team", "Equipe", summary.team],
           ["unassigned", "Non assignees", summary.unassigned],
           ["blocked_only", "Blocked", summary.blocked_only],
+          ["overdue", "Follow-up depasses", summary.overdue_follow_up],
         ].map(([value, label, count]) => (
           <button
             key={value}
             type="button"
-            onClick={() => setOpsView(value)}
+            onClick={() => {
+              if (value === "overdue") {
+                setOverdueOnly(true);
+                setOpsView("all");
+              } else {
+                setOpsView(value);
+              }
+            }}
             className={`rounded-2xl border px-4 py-3 text-left ${
-              opsView === value
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
+              (value === "overdue" ? overdueOnly : opsView === value) ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
             }`}
           >
             <div className="text-xs uppercase tracking-wide opacity-70">{label}</div>
@@ -481,99 +592,187 @@ export default function AdminOpsUrgenciesPage() {
         ))}
       </div>
 
-      <div className="rounded-2xl bg-white p-4 shadow">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900">Charge par owner</h2>
-            <p className="text-xs text-slate-500">Raccourcis pour filtrer rapidement les urgences par operateur.</p>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div className="rounded-2xl bg-white p-4 shadow">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900">Surcharge par owner</h2>
+              <p className="text-xs text-slate-500">Charge, critiques et follow-up depasses par owner.</p>
+            </div>
+            {ownerFocus !== "all" ? <button type="button" onClick={() => setOwnerFocus("all")} className="text-xs font-medium text-blue-600 hover:underline">Reinitialiser</button> : null}
           </div>
-          {ownerFocus !== "all" ? (
-            <button
-              type="button"
-              onClick={() => setOwnerFocus("all")}
-              className="text-xs font-medium text-blue-600 hover:underline"
-            >
-              Reinitialiser
-            </button>
-          ) : null}
+          <div className="mt-3 flex flex-wrap gap-2">
+            {ownerBreakdown.map((owner) => (
+              <button
+                key={owner.key}
+                type="button"
+                onClick={() => setOwnerFocus(owner.key)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium ${ownerFocus === owner.key ? "border-blue-700 bg-blue-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
+              >
+                {owner.label} ({owner.count})
+                {owner.critical > 0 ? ` • ${owner.critical} critiques` : ""}
+                {owner.overdue > 0 ? ` • ${owner.overdue} overdue` : ""}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {ownerBreakdown.map((owner) => (
-            <button
-              key={owner.key}
-              type="button"
-              onClick={() => setOwnerFocus(owner.key)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
-                ownerFocus === owner.key
-                  ? "border-blue-700 bg-blue-700 text-white"
-                  : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              {owner.label} ({owner.count})
-              {owner.critical > 0 ? ` • ${owner.critical} critique(s)` : ""}
-            </button>
-          ))}
+
+        <div className="rounded-2xl bg-white p-4 shadow">
+          <h2 className="text-sm font-semibold text-slate-900">Overdue follow-up par file</h2>
+          <p className="text-xs text-slate-500">Volume stale, blocked et follow-up depasses par domaine.</p>
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            {queueSummary.map((queue) => (
+              <div key={queue.kind} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <div className="text-sm font-semibold text-slate-900">{queueLabel(queue.kind)}</div>
+                <div className="mt-2 text-xs text-slate-600">{queue.total} dossier(s)</div>
+                <div className="mt-1 text-xs text-slate-500">{queue.overdue_follow_up_count || 0} overdue • {queue.blocked_count || 0} blocked</div>
+                <div className="mt-1 text-xs text-slate-500">{queue.stale_count || 0} stale • {queue.critical_count || 0} critiques</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_360px]">
-        <div className="rounded-2xl bg-white shadow overflow-hidden">
-          <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-slate-500">
-              <tr>
-                <th className="px-4 py-3 text-left">Type</th>
-                <th className="px-4 py-3 text-left">Dossier</th>
-                <th className="px-4 py-3 text-left">Statut</th>
-                <th className="px-4 py-3 text-left">Operateur</th>
-                <th className="px-4 py-3 text-left">Age</th>
-                <th className="px-4 py-3 text-left">Owner</th>
-                <th className="px-4 py-3 text-left">Acces</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((item) => (
-                <tr
-                  key={item.id}
-                  className={`border-t cursor-pointer ${selectedId === item.id ? "bg-blue-50/60" : ""}`}
-                  onClick={() => setSelectedId(item.id)}
-                >
-                  <td className="px-4 py-3 text-slate-700">{item.kind}</td>
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-slate-900">{item.title}</div>
-                    <div className="text-xs text-slate-500">{item.subtitle}</div>
-                    <div className="text-xs text-slate-400">{item.meta}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <span className={`rounded-full px-2 py-1 text-xs font-semibold ${badgeTone(item.priority)}`}>
-                        {item.status}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
-                        {item.operatorStatus}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-slate-700">{item.stale ? "SLA depasse" : "Actif"}</td>
-                  <td className="px-4 py-3 text-slate-700">{item.age}</td>
-                  <td className="px-4 py-3 text-slate-700">{item.owner}</td>
-                  <td className="px-4 py-3">
-                    <Link className="text-blue-600 hover:underline" to={item.to}>
-                      Ouvrir
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {!loading && filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
-                    Aucune urgence pour ce filtre.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
+      <div className="rounded-2xl bg-white p-4 shadow">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">Actions batch</h2>
+            <p className="text-xs text-slate-500">{selectedBatchItems.length} dossier(s) selectionne(s) sur la page courante.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={toggleAllVisible} className="rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50">
+              {visibleItems.length > 0 && visibleItems.every((item) => selectedIds.includes(item.id)) ? "Tout deselectionner" : "Tout selectionner"}
+            </button>
+            <button type="button" onClick={handleBatchAssignToMe} className="rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50">
+              Assigner a moi
+            </button>
+          </div>
         </div>
+
+        <ApiErrorAlert message={batchError} />
+
+        <div className="mt-4 grid gap-3 md:grid-cols-5">
+          <select value={batchForm.operator_status} onChange={(e) => setBatchForm((current) => ({ ...current, operator_status: e.target.value }))} className="rounded-lg border px-3 py-2 text-sm">
+            <option value="">Statut batch (inchangé si vide)</option>
+            <option value="needs_follow_up">Needs follow-up</option>
+            <option value="blocked">Blocked</option>
+            <option value="watching">Watching</option>
+            <option value="resolved">Resolved</option>
+          </select>
+          <input
+            value={batchOwnerQuery}
+            onChange={(e) => {
+              setBatchOwnerQuery(e.target.value);
+              setBatchForm((current) => ({ ...current, owner_user_id: "" }));
+            }}
+            placeholder="Owner batch..."
+            className="rounded-lg border px-3 py-2 text-sm"
+          />
+          <input type="datetime-local" value={batchForm.follow_up_at} onChange={(e) => setBatchForm((current) => ({ ...current, follow_up_at: e.target.value }))} className="rounded-lg border px-3 py-2 text-sm" />
+          <input value={batchForm.notes} onChange={(e) => setBatchForm((current) => ({ ...current, notes: e.target.value }))} placeholder="Note batch" className="rounded-lg border px-3 py-2 text-sm" />
+          <button type="button" onClick={handleBatchApply} disabled={!selectedBatchItems.length || batchSaving} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60">
+            {batchSaving ? "Application..." : "Appliquer batch"}
+          </button>
+        </div>
+        {batchForm.operator_status === "blocked" ? (
+          <textarea value={batchForm.blocked_reason} onChange={(e) => setBatchForm((current) => ({ ...current, blocked_reason: e.target.value }))} rows={2} placeholder="Motif blocage batch" className="mt-3 w-full rounded-lg border px-3 py-2 text-sm" />
+        ) : null}
+        {batchOwnerOptions.length ? (
+          <div className="mt-3 rounded-lg border border-slate-200">
+            {batchOwnerOptions.map((user) => (
+              <button
+                key={user.user_id}
+                type="button"
+                onClick={() => handleBatchOwnerPick(user)}
+                className="flex w-full items-start justify-between border-t px-3 py-2 text-left text-sm first:border-t-0 hover:bg-slate-50"
+              >
+                <span>{user.full_name || user.email || user.user_id}</span>
+                <span className="text-xs text-slate-400">{user.role || "-"}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_360px]">
+        <div className="rounded-2xl bg-white shadow overflow-hidden">
+          <div className="flex items-center justify-between border-b px-4 py-3 text-sm text-slate-500">
+            <span>{pageStart}-{pageEnd} sur {effectiveTotal}</span>
+            <div className="flex items-center gap-2">
+              <select value={limit} onChange={(e) => setLimit(Number(e.target.value) || 25)} className="rounded-lg border px-2 py-1 text-xs">
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <button type="button" onClick={() => setOffset((current) => Math.max(0, current - limit))} disabled={offset === 0} className="rounded-lg border px-3 py-1 text-xs disabled:opacity-50">
+                Prec.
+              </button>
+              <button type="button" onClick={() => setOffset((current) => current + limit)} disabled={offset + visibleItems.length >= effectiveTotal} className="rounded-lg border px-3 py-1 text-xs disabled:opacity-50">
+                Suiv.
+              </button>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-50 text-slate-500">
+                <tr>
+                  <th className="px-4 py-3 text-left">
+                    <input type="checkbox" checked={visibleItems.length > 0 && visibleItems.every((item) => selectedIds.includes(item.id))} onChange={toggleAllVisible} />
+                  </th>
+                  <th className="px-4 py-3 text-left"><button type="button" onClick={() => changeSort("kind")} className="font-medium">Type{sortIndicator(sortBy, sortDir, "kind")}</button></th>
+                  <th className="px-4 py-3 text-left">Dossier</th>
+                  <th className="px-4 py-3 text-left"><button type="button" onClick={() => changeSort("status")} className="font-medium">Operateur{sortIndicator(sortBy, sortDir, "status")}</button></th>
+                  <th className="px-4 py-3 text-left"><button type="button" onClick={() => changeSort("follow_up")} className="font-medium">Follow-up{sortIndicator(sortBy, sortDir, "follow_up")}</button></th>
+                  <th className="px-4 py-3 text-left"><button type="button" onClick={() => changeSort("priority")} className="font-medium">Priorite{sortIndicator(sortBy, sortDir, "priority")}</button></th>
+                  <th className="px-4 py-3 text-left"><button type="button" onClick={() => changeSort("owner")} className="font-medium">Owner{sortIndicator(sortBy, sortDir, "owner")}</button></th>
+                  <th className="px-4 py-3 text-left">Acces</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleItems.map((item) => {
+                  const followUpAt = item.operatorWorkflow?.follow_up_at;
+                  const overdue = followUpAt ? new Date(followUpAt).getTime() <= Date.now() : false;
+                  return (
+                    <tr key={item.id} className={`border-t cursor-pointer ${selectedId === item.id ? "bg-blue-50/60" : ""}`} onClick={() => setSelectedId(item.id)}>
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggleRowSelection(item.id)} />
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">{queueLabel(item.kind)}</td>
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-slate-900">{item.title}</div>
+                        <div className="text-xs text-slate-500">{item.subtitle}</div>
+                        <div className="text-xs text-slate-400">{item.meta}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          <span className={`rounded-full px-2 py-1 text-xs font-semibold ${badgeTone(item.priority)}`}>{item.status}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">{item.operatorStatus}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">
+                        <div>{followUpAt ? new Date(followUpAt).toLocaleString() : "-"}</div>
+                        <div className={`text-xs ${overdue ? "text-rose-600" : "text-slate-500"}`}>{overdue ? "Overdue" : "Planifie"}</div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">
+                        <div>{item.stale ? "SLA depasse" : "Actif"}</div>
+                        <div className="text-xs text-slate-500">{item.age}</div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">{item.owner}</td>
+                      <td className="px-4 py-3">
+                        <Link className="text-blue-600 hover:underline" to={item.to}>Ouvrir</Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!loading && visibleItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">Aucune urgence pour ce filtre.</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <aside className="rounded-2xl bg-white p-5 shadow">
@@ -585,18 +784,14 @@ export default function AdminOpsUrgenciesPage() {
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <div className="text-sm font-semibold text-slate-900">{selectedItem.title}</div>
                 <div className="text-xs text-slate-500">{selectedItem.subtitle}</div>
-                <div className="mt-2 text-xs text-slate-500">{selectedItem.kind} | {selectedItem.status}</div>
+                <div className="mt-2 text-xs text-slate-500">{queueLabel(selectedItem.kind)} | {selectedItem.status}</div>
               </div>
 
               <ApiErrorAlert message={saveError} />
 
               <label className="block space-y-1">
                 <span className="text-sm font-medium text-slate-700">Statut operateur</span>
-                <select
-                  value={form.operator_status}
-                  onChange={(e) => setForm((current) => ({ ...current, operator_status: e.target.value }))}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                >
+                <select value={form.operator_status} onChange={(e) => setForm((current) => ({ ...current, operator_status: e.target.value }))} className="w-full rounded-lg border px-3 py-2 text-sm">
                   <option value="needs_follow_up">Needs follow-up</option>
                   <option value="blocked">Blocked</option>
                   <option value="watching">Watching</option>
@@ -616,23 +811,12 @@ export default function AdminOpsUrgenciesPage() {
                     placeholder="Rechercher un admin/agent..."
                     className="w-full rounded-lg border px-3 py-2 text-sm"
                   />
-                  <button
-                    type="button"
-                    onClick={handleAssignToMe}
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50"
-                  >
-                    A moi
-                  </button>
+                  <button type="button" onClick={handleAssignToMe} className="rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50">A moi</button>
                 </div>
                 {ownerOptions.length ? (
                   <div className="rounded-lg border border-slate-200">
                     {ownerOptions.map((user) => (
-                      <button
-                        key={user.user_id}
-                        type="button"
-                        onClick={() => handleOwnerPick(user)}
-                        className="flex w-full items-start justify-between border-t px-3 py-2 text-left text-sm first:border-t-0 hover:bg-slate-50"
-                      >
+                      <button key={user.user_id} type="button" onClick={() => handleOwnerPick(user)} className="flex w-full items-start justify-between border-t px-3 py-2 text-left text-sm first:border-t-0 hover:bg-slate-50">
                         <span>{user.full_name || user.email || user.user_id}</span>
                         <span className="text-xs text-slate-400">{user.role || "-"}</span>
                       </button>
@@ -643,42 +827,22 @@ export default function AdminOpsUrgenciesPage() {
 
               <label className="block space-y-1">
                 <span className="text-sm font-medium text-slate-700">Follow-up</span>
-                <input
-                  type="datetime-local"
-                  value={form.follow_up_at}
-                  onChange={(e) => setForm((current) => ({ ...current, follow_up_at: e.target.value }))}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                />
+                <input type="datetime-local" value={form.follow_up_at} onChange={(e) => setForm((current) => ({ ...current, follow_up_at: e.target.value }))} className="w-full rounded-lg border px-3 py-2 text-sm" />
               </label>
 
               {form.operator_status === "blocked" ? (
                 <label className="block space-y-1">
                   <span className="text-sm font-medium text-slate-700">Motif blocage</span>
-                  <textarea
-                    value={form.blocked_reason}
-                    onChange={(e) => setForm((current) => ({ ...current, blocked_reason: e.target.value }))}
-                    rows={3}
-                    className="w-full rounded-lg border px-3 py-2 text-sm"
-                  />
+                  <textarea value={form.blocked_reason} onChange={(e) => setForm((current) => ({ ...current, blocked_reason: e.target.value }))} rows={3} className="w-full rounded-lg border px-3 py-2 text-sm" />
                 </label>
               ) : null}
 
               <label className="block space-y-1">
                 <span className="text-sm font-medium text-slate-700">Notes operateur</span>
-                <textarea
-                  value={form.notes}
-                  onChange={(e) => setForm((current) => ({ ...current, notes: e.target.value }))}
-                  rows={4}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                />
+                <textarea value={form.notes} onChange={(e) => setForm((current) => ({ ...current, notes: e.target.value }))} rows={4} className="w-full rounded-lg border px-3 py-2 text-sm" />
               </label>
 
-              <button
-                type="button"
-                onClick={handleSaveWorkflow}
-                disabled={saving}
-                className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
-              >
+              <button type="button" onClick={handleSaveWorkflow} disabled={saving} className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60">
                 {saving ? "Enregistrement..." : "Enregistrer le workflow"}
               </button>
             </div>
