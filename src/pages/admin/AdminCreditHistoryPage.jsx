@@ -40,12 +40,13 @@ export default function AdminCreditHistoryPage() {
   const [loading, setLoading] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [openDetails, setOpenDetails] = useState({});
+  const financialMode = mode === "history";
 
   const loadHistory = async () => {
     try {
       setLoading(true);
       const data =
-        mode === "events"
+        financialMode
           ? await api.getAdminCreditLineEvents({ user_id: userId || undefined, limit, offset })
           : await api.getAdminCreditHistory({ user_id: userId || undefined, limit, offset });
       setEntries(Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []);
@@ -69,7 +70,7 @@ export default function AdminCreditHistoryPage() {
       setLoadingUsers(true);
       try {
         const data = await api.getAdminCreditHistoryUsers({
-          mode,
+          mode: financialMode ? "events" : "history",
           q: userSearch.trim() || undefined,
           limit: 50,
         });
@@ -215,7 +216,7 @@ export default function AdminCreditHistoryPage() {
 
           <div className="grid gap-3">
             {entries.map((entry) => {
-              const amount = Number(mode === "events" ? entry.amount_delta : entry.amount);
+              const amount = Number(financialMode ? entry.amount_delta : entry.amount);
               const entryKey = entry.entry_id || entry.event_id;
               const detailsOpen = !!openDetails[entryKey];
               return (
@@ -224,9 +225,9 @@ export default function AdminCreditHistoryPage() {
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                          {mode === "events" ? "Evenement" : "Historique"}
+                          {financialMode ? "Evenement financier" : "Historique"}
                         </span>
-                        {mode === "events" && entry.status ? (
+                        {financialMode && entry.status ? (
                           <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
                             {entry.status}
                           </span>
@@ -277,7 +278,7 @@ export default function AdminCreditHistoryPage() {
 
                     <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[420px]">
                       <MetricCard
-                        label={mode === "events" ? "Delta" : "Montant"}
+                        label={financialMode ? "Delta" : "Montant"}
                         value={`${amount >= 0 ? "+" : "-"} ${formatAmount(Math.abs(amount))}`}
                         tone={amount >= 0 ? "emerald" : "rose"}
                       />
@@ -289,14 +290,14 @@ export default function AdminCreditHistoryPage() {
                       <MetricCard
                         label="Avant"
                         value={formatAmount(
-                          mode === "events" ? entry.old_limit : entry.credit_available_before
+                          financialMode ? entry.old_limit : entry.credit_available_before
                         )}
                         tone="slate"
                       />
                       <MetricCard
                         label="Apres"
                         value={formatAmount(
-                          mode === "events" ? entry.new_limit : entry.credit_available_after
+                          financialMode ? entry.new_limit : entry.credit_available_after
                         )}
                         tone="blue"
                       />
