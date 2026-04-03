@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Database, RefreshCw, Search, Wallet } from "lucide-react";
 import api from "@/services/api";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
+import useSessionStorageState from "@/hooks/useSessionStorageState";
 
 function StatCard({ title, value, subvalue, tone = "slate" }) {
   const tones = {
@@ -28,7 +29,7 @@ function prettyDate(value) {
 export default function AdminWalletAnalysisPage() {
   const [users, setUsers] = useState([]);
   const [userSearch, setUserSearch] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useSessionStorageState("admin-wallet-analysis:selected-user-id", "");
   const [cutoffDate, setCutoffDate] = useState("2025-12-20");
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loading, setLoading] = useState(false);

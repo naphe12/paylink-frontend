@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, RefreshCcw, Search, Wallet } from "lucide-react";
 
 import api from "@/services/api";
+import useSessionStorageState from "@/hooks/useSessionStorageState";
 
 const SCENARIOS = [
   {
@@ -54,7 +55,7 @@ export default function AdminWalletCorrectionPage() {
   const [userSearch, setUserSearch] = useState("");
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useSessionStorageState("admin-wallet-correction:selected-user-id", "");
   const [selectedUser, setSelectedUser] = useState(null);
   const [wallets, setWallets] = useState([]);
   const [walletsLoading, setWalletsLoading] = useState(false);

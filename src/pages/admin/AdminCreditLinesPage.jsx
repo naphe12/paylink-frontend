@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import api from "@/services/api";
+import useSessionStorageState from "@/hooks/useSessionStorageState";
 
 const CORRECTION_SCENARIOS = [
   { id: "credit_available_adjustment", label: "Crediter le disponible", needsAmount: true, needsTarget: false },
@@ -36,7 +37,17 @@ export default function AdminCreditLinesPage() {
   const navigate = useNavigate();
 
   const initialUserId = searchParams.get("user_id") || "";
-  const [targetUserId, setTargetUserId] = useState(initialUserId);
+  const [persistedTargetUserId, setPersistedTargetUserId] = useSessionStorageState(
+    "admin-credit-lines:selected-user-id",
+    initialUserId
+  );
+  const targetUserId = initialUserId || persistedTargetUserId;
+
+  useEffect(() => {
+    if (initialUserId && initialUserId !== persistedTargetUserId) {
+      setPersistedTargetUserId(initialUserId);
+    }
+  }, [initialUserId, persistedTargetUserId, setPersistedTargetUserId]);
 
   const loadUsers = async (query = "") => {
     setLoadingUsers(true);
@@ -303,7 +314,7 @@ export default function AdminCreditLinesPage() {
           </button>
           <select
             value={targetUserId}
-            onChange={(e) => setTargetUserId(e.target.value)}
+            onChange={(e) => setPersistedTargetUserId(e.target.value)}
             className="min-w-[280px] rounded-lg border px-3 py-2 text-sm"
           >
             <option value="">Choisir un utilisateur</option>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, RefreshCcw, X } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
+import useSessionStorageState from "@/hooks/useSessionStorageState";
 import api from "@/services/api";
 
 const statusOptions = [
@@ -41,7 +42,7 @@ export default function CashRequestsPage() {
   const [loading, setLoading] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [users, setUsers] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useSessionStorageState("admin-cash-requests:selected-user-id", "");
   const [depositAmount, setDepositAmount] = useState("");
   const [error, setError] = useState("");
   const directDepositIdemRef = useRef(null);

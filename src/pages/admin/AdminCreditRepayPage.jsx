@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/services/api";
+import useSessionStorageState from "@/hooks/useSessionStorageState";
 
 export default function AdminCreditRepayPage() {
   const [debtors, setDebtors] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useSessionStorageState("admin-credit-repay:selected-user-id", "");
   const [detail, setDetail] = useState(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,6 +53,13 @@ export default function AdminCreditRepayPage() {
   useEffect(() => {
     loadDebtors();
   }, []);
+
+  useEffect(() => {
+    setSelectedUserId((prev) => {
+      if (!prev || debtors.some((item) => item.user_id === prev)) return prev;
+      return "";
+    });
+  }, [debtors, setSelectedUserId]);
 
   useEffect(() => {
     loadDetail(selectedDebtor?.credit_line_id);

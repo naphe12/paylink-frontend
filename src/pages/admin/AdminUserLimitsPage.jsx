@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { RefreshCcw, Save, Search, SlidersHorizontal } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
+import useSessionStorageState from "@/hooks/useSessionStorageState";
 import api from "@/services/api";
 
 function formatNumber(value) {
@@ -14,7 +15,7 @@ function formatNumber(value) {
 export default function AdminUserLimitsPage() {
   const [users, setUsers] = useState([]);
   const [query, setQuery] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useSessionStorageState("admin-user-limits:selected-user-id", "");
   const [selectedUserDetail, setSelectedUserDetail] = useState(null);
   const [selectSearch, setSelectSearch] = useState("");
   const [loading, setLoading] = useState(true);

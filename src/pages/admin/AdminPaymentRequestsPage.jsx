@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "@/services/api";
 import { RefreshCcw, Send } from "lucide-react";
+import useSessionStorageState from "@/hooks/useSessionStorageState";
 
 export default function AdminPaymentRequestsPage() {
   const [requests, setRequests] = useState([]);
@@ -8,7 +9,7 @@ export default function AdminPaymentRequestsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useSessionStorageState("admin-payment-requests:selected-user-id", "");
   const [clientFilter, setClientFilter] = useState("");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("credit");
@@ -72,7 +73,6 @@ export default function AdminPaymentRequestsPage() {
         reason,
       });
       setCreateMsg("Demande envoyee.");
-      setSelectedUserId("");
       setAmount("");
       fetchData();
     } catch (err) {

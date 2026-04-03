@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import api from "@/services/api";
+import useSessionStorageState from "@/hooks/useSessionStorageState";
 
 const statusBadge = (status) => {
   const base = "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium";
@@ -36,7 +37,7 @@ export default function AdminTransfersPage() {
   const [loading, setLoading] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [users, setUsers] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useSessionStorageState("admin-transfers:selected-user-id", "");
   const [simulationAmount, setSimulationAmount] = useState("");
   const [simulationCurrency, setSimulationCurrency] = useState("EUR");
   const [simulationLoading, setSimulationLoading] = useState(false);
