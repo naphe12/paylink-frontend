@@ -62,7 +62,7 @@ export default function AdminCreditHistoryPage() {
 
   useEffect(() => {
     loadHistory();
-  }, [mode, offset, limit]);
+  }, [mode, userId, offset, limit]);
 
   useEffect(() => {
     let active = true;
@@ -75,7 +75,15 @@ export default function AdminCreditHistoryPage() {
           limit: 50,
         });
         if (!active) return;
-        setUsers(Array.isArray(data) ? data : []);
+        const nextUsers = Array.isArray(data) ? data : [];
+        setUsers(nextUsers);
+        if (
+          userId &&
+          !nextUsers.some((user) => String(user.user_id) === String(userId))
+        ) {
+          setUserId("");
+          setOffset(0);
+        }
       } catch (err) {
         if (!active) return;
         console.error("Erreur chargement users credit history", err);
@@ -89,7 +97,7 @@ export default function AdminCreditHistoryPage() {
       active = false;
       clearTimeout(timer);
     };
-  }, [mode, userSearch]);
+  }, [mode, userSearch, userId]);
 
   const currentPage = Math.floor(offset / limit) + 1;
   const totalPages = Math.max(1, Math.ceil(total / limit));
