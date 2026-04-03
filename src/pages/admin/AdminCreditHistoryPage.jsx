@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeftRight, CreditCard, RefreshCw, Search, ShieldCheck, UserCircle2 } from "lucide-react";
+import { ArrowLeftRight, CreditCard, RefreshCw, Search, UserCircle2 } from "lucide-react";
 
 import api from "@/services/api";
 
@@ -13,24 +13,9 @@ function formatDate(value) {
   return new Date(value).toLocaleString();
 }
 
-function ModeButton({ active, onClick, icon: Icon, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
-        active ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-      }`}
-    >
-      <Icon size={16} />
-      {children}
-    </button>
-  );
-}
-
 export default function AdminCreditHistoryPage() {
   const [entries, setEntries] = useState([]);
-  const [mode, setMode] = useState("history");
+  const [source, setSource] = useState("events");
   const [userId, setUserId] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [users, setUsers] = useState([]);
@@ -40,7 +25,7 @@ export default function AdminCreditHistoryPage() {
   const [loading, setLoading] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [openDetails, setOpenDetails] = useState({});
-  const financialMode = mode === "history";
+  const financialMode = source === "events";
 
   const loadHistory = async () => {
     try {
@@ -62,7 +47,7 @@ export default function AdminCreditHistoryPage() {
 
   useEffect(() => {
     loadHistory();
-  }, [mode, userId, offset, limit]);
+  }, [source, userId, offset, limit]);
 
   useEffect(() => {
     let active = true;
@@ -70,7 +55,7 @@ export default function AdminCreditHistoryPage() {
       setLoadingUsers(true);
       try {
         const data = await api.getAdminCreditHistoryUsers({
-          mode: financialMode ? "events" : "history",
+          mode: source,
           q: userSearch.trim() || undefined,
           limit: 50,
         });
@@ -97,7 +82,7 @@ export default function AdminCreditHistoryPage() {
       active = false;
       clearTimeout(timer);
     };
-  }, [mode, userSearch, userId]);
+  }, [source, userSearch, userId]);
 
   const currentPage = Math.floor(offset / limit) + 1;
   const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -109,16 +94,22 @@ export default function AdminCreditHistoryPage() {
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">Historique credit</h1>
             <p className="text-sm text-slate-500">
-              Bascule entre l'historique financier et les evenements metier des lignes de credit.
+              Ecran unique avec filtre de source entre `credit_line_events` et `credit_line_history`.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <ModeButton active={mode === "history"} onClick={() => setMode("history")} icon={ArrowLeftRight}>
-              Historique financier
-            </ModeButton>
-            <ModeButton active={mode === "events"} onClick={() => setMode("events")} icon={ShieldCheck}>
-              Evenements metier
-            </ModeButton>
+          <div className="w-full lg:w-80">
+            <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">Source</label>
+            <select
+              value={source}
+              onChange={(e) => {
+                setSource(e.target.value);
+                setOffset(0);
+              }}
+              className="w-full rounded-lg border px-3 py-2 text-sm"
+            >
+              <option value="events">credit_line_events</option>
+              <option value="history">credit_line_history</option>
+            </select>
           </div>
         </div>
 
