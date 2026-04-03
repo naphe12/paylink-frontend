@@ -6,10 +6,14 @@ import { bootstrapAuth } from "@/services/authStore";
 
 export default function App() {
   useEffect(() => {
-    if (Notification.permission !== "granted") {
-      Notification.requestPermission().then((permission) => {
-        console.log("🔔 Notification permission:", permission);
-      });
+    const supportsNotifications =
+      typeof window !== "undefined" && typeof window.Notification !== "undefined";
+    if (supportsNotifications && window.Notification.permission !== "granted") {
+      window.Notification.requestPermission()
+        .then((permission) => {
+          console.log("Notification permission:", permission);
+        })
+        .catch(() => {});
     }
     bootstrapAuth();
   }, []);
