@@ -19,7 +19,10 @@ export default function AdminUsersList() {
   });
 
   const load = async () => {
-    const query = statusFilter ? `?status=${statusFilter}` : "";
+    const params = new URLSearchParams();
+    params.set("role", "client");
+    if (statusFilter) params.set("status", statusFilter);
+    const query = params.toString() ? `?${params.toString()}` : "";
     const data = await api.get(`/admin/users${query}`);
     setUsers(data);
     setSelectedUserId((prev) => {
