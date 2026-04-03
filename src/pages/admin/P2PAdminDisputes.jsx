@@ -76,7 +76,7 @@ export default function P2PAdminDisputes() {
     return initial && initial in DISPUTE_QUEUE_VIEWS ? initial : "all";
   });
   const [source, setSource] = useState("all");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => searchParams.get("target_id") || "");
   const [operatorStatusFilter, setOperatorStatusFilter] = useState("all");
   const [ownerFilter, setOwnerFilter] = useState("");
   const [opsView, setOpsView] = useState("all");
@@ -140,12 +140,15 @@ export default function P2PAdminDisputes() {
 
   useEffect(() => {
     const requestedQueue = searchParams.get("queue");
+    const requestedTargetId = searchParams.get("target_id") || "";
     if (requestedQueue && requestedQueue in DISPUTE_QUEUE_VIEWS && requestedQueue !== queueView) {
       setQueueView(requestedQueue);
-      return;
     }
     if (!requestedQueue && queueView !== "all") {
       setQueueView("all");
+    }
+    if (requestedTargetId !== query) {
+      setQuery(requestedTargetId);
     }
   }, [searchParams, queueView]);
 
@@ -356,6 +359,17 @@ export default function P2PAdminDisputes() {
       setDetailLoading(false);
     }
   };
+
+  useEffect(() => {
+    const targetId = (searchParams.get("target_id") || "").trim();
+    if (!targetId || !filtered.length) return;
+    const match = filtered.find((item) =>
+      [item.trade_id, item.dispute_id, item.tx_id].some((value) => String(value || "").trim() === targetId)
+    );
+    if (!match) return;
+    if (selectedDetail?.dispute?.dispute_id === match.dispute_id) return;
+    handleSelectDispute(match);
+  }, [filtered, searchParams, selectedDetail?.dispute?.dispute_id]);
 
   return (
     <div className="space-y-6">

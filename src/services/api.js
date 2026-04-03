@@ -1200,6 +1200,27 @@ const api = {
   async getAdminStepUpStatus() {
     return this.get("/auth/admin-step-up/status");
   },
+  async getAdminStepUpEvents(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/risk/step-up-events${query ? `?${query}` : ""}`);
+  },
+  async getAdminStepUpSummary(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/risk/step-up-summary${query ? `?${query}` : ""}`);
+  },
+  async getAdminAuditSearch(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/audit/search${query ? `?${query}` : ""}`);
+  },
+  async getAdminAuditSearchDetail(source, rawRef) {
+    return this.get(`/admin/audit/search/${encodeURIComponent(source)}/${encodeURIComponent(rawRef)}`);
+  },
   async getAdminOperatorWorkItem(entityType, entityId) {
     return this.get(`/admin/ops/work-items/${entityType}/${entityId}`);
   },
@@ -1214,6 +1235,9 @@ const api = {
   },
   async updateAdminOperatorWorkItem(entityType, entityId, payload = {}) {
     return this.put(`/admin/ops/work-items/${entityType}/${entityId}`, payload);
+  },
+  async batchAdminOperatorWorkItems(payload = {}) {
+    return this.post("/admin/ops/work-items/batch", payload);
   },
 };
 

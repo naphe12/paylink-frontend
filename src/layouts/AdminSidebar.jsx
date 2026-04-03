@@ -382,8 +382,11 @@ export default function AdminSidebar() {
             <NavLink to="/dashboard/admin/liquidity" className={linkClass} onClick={onNavigate}>
               <Droplets size={18} /> Gestion liquidite
             </NavLink>
-            <NavLink to="/dashboard/admin/notifications" className={linkClass} onClick={onNavigate}>
-              <Bell size={18} /> Notifications
+            <NavLink to="security" className={linkClass} onClick={onNavigate}>
+              <Bell size={18} /> Centre securite
+            </NavLink>
+            <NavLink to="audit-search" className={linkClass} onClick={onNavigate}>
+              <FileSearch size={18} /> Recherche audit
             </NavLink>
             <NavLink to="/dashboard/admin/arbitrage" className={linkClass} onClick={onNavigate}>
               <TrendingUp size={18} /> Arbitrage
@@ -398,9 +401,6 @@ export default function AdminSidebar() {
               onClick={onNavigate}
             >
               <Power size={18} /> Arret d'urgence
-            </NavLink>
-            <NavLink to="security" className={linkClass} onClick={onNavigate}>
-              <ShieldAlert size={18} /> Securite live
             </NavLink>
             <NavLink to="webhooks" className={linkClass} onClick={onNavigate}>
               <ShieldCheck size={18} /> Logs webhooks

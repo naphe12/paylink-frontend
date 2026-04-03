@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "@/services/api";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import { getAccessToken, suspendForAuthRedirect } from "@/services/authStore";
@@ -151,9 +152,32 @@ export default function OpsDashboardPage() {
         tone: metricTone(data?.idempotency?.pending_keys, 10, 50),
         sub: "cles sans reponse payload",
       },
+      {
+        title: "Follow-up depasses",
+        value: data?.ops_workflow?.overdue_follow_up ?? "-",
+        tone: metricTone(data?.ops_workflow?.overdue_follow_up, 1, 10),
+        sub: "SLA operateur en retard",
+      },
+      {
+        title: "Dossiers bloques",
+        value: data?.ops_workflow?.blocked_only ?? "-",
+        tone: metricTone(data?.ops_workflow?.blocked_only, 5, 15),
+        sub: "operator_status = blocked",
+      },
+      {
+        title: "Urgences stale",
+        value: data?.ops_urgencies?.stale ?? "-",
+        tone: metricTone(data?.ops_urgencies?.stale, 1, 5),
+        sub: "urgences hors SLA",
+      },
     ];
   }, [data]);
   const globalStatus = useMemo(() => computeOpsStatus(data), [data]);
+  const opsAlerts = Array.isArray(data?.alerts) ? data.alerts : [];
+  const recommendedActions = Array.isArray(data?.recommended_actions) ? data.recommended_actions : [];
+  const recommendedRunbooks = Array.isArray(data?.recommended_runbooks) ? data.recommended_runbooks : [];
+  const urgencyByKind = data?.ops_urgencies?.by_kind || {};
+  const slaTrend = Array.isArray(data?.ops_urgencies?.sla_trend) ? data.ops_urgencies.sla_trend : [];
 
   return (
     <div className="space-y-5">
@@ -202,7 +226,7 @@ export default function OpsDashboardPage() {
 
       <div className={`rounded-xl border p-4 ${globalStatus.tone}`}>
         <p className="text-xs uppercase tracking-wide opacity-80">Statut global</p>
-        <p className="mt-2 text-2xl font-bold">{globalStatus.level}</p>
+        <p className="mt-2 text-2xl font-bold">{data?.status || globalStatus.level}</p>
         <p className="mt-1 text-xs opacity-80">Base sur 5xx, latence, retries webhook et equilibre ledger.</p>
       </div>
 
@@ -210,6 +234,174 @@ export default function OpsDashboardPage() {
         {cards.map((c) => (
           <Card key={c.title} title={c.title} value={c.value} tone={c.tone} sub={c.sub} />
         ))}
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section className="rounded-xl border border-slate-200 bg-white p-4">
+          <h2 className="text-lg font-semibold text-slate-900">SLA metier</h2>
+          <p className="mt-1 text-xs text-slate-500">Charge et retards issus du workflow operateur et des urgences transverses.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Work items</p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">{data?.ops_workflow?.all ?? 0}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {data?.ops_workflow?.needs_follow_up ?? 0} a suivre, {data?.ops_workflow?.unassigned ?? 0} non assignes
+              </p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Urgences OPS</p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">{data?.ops_urgencies?.total ?? 0}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {data?.ops_urgencies?.critical ?? 0} critiques, {data?.ops_urgencies?.stale ?? 0} stale
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-white p-4">
+          <h2 className="text-lg font-semibold text-slate-900">Repartition par file</h2>
+          <p className="mt-1 text-xs text-slate-500">Vue rapide des urgences par domaine metier.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {[
+              ["Escrow", urgencyByKind.escrow ?? 0],
+              ["P2P disputes", urgencyByKind.p2p_dispute ?? 0],
+              ["Payments", urgencyByKind.payment_intent ?? 0],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+                <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Tendance SLA par file</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Basee sur la date de derniere action des urgences courantes, par jour et par domaine.
+            </p>
+          </div>
+        </div>
+        {!slaTrend.length ? (
+          <p className="mt-4 text-sm text-slate-500">Aucune tendance SLA disponible.</p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-slate-500">
+                  <th className="pb-2 pr-4 font-medium">Jour</th>
+                  <th className="pb-2 pr-4 font-medium">Total</th>
+                  <th className="pb-2 pr-4 font-medium">Stale</th>
+                  <th className="pb-2 pr-4 font-medium">Critique</th>
+                  <th className="pb-2 pr-4 font-medium">Escrow</th>
+                  <th className="pb-2 pr-4 font-medium">P2P</th>
+                  <th className="pb-2 pr-4 font-medium">Payments</th>
+                </tr>
+              </thead>
+              <tbody>
+                {slaTrend.map((row) => (
+                  <tr key={row.date} className="border-b last:border-b-0">
+                    <td className="py-2 pr-4 font-medium text-slate-800">{row.date}</td>
+                    <td className="py-2 pr-4 text-slate-700">{row.total ?? 0}</td>
+                    <td className="py-2 pr-4 text-slate-700">{row.stale ?? 0}</td>
+                    <td className="py-2 pr-4 text-slate-700">{row.critical ?? 0}</td>
+                    <td className="py-2 pr-4 text-slate-700">{row.escrow ?? 0}</td>
+                    <td className="py-2 pr-4 text-slate-700">{row.p2p_dispute ?? 0}</td>
+                    <td className="py-2 pr-4 text-slate-700">{row.payment_intent ?? 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Runbook OPS</h2>
+            <p className="text-xs text-slate-500">Actions directes vers les ecrans prioritaires de remediation.</p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+            {recommendedRunbooks.length}
+          </span>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {recommendedRunbooks.map((item) => (
+            <Link
+              key={item.code}
+              to={item.route}
+              className="rounded-xl border border-slate-200 bg-slate-50 p-4 hover:border-slate-300 hover:bg-slate-100"
+            >
+              <div className="text-[11px] uppercase tracking-wide text-slate-500">{item.code}</div>
+              <div className="mt-2 text-sm font-semibold text-slate-900">{item.title}</div>
+              <div className="mt-1 text-xs text-slate-500">{item.rationale}</div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Alertes OPS</h2>
+              <p className="text-xs text-slate-500">Signaux derives des metriques critiques et warnings.</p>
+            </div>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+              {opsAlerts.length}
+            </span>
+          </div>
+          {!opsAlerts.length ? (
+            <p className="mt-4 text-sm text-slate-500">Aucune alerte active sur cette fenetre.</p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {opsAlerts.map((alert) => {
+                const tone =
+                  alert.level === "critical"
+                    ? "border-rose-200 bg-rose-50 text-rose-800"
+                    : "border-amber-200 bg-amber-50 text-amber-800";
+                return (
+                  <article key={alert.code} className={`rounded-lg border p-3 ${tone}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold">{alert.title || alert.code}</p>
+                      <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide">
+                        {alert.level || "warning"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs opacity-90">{alert.detail || "-"}</p>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Actions recommandees</h2>
+              <p className="text-xs text-slate-500">Mini-runbook derive automatiquement des anomalies detectees.</p>
+            </div>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+              {recommendedActions.length}
+            </span>
+          </div>
+          {!recommendedActions.length ? (
+            <p className="mt-4 text-sm text-slate-500">Aucune action immediate proposee.</p>
+          ) : (
+            <ul className="mt-4 space-y-2">
+              {recommendedActions.map((item) => (
+                <li key={item} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
 
       {data?.api?.note ? (
