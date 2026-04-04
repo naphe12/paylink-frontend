@@ -3,6 +3,7 @@ import { Info, Send } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api, { fetchPublicApi } from "@/services/api";
+import { normalizeDecimalInput, parseDecimalInput } from "@/utils/decimalInput";
 import { buildUserOptionLabel } from "@/utils/userRecentActivity";
 
 const PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
@@ -129,9 +130,9 @@ export default function AgentExternalTransferPage() {
   const effectiveSourceAmount =
     amountMode === "receive_local" && isBifDestination
       ? rate > 0 && form.local_amount
-        ? Number(form.local_amount) / rate
+        ? parseDecimalInput(form.local_amount) / rate
         : 0
-      : Number(form.amount || 0);
+      : parseDecimalInput(form.amount);
   const totalDebitSourceAmount = effectiveSourceAmount + feesAmountSource;
 
   useEffect(() => {
@@ -142,8 +143,8 @@ export default function AgentExternalTransferPage() {
     }
     const sourceAmount =
       amountMode === "receive_local" && isBifDestination
-        ? Number(form.local_amount || 0) / rate
-        : Number(form.amount || 0);
+        ? parseDecimalInput(form.local_amount) / rate
+        : parseDecimalInput(form.amount);
     if (!sourceAmount || Number.isNaN(sourceAmount)) {
       setRecipientAmount(0);
       setFeesAmountSource(0);
@@ -153,7 +154,7 @@ export default function AgentExternalTransferPage() {
     setFeesAmountSource(fee);
     setRecipientAmount(
       amountMode === "receive_local" && isBifDestination
-        ? Number(form.local_amount || 0)
+        ? parseDecimalInput(form.local_amount)
         : sourceAmount * rate
     );
   }, [form.amount, form.local_amount, rate, feesPercent, amountMode, isBifDestination]);
@@ -301,7 +302,12 @@ export default function AgentExternalTransferPage() {
     const { name, value } = event.target;
     setForm((prev) => ({
       ...prev,
-      [name]: name === "recipient_phone" ? normalizeRecipientPhone(value) : value,
+      [name]:
+        name === "recipient_phone"
+          ? normalizeRecipientPhone(value)
+          : name === "amount" || name === "local_amount"
+            ? normalizeDecimalInput(value)
+            : value,
     }));
   };
 
@@ -636,11 +642,11 @@ export default function AgentExternalTransferPage() {
                 <>
                   <label className="block text-sm font-semibold mb-1">Montant a recevoir (BIF)</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     name="local_amount"
                     value={form.local_amount}
                     onChange={handleChange}
-                    min="1"
                     className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
                     placeholder="150000"
                   />
@@ -652,11 +658,11 @@ export default function AgentExternalTransferPage() {
                 <>
                   <label className="block text-sm font-semibold mb-1">Montant ({selectedUserCurrency})</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     name="amount"
                     value={form.amount}
                     onChange={handleChange}
-                    min="1"
                     className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
                     placeholder="100.00"
                   />

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "@/services/api";
 
-export default function AdminTransferNotePage() {
+export default function AdminTransferNotePage({ standalone = false }) {
   const { transferId } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,12 +38,15 @@ export default function AdminTransferNotePage() {
   const filenameBase = `note-paiement-${note?.reference_code || transferId}`;
 
   const handleDownloadImage = async (format) => {
-    const node = document.getElementById("payment-note-paper");
-    if (!node) return;
     setExporting(format);
     try {
-      const blob = await renderNodeToImageBlob(node, format);
-      downloadBlob(`${filenameBase}.${format === "jpeg" ? "jpg" : "png"}`, blob);
+      const pngBlob = await api.downloadAdminTransferPaymentNote(transferId);
+      if (format === "jpeg") {
+        const jpegBlob = await convertBlobToJpeg(pngBlob);
+        downloadBlob(`${filenameBase}.jpg`, jpegBlob);
+      } else {
+        downloadBlob(`${filenameBase}.png`, pngBlob);
+      }
     } catch (err) {
       window.alert(err?.message || "Export impossible.");
     } finally {
@@ -78,14 +81,48 @@ export default function AdminTransferNotePage() {
         }
       `}</style>
 
-      <div className="note-toolbar flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Note de paiement</h1>
-          <p className="text-sm text-slate-500">
-            Reference {note?.reference_code || transferId} {note?.payment_note_required ? "· note requise ou recente" : ""}
-          </p>
+      {!standalone ? (
+        <div className="note-toolbar flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">Note de paiement</h1>
+            <p className="text-sm text-slate-500">
+              Reference {note?.reference_code || transferId} {note?.payment_note_required ? "· note requise ou recente" : ""}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+            >
+              PDF
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDownloadImage("png")}
+              disabled={exporting === "png"}
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60"
+            >
+              {exporting === "png" ? "Export PNG..." : "PNG"}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDownloadImage("jpeg")}
+              disabled={exporting === "jpeg"}
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60"
+            >
+              {exporting === "jpeg" ? "Export JPEG..." : "JPEG"}
+            </button>
+            <Link
+              to="/dashboard/admin/transfers"
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700"
+            >
+              Retour
+            </Link>
+          </div>
         </div>
-        <div className="flex gap-2">
+      ) : (
+        <div className="note-toolbar flex justify-end gap-2">
           <button
             type="button"
             onClick={() => window.print()}
@@ -97,7 +134,7 @@ export default function AdminTransferNotePage() {
             type="button"
             onClick={() => handleDownloadImage("png")}
             disabled={exporting === "png"}
-            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60"
           >
             {exporting === "png" ? "Export PNG..." : "PNG"}
           </button>
@@ -105,18 +142,12 @@ export default function AdminTransferNotePage() {
             type="button"
             onClick={() => handleDownloadImage("jpeg")}
             disabled={exporting === "jpeg"}
-            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60"
           >
             {exporting === "jpeg" ? "Export JPEG..." : "JPEG"}
           </button>
-          <Link
-            to="/dashboard/admin/transfers"
-            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700"
-          >
-            Retour
-          </Link>
         </div>
-      </div>
+      )}
 
       <div className="note-shell flex justify-center px-2">
         <article
@@ -144,6 +175,10 @@ export default function AdminTransferNotePage() {
               <div className="rounded-[28px] border border-amber-200 bg-[linear-gradient(180deg,#fff6dd,#fffaf0)] px-7 py-7">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">Montant a payer</p>
                 <p className="mt-4 font-serif text-5xl font-semibold text-slate-950">{payload.amount_text || "-"}</p>
+                <div className="mt-5 rounded-2xl bg-white/80 px-5 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Montant recu par le beneficiaire</p>
+                  <p className="mt-2 text-3xl font-semibold text-slate-950">{payload.recipient_amount_text || "-"}</p>
+                </div>
                 <p className="mt-4 text-lg font-semibold leading-7 text-slate-950">
                   {note?.payment_sentence || "Veuillez effectuer le paiement sur le compte indique ci-dessous."}
                 </p>
@@ -207,53 +242,32 @@ function downloadBlob(filename, blob) {
   window.URL.revokeObjectURL(url);
 }
 
-async function renderNodeToImageBlob(node, format = "png") {
-  const rect = node.getBoundingClientRect();
-  const width = Math.max(Math.ceil(rect.width), 1);
-  const height = Math.max(Math.ceil(rect.height), 1);
-  const clonedNode = node.cloneNode(true);
-
-  const wrapper = document.createElement("div");
-  wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-  wrapper.style.width = `${width}px`;
-  wrapper.style.height = `${height}px`;
-  wrapper.style.background = "#fbf8f1";
-  wrapper.appendChild(clonedNode);
-
-  const serialized = new XMLSerializer().serializeToString(wrapper);
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-      <foreignObject width="100%" height="100%">${serialized}</foreignObject>
-    </svg>
-  `;
-  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-
+async function convertBlobToJpeg(sourceBlob) {
+  const url = window.URL.createObjectURL(sourceBlob);
   try {
     const image = await loadImage(url);
     const canvas = document.createElement("canvas");
-    canvas.width = width * 2;
-    canvas.height = height * 2;
+    canvas.width = image.width;
+    canvas.height = image.height;
     const context = canvas.getContext("2d");
     if (!context) {
-      throw new Error("Canvas indisponible pour l'export.");
+      throw new Error("Canvas indisponible pour l'export JPEG.");
     }
-    context.scale(2, 2);
-    context.fillStyle = "#fbf8f1";
-    context.fillRect(0, 0, width, height);
-    context.drawImage(image, 0, 0, width, height);
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0);
     return await new Promise((resolve, reject) => {
       canvas.toBlob(
         (value) => {
           if (value) resolve(value);
-          else reject(new Error("Generation image impossible."));
+          else reject(new Error("Generation JPEG impossible."));
         },
-        format === "jpeg" ? "image/jpeg" : "image/png",
-        format === "jpeg" ? 0.95 : undefined
+        "image/jpeg",
+        0.95
       );
     });
   } finally {
-    URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(url);
   }
 }
 

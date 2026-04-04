@@ -4,6 +4,7 @@ import { Info, Send } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api, { fetchPublicApi } from "@/services/api";
+import { normalizeDecimalInput, parseDecimalInput } from "@/utils/decimalInput";
 
 const PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
 
@@ -128,13 +129,13 @@ export default function ExternalTransferPage() {
   const effectiveSourceAmount =
     amountMode === "receive_local" && isBifDestination
       ? rate > 0 && form.local_amount
-        ? Number(form.local_amount) / rate
+        ? parseDecimalInput(form.local_amount) / rate
         : 0
-      : Number(form.amount || 0);
+      : parseDecimalInput(form.amount);
   const hasEnteredAmount =
     (amountMode === "receive_local" && isBifDestination
-      ? Number(form.local_amount || 0)
-      : Number(form.amount || 0)) > 0;
+      ? parseDecimalInput(form.local_amount)
+      : parseDecimalInput(form.amount)) > 0;
   const totalDebitSourceAmount = effectiveSourceAmount + feesAmountSource;
 
   useEffect(() => {
@@ -145,8 +146,8 @@ export default function ExternalTransferPage() {
     }
     const sourceAmount =
       amountMode === "receive_local" && isBifDestination
-        ? Number(form.local_amount || 0) / rate
-        : Number(form.amount || 0);
+        ? parseDecimalInput(form.local_amount) / rate
+        : parseDecimalInput(form.amount);
     if (!sourceAmount || Number.isNaN(sourceAmount)) {
       setRecipientAmount(0);
       setFeesAmountSource(0);
@@ -156,7 +157,7 @@ export default function ExternalTransferPage() {
     setFeesAmountSource(fee);
     setRecipientAmount(
       amountMode === "receive_local" && isBifDestination
-        ? Number(form.local_amount || 0)
+        ? parseDecimalInput(form.local_amount)
         : sourceAmount * rate
     );
   }, [form.amount, form.local_amount, rate, feesPercent, amountMode, isBifDestination]);
@@ -285,7 +286,12 @@ export default function ExternalTransferPage() {
     const { name, value } = e.target;
     setForm({
       ...form,
-      [name]: name === "recipient_phone" ? normalizeRecipientPhone(value) : value,
+      [name]:
+        name === "recipient_phone"
+          ? normalizeRecipientPhone(value)
+          : name === "amount" || name === "local_amount"
+            ? normalizeDecimalInput(value)
+            : value,
     });
   };
 
@@ -542,29 +548,29 @@ export default function ExternalTransferPage() {
           <div>
             <label className="block text-sm font-semibold mb-1">Montant a recevoir (BIF)</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               name="local_amount"
               value={form.local_amount}
               onChange={handleChange}
               required
-              min="1"
               className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
               placeholder="150000"
             />
             <p className="text-xs text-slate-500 mt-1">
-              Le beneficiaire recevra {Number(form.local_amount || 0).toFixed(2)} BIF et il faudra {totalDebitSourceAmount.toFixed(2)} {sourceCurrency} au total, frais inclus.
+              Le beneficiaire recevra {parseDecimalInput(form.local_amount).toFixed(2)} BIF et il faudra {totalDebitSourceAmount.toFixed(2)} {sourceCurrency} au total, frais inclus.
             </p>
           </div>
         ) : (
           <div>
             <label className="block text-sm font-semibold mb-1">Montant ({sourceCurrency})</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               name="amount"
               value={form.amount}
               onChange={handleChange}
               required
-              min="1"
               className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
               placeholder="100.00"
             />

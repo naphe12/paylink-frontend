@@ -4,6 +4,7 @@ import { Check, RefreshCcw, X } from "lucide-react";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import useSessionStorageState from "@/hooks/useSessionStorageState";
 import api from "@/services/api";
+import { normalizeDecimalInput, parseDecimalInput } from "@/utils/decimalInput";
 import { buildUserOptionLabel } from "@/utils/userRecentActivity";
 
 const statusOptions = [
@@ -107,7 +108,8 @@ export default function CashRequestsPage() {
 
   const handleDirectCashAction = async () => {
     setError("");
-    if (!selectedUserId || !Number(depositAmount)) {
+    const normalizedAmount = parseDecimalInput(depositAmount);
+    if (!selectedUserId || !(normalizedAmount > 0)) {
       alert("Selectionnez un user et un montant valide.");
       return;
     }
@@ -117,10 +119,11 @@ export default function CashRequestsPage() {
       if (!directDepositIdemRef.current) {
         directDepositIdemRef.current = api.newIdempotencyKey(isWithdraw ? "admin-cash-withdraw" : "admin-cash-deposit");
       }
-      const res = await (isWithdraw ? api.adminCashWithdraw : api.adminCashDeposit)(
+      const action = isWithdraw ? api.adminCashWithdraw : api.adminCashDeposit;
+      const res = await action(
         {
           user_id: selectedUserId,
-          amount: Number(depositAmount),
+          amount: normalizedAmount,
           note,
         },
         directDepositIdemRef.current
@@ -244,11 +247,10 @@ export default function CashRequestsPage() {
           </select>
           <div className="mt-2 flex gap-2">
             <input
-              type="number"
-              min="0"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               value={depositAmount}
-              onChange={(e) => setDepositAmount(e.target.value)}
+              onChange={(e) => setDepositAmount(normalizeDecimalInput(e.target.value))}
               placeholder="Montant"
               className="border rounded-lg px-3 py-2 text-sm w-full"
             />
