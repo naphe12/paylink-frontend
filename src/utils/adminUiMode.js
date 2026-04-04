@@ -38,6 +38,9 @@ const ADMIN_UI_ALLOWED_PREFIXES = {
     "/dashboard/admin/credit-history",
     "/dashboard/admin/financial-summary",
     "/dashboard/admin/interface-mode",
+    "/dashboard/admin/settings",
+    "/dashboard/admin/kyc/reviews",
+    "/dashboard/admin/analytics",
   ],
   intermediate: [
     "/dashboard/admin/overview",
