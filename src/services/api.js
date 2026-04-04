@@ -317,6 +317,31 @@ const api = {
     return parseJsonOrThrow(res, path, "GET");
   },
 
+  async getBlob(path, allowRefresh = true) {
+    const token = getAccessToken();
+    let res = null;
+    try {
+      res = await fetchWithFallback(path, {
+        method: "GET",
+        headers: {
+          Accept: "*/*",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+    } catch (err) {
+      throw new Error(formatNetworkError(path, "GET", err));
+    }
+    if (res.status === 401 && allowRefresh) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return this.getBlob(path, false);
+      }
+      return handleUnauthorizedAfterRefreshFailure();
+    }
+    if (!res.ok) throw await buildApiError(res, path, "GET");
+    return res.blob();
+  },
+
   async post(path, data, allowRefresh = true) {
     const token = getAccessToken();
     let res;
@@ -861,6 +886,9 @@ const api = {
   },
   async simulateAdminExternalTransfer(payload = {}) {
     return this.post("/admin/transfers/simulate-external", payload);
+  },
+  async downloadAdminTransferPaymentNote(transferId) {
+    return this.getBlob(`/admin/transfers/${transferId}/payment-note.png`);
   },
   async getAdminTransactionsAudit(params = {}) {
     const query = new URLSearchParams(

@@ -44,6 +44,7 @@ export default function AdminTransfersPage() {
   const [simulationResult, setSimulationResult] = useState(null);
   const [simulationError, setSimulationError] = useState("");
   const [copyingSimulation, setCopyingSimulation] = useState(false);
+  const [downloadingNoteId, setDownloadingNoteId] = useState("");
   const simulationCardRef = useRef(null);
   const location = useLocation();
 
@@ -160,6 +161,27 @@ export default function AdminTransfersPage() {
     const set = new Set(transfers.map((t) => t.channel).filter(Boolean));
     return Array.from(set);
   }, [transfers]);
+
+  const handleDownloadPaymentNote = async (transfer) => {
+    const transferId = String(transfer?.transfer_id || "").trim();
+    if (!transferId) return;
+    setDownloadingNoteId(transferId);
+    try {
+      const blob = await api.downloadAdminTransferPaymentNote(transferId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `note-paiement-${transfer.reference_code || transferId}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      window.alert(err?.message || "Generation de note impossible.");
+    } finally {
+      setDownloadingNoteId("");
+    }
+  };
 
   const staleTransfersCount = transfers.filter(
     (item) => ["pending", "initiated"].includes(String(item.status || "").toLowerCase()) && getAgeHours(item.created_at) >= 2
@@ -343,18 +365,19 @@ export default function AdminTransfersPage() {
               <th className="p-3 text-left">Canal</th>
               <th className="p-3 text-left">Statut</th>
               <th className="p-3 text-left">Creee</th>
+              <th className="p-3 text-left">Note</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="p-6 text-center text-slate-500">
+                <td colSpan={9} className="p-6 text-center text-slate-500">
                   Chargement...
                 </td>
               </tr>
             ) : transfers.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-6 text-center text-slate-500">
+                <td colSpan={9} className="p-6 text-center text-slate-500">
                   Aucun transfert avec ces filtres.
                 </td>
               </tr>
@@ -392,6 +415,20 @@ export default function AdminTransfersPage() {
                   </td>
                   <td className="p-3 text-xs text-slate-500">
                     {tx.created_at ? new Date(tx.created_at).toLocaleString() : "-"}
+                  </td>
+                  <td className="p-3">
+                    {tx.transfer_id ? (
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadPaymentNote(tx)}
+                        disabled={downloadingNoteId === tx.transfer_id}
+                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {downloadingNoteId === tx.transfer_id ? "Generation..." : "Generer"}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-slate-400">-</span>
+                    )}
                   </td>
                 </tr>
               ))
