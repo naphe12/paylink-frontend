@@ -26,7 +26,7 @@ export default function AuthPage() {
   const { isAuthenticated, loading: authLoading, role } = useAuth();
 
   const getCountryCode = (c) =>
-    (c?.alpha2 || c?.code || c?.iso2 || "").toUpperCase();
+    (c?.country_code || c?.alpha2 || c?.code || c?.iso2 || "").toUpperCase();
 
   // Redirige si un token existe déjà
   useEffect(() => {

@@ -337,10 +337,11 @@ export default function AdminSidebar() {
 
   const renderNavLink = (to, icon, label, onNavigate, extra = null, customClass = linkClass) => {
     const target = String(to || "");
+    const isAdminTarget = !target.startsWith("/") || target.startsWith("/dashboard/admin");
     const accessPath = target.startsWith("/")
       ? target
       : `/dashboard/admin/${target.replace(/^\/+/, "")}`;
-    if (!isAdminPathAllowed(accessPath, uiMode)) return null;
+    if (isAdminTarget && !isAdminPathAllowed(accessPath, uiMode)) return null;
     const Icon = icon;
     return (
       <NavLink to={to} className={customClass} onClick={onNavigate}>
