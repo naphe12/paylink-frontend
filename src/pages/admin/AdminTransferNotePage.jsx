@@ -17,7 +17,7 @@ export default function AdminTransferNotePage() {
       try {
         const data = await api.getAdminTransferPaymentNoteContext(transferId);
         if (!cancelled) {
-          setNote(data || null);
+          setNote(data || null) ;
         }
       } catch (err) {
         if (!cancelled) {
