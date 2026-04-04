@@ -25,6 +25,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
+import { getAdminUiVisibleGroups, isAdminPathAllowed, normalizeAdminUiMode } from "@/utils/adminUiMode";
 
 const ADMIN_QUICK_ACTION_GROUPS = [
   {
@@ -163,6 +164,7 @@ const ADMIN_QUICK_ACTION_GROUPS = [
     icon: Settings,
     className: "border-sky-200 bg-sky-50 hover:bg-sky-100/60",
     actions: [
+      { label: "Mode interface", to: "/dashboard/admin/interface-mode", icon: Settings, description: "Complexite de la console" },
       { label: "Parametres", to: "/dashboard/admin/settings", icon: Settings, description: "Configuration generale" },
       { label: "Verif KYC", to: "/dashboard/admin/kyc/reviews", icon: UserCheck, description: "Revue KYC" },
       { label: "Statistiques", to: "/dashboard/admin/analytics", icon: BarChart3, description: "Analyses consolidees" },
@@ -178,6 +180,15 @@ const ADMIN_QUICK_ACTION_GROUPS = [
   },
 ];
 
-export function getAdminQuickActionGroups() {
-  return ADMIN_QUICK_ACTION_GROUPS;
+export function getAdminQuickActionGroups(mode = "expert") {
+  const normalizedMode = normalizeAdminUiMode(mode);
+  const visibleGroups = new Set(getAdminUiVisibleGroups(normalizedMode));
+
+  return ADMIN_QUICK_ACTION_GROUPS
+    .filter((group) => visibleGroups.has(group.key))
+    .map((group) => ({
+      ...group,
+      actions: group.actions.filter((action) => isAdminPathAllowed(action.to, normalizedMode)),
+    }))
+    .filter((group) => group.actions.length > 0);
 }
