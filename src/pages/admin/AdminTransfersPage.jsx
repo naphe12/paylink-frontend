@@ -44,7 +44,6 @@ export default function AdminTransfersPage() {
   const [simulationResult, setSimulationResult] = useState(null);
   const [simulationError, setSimulationError] = useState("");
   const [copyingSimulation, setCopyingSimulation] = useState(false);
-  const [downloadingNoteId, setDownloadingNoteId] = useState("");
   const simulationCardRef = useRef(null);
   const location = useLocation();
 
@@ -162,25 +161,10 @@ export default function AdminTransfersPage() {
     return Array.from(set);
   }, [transfers]);
 
-  const handleDownloadPaymentNote = async (transfer) => {
+  const handleOpenPaymentNote = (transfer) => {
     const transferId = String(transfer?.transfer_id || "").trim();
     if (!transferId) return;
-    setDownloadingNoteId(transferId);
-    try {
-      const blob = await api.downloadAdminTransferPaymentNote(transferId);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `note-paiement-${transfer.reference_code || transferId}.png`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      window.alert(err?.message || "Generation de note impossible.");
-    } finally {
-      setDownloadingNoteId("");
-    }
+    window.open(`/dashboard/admin/transfers/${transferId}/note`, "_blank", "noopener,noreferrer");
   };
 
   const staleTransfersCount = transfers.filter(
@@ -358,8 +342,6 @@ export default function AdminTransfersPage() {
           <thead className="bg-slate-50 text-slate-600">
             <tr>
               <th className="p-3 text-left">Initiateur</th>
-              <th className="p-3 text-left">Reference</th>
-              <th className="p-3 text-left">Transaction</th>
               <th className="p-3 text-left">Montant</th>
               <th className="p-3 text-left">Montant local</th>
               <th className="p-3 text-left">Canal</th>
@@ -371,13 +353,13 @@ export default function AdminTransfersPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="p-6 text-center text-slate-500">
+                <td colSpan={7} className="p-6 text-center text-slate-500">
                   Chargement...
                 </td>
               </tr>
             ) : transfers.length === 0 ? (
               <tr>
-                <td colSpan={9} className="p-6 text-center text-slate-500">
+                <td colSpan={7} className="p-6 text-center text-slate-500">
                   Aucun transfert avec ces filtres.
                 </td>
               </tr>
@@ -388,8 +370,6 @@ export default function AdminTransfersPage() {
                     <div className="font-medium text-slate-900">{tx.initiator_name || "Inconnu"}</div>
                     <div className="text-xs text-slate-500">{tx.initiator_email}</div>
                   </td>
-                  <td className="p-3 font-mono text-slate-700">{tx.reference_code || "-"}</td>
-                  <td className="p-3 font-mono text-slate-700">{tx.tx_id.slice(0, 10)}...</td>
                   <td className="p-3 font-semibold text-slate-900">
                     {Number(tx.amount || 0).toLocaleString()} {tx.currency}
                   </td>
@@ -420,11 +400,10 @@ export default function AdminTransfersPage() {
                     {tx.transfer_id && tx.payment_note_required ? (
                       <button
                         type="button"
-                        onClick={() => handleDownloadPaymentNote(tx)}
-                        disabled={downloadingNoteId === tx.transfer_id}
+                        onClick={() => handleOpenPaymentNote(tx)}
                         className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {downloadingNoteId === tx.transfer_id ? "Generation..." : "Generer"}
+                        Ouvrir
                       </button>
                     ) : (
                       <span className="text-xs text-slate-400">
