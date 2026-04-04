@@ -417,7 +417,7 @@ export default function AdminTransfersPage() {
                     {tx.created_at ? new Date(tx.created_at).toLocaleString() : "-"}
                   </td>
                   <td className="p-3">
-                    {tx.transfer_id ? (
+                    {tx.transfer_id && tx.payment_note_required ? (
                       <button
                         type="button"
                         onClick={() => handleDownloadPaymentNote(tx)}
@@ -427,7 +427,9 @@ export default function AdminTransfersPage() {
                         {downloadingNoteId === tx.transfer_id ? "Generation..." : "Generer"}
                       </button>
                     ) : (
-                      <span className="text-xs text-slate-400">-</span>
+                      <span className="text-xs text-slate-400">
+                        {tx.transfer_id ? "Non requise" : "-"}
+                      </span>
                     )}
                   </td>
                 </tr>
