@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api from "@/services/api";
 import { RefreshCcw, Send } from "lucide-react";
 import useSessionStorageState from "@/hooks/useSessionStorageState";
+import { buildUserOptionLabel } from "@/utils/userRecentActivity";
 
 export default function AdminPaymentRequestsPage() {
   const [requests, setRequests] = useState([]);
@@ -130,7 +131,10 @@ export default function AdminPaymentRequestsPage() {
               <option value="">Selectionner un client</option>
               {filteredDebtors.map((debtor) => (
                 <option key={debtor.user_id} value={debtor.user_id}>
-                  {debtor.full_name || debtor.email || debtor.paytag || debtor.username || debtor.user_id}
+                  {buildUserOptionLabel(
+                    debtor,
+                    debtor.email || debtor.paytag || debtor.username || debtor.user_id
+                  )}
                   {" · "}
                   {debtor.email || debtor.paytag || debtor.username || debtor.user_id}
                 </option>

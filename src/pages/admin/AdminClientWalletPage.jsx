@@ -4,6 +4,7 @@ import { Coins, CreditCard, Search, Users, Wallet } from "lucide-react";
 import api from "@/services/api";
 import useSessionStorageState from "@/hooks/useSessionStorageState";
 import { formatWalletOperationLabel, inferWalletEntryIsCredit } from "@/utils/walletHistory";
+import { buildUserOptionLabel } from "@/utils/userRecentActivity";
 
 const DEFAULT_HISTORY_FILTERS = { limit: 25, search: "" };
 
@@ -322,7 +323,7 @@ export default function AdminClientWalletPage() {
                 </option>
                 {filteredUsers.map((user) => (
                   <option key={user.user_id} value={user.user_id}>
-                    {user.full_name || "Sans nom"}
+                    {buildUserOptionLabel(user)}
                   </option>
                 ))}
               </select>
