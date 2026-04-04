@@ -33,6 +33,7 @@ export default function AgentDashboard() {
   const navigate = useNavigate();
   const isAdmin = String(getCurrentRole() || "agent").toLowerCase() === "admin";
   const [dashboard, setDashboard] = useState(null);
+  const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [creatingClient, setCreatingClient] = useState(false);
@@ -59,6 +60,18 @@ export default function AgentDashboard() {
 
   useEffect(() => {
     load();
+  }, []);
+
+  useEffect(() => {
+    const loadCountries = async () => {
+      try {
+        const list = await api.getCountries();
+        setCountries(list);
+      } catch (err) {
+        setError((prev) => prev || err?.message || "Impossible de charger les pays");
+      }
+    };
+    loadCountries();
   }, []);
 
   const handleClientChange = (field, value) => {
@@ -175,18 +188,24 @@ export default function AgentDashboard() {
                 onChange={(e) => handleClientChange("phone_e164", e.target.value)}
               />
               <input
-                className="rounded-xl border px-3 py-2 uppercase"
-                placeholder="Pays (BI, FR...)"
-                value={clientForm.country_code}
-                onChange={(e) => handleClientChange("country_code", e.target.value)}
-              />
-              <input
                 className="rounded-xl border px-3 py-2"
                 placeholder="Mot de passe initial"
                 value={clientForm.password}
                 onChange={(e) => handleClientChange("password", e.target.value)}
                 required
               />
+              <select
+                className="rounded-xl border px-3 py-2"
+                value={clientForm.country_code}
+                onChange={(e) => handleClientChange("country_code", e.target.value)}
+              >
+                <option value="">Choisir un pays</option>
+                {countries.map((country) => (
+                  <option key={country.country_code} value={country.country_code}>
+                    {country.name} ({country.country_code})
+                  </option>
+                ))}
+              </select>
               <button
                 type="submit"
                 disabled={creatingClient}

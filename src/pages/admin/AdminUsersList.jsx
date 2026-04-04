@@ -7,6 +7,7 @@ const ADMIN_USERS_SELECTED_KEY = "admin-users:selected-user-id";
 
 export default function AdminUsersList() {
   const [users, setUsers] = useState([]);
+  const [countries, setCountries] = useState([]);
   const [selectedUserId, setSelectedUserId] = useSessionStorageState(ADMIN_USERS_SELECTED_KEY, "");
   const [selectSearch, setSelectSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("active");
@@ -38,6 +39,18 @@ export default function AdminUsersList() {
   useEffect(() => {
     load();
   }, [statusFilter]);
+
+  useEffect(() => {
+    const loadCountries = async () => {
+      try {
+        const list = await api.getCountries();
+        setCountries(list);
+      } catch (err) {
+        alert(err?.message || "Chargement des pays impossible");
+      }
+    };
+    loadCountries();
+  }, []);
 
   const filteredUsers = useMemo(() => {
     if (!selectedUserId) return users;
@@ -149,18 +162,25 @@ export default function AdminUsersList() {
             onChange={(e) => handleCreateChange("phone_e164", e.target.value)}
           />
           <input
-            className="border p-2 rounded uppercase"
-            placeholder="Pays (BI, FR...)"
-            value={createForm.country_code}
-            onChange={(e) => handleCreateChange("country_code", e.target.value)}
-          />
-          <input
+            type="password"
             className="border p-2 rounded"
             placeholder="Mot de passe initial"
             value={createForm.password}
             onChange={(e) => handleCreateChange("password", e.target.value)}
             required
           />
+          <select
+            className="border p-2 rounded"
+            value={createForm.country_code}
+            onChange={(e) => handleCreateChange("country_code", e.target.value)}
+          >
+            <option value="">Choisir un pays</option>
+            {countries.map((country) => (
+              <option key={country.country_code} value={country.country_code}>
+                {country.name} ({country.country_code})
+              </option>
+            ))}
+          </select>
           <button
             type="submit"
             disabled={creating}
