@@ -112,7 +112,7 @@ export default function AdminClientWalletPage() {
     const timer = setTimeout(async () => {
       setUsersLoading(true);
       try {
-        const data = await api.getUsers({ q: userSearch.trim(), role: "client" });
+        const data = await api.getUsers({ q: userSearch.trim(), role: "client", exclude_wallet_currency: "BIF" });
         if (!active) return;
         setUsers(Array.isArray(data) ? data : []);
       } catch (err) {
