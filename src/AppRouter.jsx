@@ -100,6 +100,7 @@ import AdminAiFeedbackPage from "@/pages/admin/AdminAiFeedbackPage";
 import AdminAiSynonymsPage from "@/pages/admin/AdminAiSynonymsPage";
 import AdminDisputeCodesPage from "@/pages/admin/AdminDisputeCodesPage";
 import AdminOpsUrgenciesPage from "@/pages/admin/AdminOpsUrgenciesPage";
+import AdminInterfaceModePage from "@/pages/admin/AdminInterfaceModePage";
 
 import AgentOperationPage from "@/pages/agent/AgentOperationPage";
 import AgentDashboard from "@/pages/agent/AgentDashboard";
@@ -242,6 +243,7 @@ export default function AppRouter() {
         <Route path="tontines/create" element={<AdminTontineCreatePage />} />
         <Route path="tontines/members" element={<AdminTontineMembersPage />} />
         <Route path="settings" element={<AdminSettingsPage />} />
+        <Route path="interface-mode" element={<AdminInterfaceModePage />} />
         <Route path="kyc/reviews" element={<KYCReviewPage />} />
         <Route path="analytics" element={<RiskMonitorPage />} />
         <Route path="loans" element={<AdminLoansPage />} />

@@ -40,6 +40,15 @@ import AdminOperatorPrioritiesPanel from "@/components/admin/AdminOperatorPriori
 import { getAdminQuickActionGroups } from "@/constants/adminQuickActionGroups";
 import { fetchBackendVersion } from "@/services/api";
 import { getFrontendReleaseInfo } from "@/utils/releaseInfo";
+import {
+  ADMIN_UI_MODES,
+  getAdminUiMode,
+  getAdminUiVisibleGroups,
+  getDefaultAdminRouteForMode,
+  isAdminPathAllowed,
+  setAdminUiMode,
+  subscribeAdminUiMode,
+} from "@/utils/adminUiMode";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 const OPS_ALERT_MUTE_KEY = "ops_alert_muted_until";
@@ -110,7 +119,12 @@ function getGroupForPath(pathname = "") {
     return "microfinance";
   }
   if (pathname.includes("/tontines")) return "tontines";
-  if (pathname.includes("/settings") || pathname.includes("/analytics") || pathname.includes("/kyc/reviews")) {
+  if (
+    pathname.includes("/settings") ||
+    pathname.includes("/analytics") ||
+    pathname.includes("/kyc/reviews") ||
+    pathname.includes("/interface-mode")
+  ) {
     return "config";
   }
   if (
@@ -182,9 +196,11 @@ export default function AdminSidebar() {
   const [nowTs, setNowTs] = useState(Date.now());
   const [collapsedGroups, setCollapsedGroups] = useState(DEFAULT_COLLAPSED_GROUPS);
   const [backendVersion, setBackendVersion] = useState(null);
+  const [uiMode, setUiMode] = useState(getAdminUiMode());
   const env = import.meta.env.VITE_APP_ENV || "dev";
   const isOpsMuted = nowTs < Number(opsMutedUntil || 0);
   const frontendRelease = getFrontendReleaseInfo();
+  const visibleGroups = new Set(getAdminUiVisibleGroups(uiMode));
 
   useEffect(() => {
     api("/api/admin/aml/cases?status=OPEN").then((data) => {
@@ -250,6 +266,14 @@ export default function AdminSidebar() {
     });
   }, [location.pathname]);
 
+  useEffect(() => subscribeAdminUiMode(setUiMode), []);
+
+  useEffect(() => {
+    if (!location.pathname.startsWith("/dashboard/admin")) return;
+    if (isAdminPathAllowed(location.pathname, uiMode)) return;
+    navigate(getDefaultAdminRouteForMode(uiMode), { replace: true });
+  }, [location.pathname, navigate, uiMode]);
+
   const logout = () => {
     logoutSession().finally(() => {
       navigate("/auth", { replace: true });
@@ -311,6 +335,34 @@ export default function AdminSidebar() {
   const groupButtonClass =
     "w-full flex items-center justify-between px-2 py-2 text-[11px] uppercase tracking-[0.3em] text-slate-500 hover:text-slate-300 transition";
 
+  const renderNavLink = (to, icon, label, onNavigate, extra = null, customClass = linkClass) => {
+    const target = String(to || "");
+    const accessPath = target.startsWith("/")
+      ? target
+      : `/dashboard/admin/${target.replace(/^\/+/, "")}`;
+    if (!isAdminPathAllowed(accessPath, uiMode)) return null;
+    const Icon = icon;
+    return (
+      <NavLink to={to} className={customClass} onClick={onNavigate}>
+        <div className="flex items-center gap-3">
+          <Icon size={18} />
+          <span>{label}</span>
+        </div>
+        {extra}
+      </NavLink>
+    );
+  };
+
+  const renderGroupHeader = (key, label) => {
+    if (!visibleGroups.has(key)) return null;
+    return (
+      <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup(key)}>
+        <span>{label}</span>
+        {collapsedGroups[key] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+      </button>
+    );
+  };
+
   const SidebarContent = ({ onNavigate }) => (
     <div className="h-full flex flex-col">
       <div className="px-6 py-8 border-b border-white/10">
@@ -327,6 +379,30 @@ export default function AdminSidebar() {
           </div>
         )}
         <p className="text-slate-400 text-xs mt-2">Supervision temps-reel & conformite</p>
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-slate-400">Mode interface</p>
+            <NavLink to="/dashboard/admin/interface-mode" className="text-xs text-cyan-300 hover:text-cyan-200" onClick={onNavigate}>
+              Configurer
+            </NavLink>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {Object.values(ADMIN_UI_MODES).map((mode) => (
+              <button
+                key={mode.key}
+                type="button"
+                onClick={() => setAdminUiMode(mode.key)}
+                className={`rounded-xl px-2 py-2 text-xs font-semibold transition ${
+                  uiMode === mode.key
+                    ? "bg-white text-slate-900"
+                    : "bg-white/10 text-slate-200 hover:bg-white/20"
+                }`}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-[11px] text-slate-300">
           <p className="font-semibold text-white">Release</p>
           <p className="mt-1">Front: {frontendRelease.version}</p>
@@ -344,75 +420,39 @@ export default function AdminSidebar() {
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-2">
-        <button className={groupButtonClass} onClick={() => toggleGroup("surveillance")}>
-          <span>Surveillance</span>
-          {collapsedGroups.surveillance ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-        </button>
-        {!collapsedGroups.surveillance && (
+        {renderGroupHeader("surveillance", "Surveillance")}
+        {visibleGroups.has("surveillance") && !collapsedGroups.surveillance && (
           <div className="space-y-2">
-            <NavLink to="users" className={linkClass} onClick={onNavigate}>
-              <Users size={18} /> Utilisateurs
-            </NavLink>
-            <NavLink to="users/limits" className={linkClass} onClick={onNavigate}>
-              <SlidersHorizontal size={18} /> Limites clients
-            </NavLink>
-            <NavLink to="agents" className={linkClass} onClick={onNavigate}>
-              <Briefcase size={18} /> Gestion agents
-            </NavLink>
-            <NavLink to="/dashboard/admin/overview" className={linkClass} onClick={onNavigate}>
-              <LayoutDashboard size={18} /> Dashboard
-            </NavLink>
-            <NavLink to="/dashboard/admin/overview-lite" className={linkClass} onClick={onNavigate}>
-              <LayoutDashboard size={18} /> Dashboard Lite
-            </NavLink>
-            <NavLink to="/dashboard/admin/aml-cases" className={linkClass} onClick={onNavigate}>
-              <div className="flex items-center gap-3">
-                <ShieldAlert size={18} />
-                <span>Cas AML</span>
-              </div>
-              {amlCount > 0 && (
-                <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
-                  {amlCount}
-                </span>
-              )}
-            </NavLink>
-            <NavLink to="/dashboard/admin/risk-heatmap" className={linkClass} onClick={onNavigate}>
-              <Activity size={18} /> Carte de risque
-            </NavLink>
-            <NavLink to="/dashboard/admin/liquidity" className={linkClass} onClick={onNavigate}>
-              <Droplets size={18} /> Gestion liquidite
-            </NavLink>
-            <NavLink to="security" className={linkClass} onClick={onNavigate}>
-              <Bell size={18} /> Centre securite
-            </NavLink>
-            <NavLink to="audit-search" className={linkClass} onClick={onNavigate}>
-              <FileSearch size={18} /> Recherche audit
-            </NavLink>
-            <NavLink to="/dashboard/admin/arbitrage" className={linkClass} onClick={onNavigate}>
-              <TrendingUp size={18} /> Arbitrage
-            </NavLink>
-            <NavLink
-              to="/dashboard/admin/kill-switch"
-              className={({ isActive }) =>
+            {renderNavLink("users", Users, "Utilisateurs", onNavigate)}
+            {renderNavLink("users/limits", SlidersHorizontal, "Limites clients", onNavigate)}
+            {renderNavLink("agents", Briefcase, "Gestion agents", onNavigate)}
+            {renderNavLink("/dashboard/admin/overview", LayoutDashboard, "Dashboard", onNavigate)}
+            {renderNavLink("/dashboard/admin/overview-lite", LayoutDashboard, "Dashboard Lite", onNavigate)}
+            {renderNavLink("/dashboard/admin/aml-cases", ShieldAlert, "Cas AML", onNavigate, amlCount > 0 ? (
+              <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
+                {amlCount}
+              </span>
+            ) : null)}
+            {renderNavLink("/dashboard/admin/risk-heatmap", Activity, "Carte de risque", onNavigate)}
+            {renderNavLink("/dashboard/admin/liquidity", Droplets, "Gestion liquidite", onNavigate)}
+            {renderNavLink("security", Bell, "Centre securite", onNavigate)}
+            {renderNavLink("audit-search", FileSearch, "Recherche audit", onNavigate)}
+            {renderNavLink("/dashboard/admin/arbitrage", TrendingUp, "Arbitrage", onNavigate)}
+            {renderNavLink(
+              "/dashboard/admin/kill-switch",
+              Power,
+              "Arret d'urgence",
+              onNavigate,
+              null,
+              ({ isActive }) =>
                 `flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-medium transition ${
                   isActive ? "bg-white/15 text-red-300 shadow-lg shadow-black/10" : "text-red-400 hover:bg-white/10"
                 }`
-              }
-              onClick={onNavigate}
-            >
-              <Power size={18} /> Arret d'urgence
-            </NavLink>
-            <NavLink to="webhooks" className={linkClass} onClick={onNavigate}>
-              <ShieldCheck size={18} /> Logs webhooks
-            </NavLink>
-            <NavLink to="/backoffice/audit" className={linkClass} onClick={onNavigate}>
-              <FileSearch size={18} /> Audit Log
-            </NavLink>
-            <NavLink to="/backoffice/monitoring" className={linkClass} onClick={onNavigate}>
-              <BarChart3 size={18} /> Monitoring
-            </NavLink>
-            <NavLink to="/dashboard/admin/ops-dashboard" className={linkClass} onClick={onNavigate}>
-              <Activity size={18} /> Ops Dashboard
+            )}
+            {renderNavLink("webhooks", ShieldCheck, "Logs webhooks", onNavigate)}
+            {renderNavLink("/backoffice/audit", FileSearch, "Audit Log", onNavigate)}
+            {renderNavLink("/backoffice/monitoring", BarChart3, "Monitoring", onNavigate)}
+            {renderNavLink("/dashboard/admin/ops-dashboard", Activity, "Ops Dashboard", onNavigate, (
               <span
                 className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                   opsLevel === "CRITICAL"
@@ -424,7 +464,7 @@ export default function AdminSidebar() {
               >
                 {opsLevel}
               </span>
-            </NavLink>
+            ))}
             {opsLevel === "CRITICAL" && (
               <div className="space-y-2">
                 {!isOpsMuted ? (
@@ -451,244 +491,111 @@ export default function AdminSidebar() {
                 )}
               </div>
             )}
-            <NavLink to="risk" className={linkClass} onClick={onNavigate}>
-              <ShieldAlert size={18} /> Monitoring risque
-            </NavLink>
+            {renderNavLink("risk", ShieldAlert, "Monitoring risque", onNavigate)}
           </div>
         )}
 
-        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("assistants")}>
-          <span>Assistants admin</span>
-          {collapsedGroups.assistants ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-        </button>
-        {!collapsedGroups.assistants && (
+        {renderGroupHeader("assistants", "Assistants admin")}
+        {visibleGroups.has("assistants") && !collapsedGroups.assistants && (
           <div className="space-y-2">
-            <NavLink to="/dashboard/admin/assistants-guide" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Guide assistants
-            </NavLink>
-            <NavLink to="/dashboard/admin/ai-feedback" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Feedback IA
-            </NavLink>
-            <NavLink to="/dashboard/admin/ai-synonyms" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Synonymes IA
-            </NavLink>
-            <NavLink to="/dashboard/admin/dispute-codes" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Codes litiges
-            </NavLink>
-            <NavLink to="/dashboard/admin/agent-chat" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Assistant transfert
-            </NavLink>
-            <NavLink to="/dashboard/admin/cash-agent" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Assistant cash
-            </NavLink>
-            <NavLink to="/dashboard/admin/credit-agent" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Assistant credit
-            </NavLink>
-            <NavLink to="/dashboard/admin/kyc-agent" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Assistant KYC
-            </NavLink>
-            <NavLink to="/dashboard/admin/transfer-support-agent" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Support transfert
-            </NavLink>
-            <NavLink to="/dashboard/admin/wallet-agent" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Assistant wallet
-            </NavLink>
-            <NavLink to="/dashboard/admin/wallet-support-agent" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Support wallet
-            </NavLink>
-            <NavLink to="/dashboard/admin/escrow-agent" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Assistant escrow
-            </NavLink>
-            <NavLink to="/dashboard/admin/p2p-agent" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Assistant P2P
-            </NavLink>
+            {renderNavLink("/dashboard/admin/assistants-guide", BookOpen, "Guide assistants", onNavigate)}
+            {renderNavLink("/dashboard/admin/ai-feedback", BookOpen, "Feedback IA", onNavigate)}
+            {renderNavLink("/dashboard/admin/ai-synonyms", BookOpen, "Synonymes IA", onNavigate)}
+            {renderNavLink("/dashboard/admin/dispute-codes", BookOpen, "Codes litiges", onNavigate)}
+            {renderNavLink("/dashboard/admin/agent-chat", BookOpen, "Assistant transfert", onNavigate)}
+            {renderNavLink("/dashboard/admin/cash-agent", BookOpen, "Assistant cash", onNavigate)}
+            {renderNavLink("/dashboard/admin/credit-agent", BookOpen, "Assistant credit", onNavigate)}
+            {renderNavLink("/dashboard/admin/kyc-agent", BookOpen, "Assistant KYC", onNavigate)}
+            {renderNavLink("/dashboard/admin/transfer-support-agent", BookOpen, "Support transfert", onNavigate)}
+            {renderNavLink("/dashboard/admin/wallet-agent", BookOpen, "Assistant wallet", onNavigate)}
+            {renderNavLink("/dashboard/admin/wallet-support-agent", BookOpen, "Support wallet", onNavigate)}
+            {renderNavLink("/dashboard/admin/escrow-agent", BookOpen, "Assistant escrow", onNavigate)}
+            {renderNavLink("/dashboard/admin/p2p-agent", BookOpen, "Assistant P2P", onNavigate)}
           </div>
         )}
 
-        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("p2p")}>
-          <span>P2P</span>
-          {collapsedGroups.p2p ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-        </button>
-        {!collapsedGroups.p2p && (
+        {renderGroupHeader("p2p", "P2P")}
+        {visibleGroups.has("p2p") && !collapsedGroups.p2p && (
           <div className="space-y-2">
-            <NavLink to="p2p/trades" className={linkClass} onClick={onNavigate}>
-              <ArrowLeftRight size={18} /> Suivi P2P
-            </NavLink>
-            <NavLink to="p2p/disputes" className={linkClass} onClick={onNavigate}>
-              <FileSearch size={18} /> Disputes
-            </NavLink>
-            <NavLink to="p2p/risk" className={linkClass} onClick={onNavigate}>
-              <ShieldAlert size={18} /> Risque / alertes
-            </NavLink>
+            {renderNavLink("p2p/trades", ArrowLeftRight, "Suivi P2P", onNavigate)}
+            {renderNavLink("p2p/disputes", FileSearch, "Disputes", onNavigate)}
+            {renderNavLink("p2p/risk", ShieldAlert, "Risque / alertes", onNavigate)}
           </div>
         )}
 
-        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("escrowLedger")}>
-          <span>Escrow et Ledger</span>
-          {collapsedGroups.escrowLedger ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-        </button>
-        {!collapsedGroups.escrowLedger && (
+        {renderGroupHeader("escrowLedger", "Escrow et Ledger")}
+        {visibleGroups.has("escrowLedger") && !collapsedGroups.escrowLedger && (
           <div className="space-y-2">
-            <NavLink to="escrow" className={linkClass} onClick={onNavigate}>
-              <Coins size={18} /> File escrow
-            </NavLink>
-            <NavLink to="escrow/audit" className={linkClass} onClick={onNavigate}>
-              <ShieldCheck size={18} /> Audit Escrow
-            </NavLink>
-            <NavLink to="ledger/balances" className={linkClass} onClick={onNavigate}>
-              <Wallet size={18} /> Balances
-            </NavLink>
-            <NavLink to="ledger/t-accounts" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Comptes T
-            </NavLink>
-            <NavLink to="ledger/unbalanced-journals" className={linkClass} onClick={onNavigate}>
-              <LineChart size={18} /> Journaux non equilibres
-            </NavLink>
-            <NavLink to="ledger/idempotency-scopes" className={linkClass} onClick={onNavigate}>
-              <LineChart size={18} /> Idempotence scopes
-            </NavLink>
-            <NavLink to="onchain-simulator" className={linkClass} onClick={onNavigate}>
-              <Activity size={18} /> Simulateur on-chain
-            </NavLink>
-            <NavLink to="balance-events" className={linkClass} onClick={onNavigate}>
-              <LineChart size={18} /> Balances clients
-            </NavLink>
-            <NavLink to="legacy-transfers" className={linkClass} onClick={onNavigate}>
-              <GitPullRequest size={18} /> Transferts legacy
-            </NavLink>
+            {renderNavLink("escrow", Coins, "File escrow", onNavigate)}
+            {renderNavLink("escrow/audit", ShieldCheck, "Audit Escrow", onNavigate)}
+            {renderNavLink("ledger/balances", Wallet, "Balances", onNavigate)}
+            {renderNavLink("ledger/t-accounts", BookOpen, "Comptes T", onNavigate)}
+            {renderNavLink("ledger/unbalanced-journals", LineChart, "Journaux non equilibres", onNavigate)}
+            {renderNavLink("ledger/idempotency-scopes", LineChart, "Idempotence scopes", onNavigate)}
+            {renderNavLink("onchain-simulator", Activity, "Simulateur on-chain", onNavigate)}
+            {renderNavLink("balance-events", LineChart, "Balances clients", onNavigate)}
+            {renderNavLink("legacy-transfers", GitPullRequest, "Transferts legacy", onNavigate)}
           </div>
         )}
 
-        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("operations")}>
-          <span>Operations</span>
-          {collapsedGroups.operations ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-        </button>
-        {!collapsedGroups.operations && (
+        {renderGroupHeader("operations", "Operations")}
+        {visibleGroups.has("operations") && !collapsedGroups.operations && (
           <div className="space-y-2">
-            <NavLink to="wallets" className={linkClass} onClick={onNavigate}>
-              <Wallet size={18} /> Portefeuilles
-            </NavLink>
-            <NavLink to="client-wallets" className={linkClass} onClick={onNavigate}>
-              <Users size={18} /> Wallets clients
-            </NavLink>
-            <NavLink to="wallet-corrections" className={linkClass} onClick={onNavigate}>
-              <Wallet size={18} /> Corrections wallet
-            </NavLink>
-            <NavLink to="wallet-analysis" className={linkClass} onClick={onNavigate}>
-              <LineChart size={18} /> Analyse wallets
-            </NavLink>
-            <NavLink to="mobilemoney" className={linkClass} onClick={onNavigate}>
-              <Wallet size={18} /> Mobile Money
-            </NavLink>
-            <NavLink to="transfers" className={linkClass} onClick={onNavigate}>
-              <GitPullRequest size={18} /> Transferts externes
-            </NavLink>
-            <NavLink to="transfer-approvals" className={linkClass} onClick={onNavigate}>
-              <GitPullRequest size={18} /> Validations transferts
-            </NavLink>
-            <NavLink to="transfer-gains" className={linkClass} onClick={onNavigate}>
-              <TrendingUp size={18} /> Gains transferts
-            </NavLink>
-            <NavLink to="cash-requests" className={linkClass} onClick={onNavigate}>
-              <Coins size={18} /> Cash in/out
-            </NavLink>
-            <NavLink to="cash-deposits" className={linkClass} onClick={onNavigate}>
-              <Coins size={18} /> Depots admin
-            </NavLink>
-            <NavLink to="payment-intents" className={linkClass} onClick={onNavigate}>
-              <HandCoins size={18} /> Depots mobile money BIF
-            </NavLink>
-            <NavLink to="payment-requests" className={linkClass} onClick={onNavigate}>
-              <HandCoins size={18} /> Demandes de paiement
-            </NavLink>
-            <NavLink to="ops-urgencies" className={linkClass} onClick={onNavigate}>
-              <ShieldAlert size={18} /> Urgences OPS
-            </NavLink>
-            <NavLink to="ops/liquidity-bif" className={linkClass} onClick={onNavigate}>
-              <Droplets size={18} /> Liquidite BIF (OPS)
-            </NavLink>
-            <NavLink to="ops/errors" className={linkClass} onClick={onNavigate}>
-              <Activity size={18} /> Erreurs API
-            </NavLink>
+            {renderNavLink("wallets", Wallet, "Portefeuilles", onNavigate)}
+            {renderNavLink("client-wallets", Users, "Wallets clients", onNavigate)}
+            {renderNavLink("wallet-corrections", Wallet, "Corrections wallet", onNavigate)}
+            {renderNavLink("wallet-analysis", LineChart, "Analyse wallets", onNavigate)}
+            {renderNavLink("mobilemoney", Wallet, "Mobile Money", onNavigate)}
+            {renderNavLink("transfers", GitPullRequest, "Transferts externes", onNavigate)}
+            {renderNavLink("transfer-approvals", GitPullRequest, "Validations transferts", onNavigate)}
+            {renderNavLink("transfer-gains", TrendingUp, "Gains transferts", onNavigate)}
+            {renderNavLink("cash-requests", Coins, "Cash in/out", onNavigate)}
+            {renderNavLink("cash-deposits", Coins, "Depots admin", onNavigate)}
+            {renderNavLink("payment-intents", HandCoins, "Depots mobile money BIF", onNavigate)}
+            {renderNavLink("payment-requests", HandCoins, "Demandes de paiement", onNavigate)}
+            {renderNavLink("ops-urgencies", ShieldAlert, "Urgences OPS", onNavigate)}
+            {renderNavLink("ops/liquidity-bif", Droplets, "Liquidite BIF (OPS)", onNavigate)}
+            {renderNavLink("ops/errors", Activity, "Erreurs API", onNavigate)}
           </div>
         )}
 
-        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("microfinance")}>
-          <span>Microfinance</span>
-          {collapsedGroups.microfinance ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-        </button>
-        {!collapsedGroups.microfinance && (
+        {renderGroupHeader("microfinance", "Microfinance")}
+        {visibleGroups.has("microfinance") && !collapsedGroups.microfinance && (
           <div className="space-y-2">
-            <NavLink to="loans" className={linkClass} onClick={onNavigate}>
-              <CreditCard size={18} /> Credits
-            </NavLink>
-            <NavLink to="credit-history" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Historique credits
-            </NavLink>
-            <NavLink to="credit-lines" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Lignes de credit
-            </NavLink>
-            <NavLink to="credit-lines/repay" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Remboursement credit
-            </NavLink>
-            <NavLink to="microfinance" className={linkClass} onClick={onNavigate}>
-              <Shield size={18} /> Microfinance
-            </NavLink>
-            <NavLink to="loan-products" className={linkClass} onClick={onNavigate}>
-              <BookOpen size={18} /> Produits pret
-            </NavLink>
+            {renderNavLink("loans", CreditCard, "Credits", onNavigate)}
+            {renderNavLink("credit-history", BookOpen, "Historique credits", onNavigate)}
+            {renderNavLink("credit-lines", BookOpen, "Lignes de credit", onNavigate)}
+            {renderNavLink("credit-lines/repay", BookOpen, "Remboursement credit", onNavigate)}
+            {renderNavLink("microfinance", Shield, "Microfinance", onNavigate)}
+            {renderNavLink("loan-products", BookOpen, "Produits pret", onNavigate)}
           </div>
         )}
 
-        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("tontines")}>
-          <span>Tontines</span>
-          {collapsedGroups.tontines ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-        </button>
-        {!collapsedGroups.tontines && (
+        {renderGroupHeader("tontines", "Tontines")}
+        {visibleGroups.has("tontines") && !collapsedGroups.tontines && (
           <div className="space-y-2">
-            <NavLink to="tontines-dashboard" className={linkClass} onClick={onNavigate}>
-              <BarChart3 size={18} /> Dashboard tontines
-            </NavLink>
-            <NavLink to="tontines-arrears" className={linkClass} onClick={onNavigate}>
-              <BarChart3 size={18} /> Impayes tontines
-            </NavLink>
-            <NavLink to="tontines/create" className={linkClass} onClick={onNavigate}>
-              <BarChart3 size={18} /> Creer une tontine
-            </NavLink>
-            <NavLink to="tontines/members" className={linkClass} onClick={onNavigate}>
-              <BarChart3 size={18} /> Membres tontines
-            </NavLink>
+            {renderNavLink("tontines-dashboard", BarChart3, "Dashboard tontines", onNavigate)}
+            {renderNavLink("tontines-arrears", BarChart3, "Impayes tontines", onNavigate)}
+            {renderNavLink("tontines/create", BarChart3, "Creer une tontine", onNavigate)}
+            {renderNavLink("tontines/members", BarChart3, "Membres tontines", onNavigate)}
           </div>
         )}
 
-        <button className={`${groupButtonClass} mt-6`} onClick={() => toggleGroup("config")}>
-          <span>Configuration</span>
-          {collapsedGroups.config ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-        </button>
-        {!collapsedGroups.config && (
+        {renderGroupHeader("config", "Configuration")}
+        {visibleGroups.has("config") && !collapsedGroups.config && (
           <div className="space-y-2">
-            <NavLink to="settings" className={linkClass} onClick={onNavigate}>
-              <Settings size={18} /> Parametres
-            </NavLink>
-            <NavLink to="kyc/reviews" className={linkClass} onClick={onNavigate}>
-              <UserCheck size={18} /> Verif KYC
-            </NavLink>
-            <NavLink to="analytics" className={linkClass} onClick={onNavigate}>
-              <BarChart3 size={18} /> Statistiques
-            </NavLink>
+            {renderNavLink("interface-mode", Settings, "Mode interface", onNavigate)}
+            {renderNavLink("settings", Settings, "Parametres", onNavigate)}
+            {renderNavLink("kyc/reviews", UserCheck, "Verif KYC", onNavigate)}
+            {renderNavLink("analytics", BarChart3, "Statistiques", onNavigate)}
           </div>
         )}
 
         <div className="mt-8 pt-6 border-t border-white/10">
-          <button className={groupButtonClass} onClick={() => toggleGroup("modeAgent")}>
-            <span>Mode Agent</span>
-            {collapsedGroups.modeAgent ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-          </button>
-          {!collapsedGroups.modeAgent && (
+          {renderGroupHeader("modeAgent", "Mode Agent")}
+          {visibleGroups.has("modeAgent") && !collapsedGroups.modeAgent && (
             <div className="space-y-2 mt-2">
-              <NavLink to="/dashboard/agent/dashboard" className={linkClass} onClick={onNavigate}>
-                <ArrowLeftRight size={18} /> Hub agent
-              </NavLink>
+              {renderNavLink("/dashboard/agent/dashboard", ArrowLeftRight, "Hub agent", onNavigate)}
             </div>
           )}
         </div>
@@ -777,14 +684,14 @@ export default function AdminSidebar() {
             </button>
           </div>
           <div className="mb-6 space-y-3">
-            <AdminOperatorPrioritiesPanel />
+            {uiMode === "expert" ? <AdminOperatorPrioritiesPanel /> : null}
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">
-              UI marker: admin-global-quick-actions-layout-v1
+              UI marker: admin-global-quick-actions-layout-v2 / mode={uiMode}
             </div>
             <QuickActions
               title="Actions rapides admin"
-              subtitle="Les groupes reprennent la structure complete du menu admin."
-              groups={getAdminQuickActionGroups()}
+              subtitle={`Les groupes suivent le mode ${ADMIN_UI_MODES[uiMode]?.label?.toLowerCase() || "expert"} de la console admin.`}
+              groups={getAdminQuickActionGroups(uiMode)}
             />
           </div>
           <Outlet />
