@@ -523,6 +523,11 @@ const api = {
     return this.get(`/api/exchange-rate/${query ? `?${query}` : ""}`);
   },
 
+  async getCountries() {
+    const data = await this.get("/api/countries/");
+    return Array.isArray(data?.countries) ? data.countries : Array.isArray(data) ? data : [];
+  },
+
   // ----------- ADMIN / ANALYTICS -----------
   async getAdminPremiumAnalytics() {
     return this.get("/admin/analytics/premium");
