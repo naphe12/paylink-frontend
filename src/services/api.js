@@ -1277,4 +1277,10 @@ const api = {
   },
 };
 
+for (const [key, value] of Object.entries(api)) {
+  if (typeof value === "function") {
+    api[key] = value.bind(api);
+  }
+}
+
 export default api;

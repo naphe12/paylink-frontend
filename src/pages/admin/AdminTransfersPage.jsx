@@ -164,7 +164,7 @@ export default function AdminTransfersPage() {
   const handleOpenPaymentNote = (transfer) => {
     const transferId = String(transfer?.transfer_id || "").trim();
     if (!transferId) return;
-    window.open(`/dashboard/admin/transfers/${transferId}/note`, "_blank", "noopener,noreferrer");
+    window.open(`/print/admin/transfers/${transferId}/note`, "_blank", "noopener,noreferrer");
   };
 
   const staleTransfersCount = transfers.filter(

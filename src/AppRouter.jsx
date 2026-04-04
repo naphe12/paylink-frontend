@@ -296,6 +296,17 @@ export default function AppRouter() {
       </Route>
 
       <Route
+        path="/print/admin/transfers/:transferId/note"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <div className="min-h-screen bg-stone-100 p-6">
+              <AdminTransferNotePage standalone />
+            </div>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/dashboard/agent"
         element={
           <ProtectedRoute allowedRoles={["agent", "admin"]}>
