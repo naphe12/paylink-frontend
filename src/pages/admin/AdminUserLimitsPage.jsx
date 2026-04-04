@@ -5,6 +5,7 @@ import { RefreshCcw, Save, Search, SlidersHorizontal } from "lucide-react";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import useSessionStorageState from "@/hooks/useSessionStorageState";
 import api from "@/services/api";
+import { buildUserOptionLabel } from "@/utils/userRecentActivity";
 
 function formatNumber(value) {
   const num = Number(value || 0);
@@ -196,7 +197,7 @@ export default function AdminUserLimitsPage() {
                   <option value="">-- selectionner un client --</option>
                   {filteredUsers.map((user) => (
                     <option key={user.user_id} value={user.user_id}>
-                      {user.full_name || "Sans nom"} - {user.email || user.phone || "-"}
+                      {buildUserOptionLabel(user)} - {user.email || user.phone || "-"}
                     </option>
                   ))}
                 </select>

@@ -4,6 +4,7 @@ import { Check, RefreshCcw, X } from "lucide-react";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import useSessionStorageState from "@/hooks/useSessionStorageState";
 import api from "@/services/api";
+import { buildUserOptionLabel } from "@/utils/userRecentActivity";
 
 const statusOptions = [
   { value: "pending", label: "En attente" },
@@ -237,7 +238,7 @@ export default function CashRequestsPage() {
             <option value="">-- selectionner --</option>
             {filteredUsers.map((u) => (
               <option key={u.user_id} value={u.user_id}>
-                {u.full_name || "Sans nom"} - {u.email || "-"} - {u.phone_e164 || "-"}
+                {buildUserOptionLabel(u)} - {u.email || "-"} - {u.phone_e164 || "-"}
               </option>
             ))}
           </select>

@@ -3,6 +3,7 @@ import { Info, Send } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api, { fetchPublicApi } from "@/services/api";
+import { buildUserOptionLabel } from "@/utils/userRecentActivity";
 
 const PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
 
@@ -496,7 +497,7 @@ export default function AgentExternalTransferPage() {
                   <option value="">-- Selectionner un utilisateur --</option>
                   {filteredUsers.map((user) => (
                     <option key={user.user_id} value={user.user_id}>
-                      {(user.full_name || "Utilisateur")} {user.currency ? `(${user.currency})` : ""}
+                      {buildUserOptionLabel(user, "Utilisateur")} {user.currency ? `- ${user.currency}` : ""}
                     </option>
                   ))}
                 </select>

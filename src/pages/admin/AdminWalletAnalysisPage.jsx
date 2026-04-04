@@ -3,6 +3,7 @@ import { AlertTriangle, Database, RefreshCw, Search, Wallet } from "lucide-react
 import api from "@/services/api";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import useSessionStorageState from "@/hooks/useSessionStorageState";
+import { buildUserOptionLabel } from "@/utils/userRecentActivity";
 
 function StatCard({ title, value, subvalue, tone = "slate" }) {
   const tones = {
@@ -145,7 +146,7 @@ export default function AdminWalletAnalysisPage() {
                 </option>
                 {filteredUsers.map((user) => (
                   <option key={user.user_id} value={user.user_id}>
-                    {user.full_name || "Sans nom"}
+                    {buildUserOptionLabel(user)}
                   </option>
                 ))}
               </select>

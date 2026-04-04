@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api from "@/services/api";
+import { buildUserOptionLabel } from "@/utils/userRecentActivity";
 
 const CASH_ACTIONS = {
   deposit: {
@@ -227,7 +228,7 @@ export default function AgentCashActionPage({ initialType = "deposit" }) {
                 <option value="">-- selectionner un client --</option>
                 {filteredUsers.map((user) => (
                   <option key={user.user_id} value={user.user_id}>
-                    {user.full_name || "Sans nom"} - {user.email || "-"} - {user.phone_e164 || "-"}
+                    {buildUserOptionLabel(user)} - {user.email || "-"} - {user.phone_e164 || "-"}
                   </option>
                 ))}
               </select>

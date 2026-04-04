@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, RefreshCcw, Search, Wallet } from "lucide-
 
 import api from "@/services/api";
 import useSessionStorageState from "@/hooks/useSessionStorageState";
+import { buildUserOptionLabel } from "@/utils/userRecentActivity";
 
 const SCENARIOS = [
   {
@@ -233,7 +234,7 @@ export default function AdminWalletCorrectionPage() {
               <option value="">{usersLoading ? "Chargement..." : "Selectionner un client"}</option>
               {filteredUsers.map((user) => (
                 <option key={user.user_id} value={user.user_id}>
-                  {user.full_name || user.email || user.user_id}
+                  {buildUserOptionLabel(user, user.user_id)}
                 </option>
               ))}
             </select>

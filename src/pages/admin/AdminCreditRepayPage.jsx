@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/services/api";
 import useSessionStorageState from "@/hooks/useSessionStorageState";
+import { buildUserOptionLabel } from "@/utils/userRecentActivity";
 
 export default function AdminCreditRepayPage() {
   const [debtors, setDebtors] = useState([]);
@@ -127,7 +128,7 @@ export default function AdminCreditRepayPage() {
               <option value="">-- selectionner un user --</option>
               {debtors.map((debtor) => (
                 <option key={debtor.user_id} value={debtor.user_id}>
-                  {debtor.full_name || debtor.email || debtor.user_id} | {debtor.debt_origin_label}
+                  {buildUserOptionLabel(debtor, debtor.user_id)} | {debtor.debt_origin_label}
                 </option>
               ))}
             </select>

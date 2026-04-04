@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import api from "@/services/api";
 import useSessionStorageState from "@/hooks/useSessionStorageState";
+import { buildUserOptionLabel } from "@/utils/userRecentActivity";
 
 const CORRECTION_SCENARIOS = [
   { id: "credit_available_adjustment", label: "Crediter le disponible", needsAmount: true, needsTarget: false },
@@ -320,7 +321,7 @@ export default function AdminCreditLinesPage() {
             <option value="">Choisir un utilisateur</option>
             {filteredUsers.map((user) => (
               <option key={user.user_id} value={user.user_id}>
-                {user.full_name || user.email || user.user_id}
+                {buildUserOptionLabel(user, user.user_id)}
               </option>
             ))}
           </select>
