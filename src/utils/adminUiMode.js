@@ -9,7 +9,7 @@ export const ADMIN_UI_MODES = {
   },
   intermediate: {
     key: "intermediate",
-    label: "Intermediaire",
+    label: "Standard",
     description: "Operations courantes avec supervision et configuration de base.",
   },
   expert: {

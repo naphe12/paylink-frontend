@@ -74,7 +74,7 @@ export default function AdminInterfaceModePage() {
             ]}
           />
           <ModeSummary
-            title="Intermediaire"
+            title="Standard"
             items={[
               "Tout le mode simple",
               "Dashboards principaux",
