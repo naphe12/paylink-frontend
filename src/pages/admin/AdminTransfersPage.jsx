@@ -44,7 +44,6 @@ export default function AdminTransfersPage() {
   const [simulationResult, setSimulationResult] = useState(null);
   const [simulationError, setSimulationError] = useState("");
   const [copyingSimulation, setCopyingSimulation] = useState(false);
-  const [downloadingNoteId, setDownloadingNoteId] = useState("");
   const simulationCardRef = useRef(null);
   const location = useLocation();
 
@@ -162,25 +161,10 @@ export default function AdminTransfersPage() {
     return Array.from(set);
   }, [transfers]);
 
-  const handleDownloadPaymentNote = async (transfer) => {
+  const handleOpenPaymentNote = (transfer) => {
     const transferId = String(transfer?.transfer_id || "").trim();
     if (!transferId) return;
-    setDownloadingNoteId(transferId);
-    try {
-      const blob = await api.downloadAdminTransferPaymentNote(transferId);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `note-paiement-${transfer.reference_code || transferId}.png`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      window.alert(err?.message || "Generation de note impossible.");
-    } finally {
-      setDownloadingNoteId("");
-    }
+    window.open(`/dashboard/admin/transfers/${transferId}/note`, "_blank", "noopener,noreferrer");
   };
 
   const staleTransfersCount = transfers.filter(
@@ -416,11 +400,10 @@ export default function AdminTransfersPage() {
                     {tx.transfer_id && tx.payment_note_required ? (
                       <button
                         type="button"
-                        onClick={() => handleDownloadPaymentNote(tx)}
-                        disabled={downloadingNoteId === tx.transfer_id}
+                        onClick={() => handleOpenPaymentNote(tx)}
                         className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {downloadingNoteId === tx.transfer_id ? "Generation..." : "Generer"}
+                        Ouvrir
                       </button>
                     ) : (
                       <span className="text-xs text-slate-400">

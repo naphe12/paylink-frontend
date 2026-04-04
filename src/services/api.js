@@ -887,6 +887,9 @@ const api = {
   async simulateAdminExternalTransfer(payload = {}) {
     return this.post("/admin/transfers/simulate-external", payload);
   },
+  async getAdminTransferPaymentNoteContext(transferId) {
+    return this.get(`/admin/transfers/${transferId}/payment-note-context`);
+  },
   async downloadAdminTransferPaymentNote(transferId) {
     return this.getBlob(`/admin/transfers/${transferId}/payment-note.png`);
   },
