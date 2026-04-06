@@ -32,6 +32,7 @@ const CRYPTO_THEME = {
 
 export default function WalletPage() {
   const [wallet, setWallet] = useState(null);
+  const [walletSummary, setWalletSummary] = useState(null);
   const [usdcWallet, setUsdcWallet] = useState(null);
   const [cryptoBalances, setCryptoBalances] = useState({ USDC: 0, USDT: 0 });
   const [depositInstructions, setDepositInstructions] = useState({
@@ -41,6 +42,7 @@ export default function WalletPage() {
   const [depositRequestAmounts, setDepositRequestAmounts] = useState({ USDC: "", USDT: "" });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("fiat");
+  const [savingDisplayCurrency, setSavingDisplayCurrency] = useState(false);
   const [showHistory, setShowHistory] = useState({
     fiat: false,
     usdc: false,
@@ -50,14 +52,17 @@ export default function WalletPage() {
   const loadWallet = async () => {
     try {
       setLoading(true);
-      const [fiatWallet, usdc, balances, usdcInstruction, usdtInstruction] = await Promise.all([
+      const [fiatWallet, balancesSummary, usdc, balances, usdcInstruction, usdtInstruction] =
+        await Promise.all([
         api.get("/wallet/"),
+        api.getWalletBalancesSummary().catch(() => null),
         api.getUsdcWallet().catch(() => null),
         api.getCryptoWalletBalances().catch(() => ({ balances: { USDC: 0, USDT: 0 } })),
         api.getCryptoDepositInstructions("USDC").catch(() => null),
         api.getCryptoDepositInstructions("USDT").catch(() => null),
-      ]);
+        ]);
       setWallet(fiatWallet);
+      setWalletSummary(balancesSummary);
       setUsdcWallet(usdc);
       setCryptoBalances(balances?.balances || { USDC: 0, USDT: 0 });
       setDepositInstructions({
@@ -68,6 +73,27 @@ export default function WalletPage() {
       console.error("Erreur chargement wallet:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateDisplayCurrency = async (nextCurrency) => {
+    try {
+      setSavingDisplayCurrency(true);
+      const preference = await api.updateMyDisplayCurrencyPreference(nextCurrency);
+      setWalletSummary((prev) =>
+        prev
+          ? {
+              ...prev,
+              display_currency: preference.display_currency,
+              source: preference.source,
+            }
+          : prev
+      );
+      await loadWallet();
+    } catch (err) {
+      console.error("Erreur mise a jour devise d'affichage:", err);
+    } finally {
+      setSavingDisplayCurrency(false);
     }
   };
 
@@ -115,6 +141,16 @@ export default function WalletPage() {
       ? Number(cryptoBalances.USDC || usdcWallet?.balance || 0)
       : Number(cryptoBalances.USDT || 0);
   const theme = CRYPTO_THEME[activeToken];
+  const displayCurrency = walletSummary?.display_currency || wallet.display_currency_code || wallet.currency_code;
+  const balanceRows = Array.isArray(walletSummary?.balances) ? walletSummary.balances : [];
+
+  const formatAmount = (value, currency) => {
+    const amount = Number(value || 0);
+    return `${amount.toLocaleString(undefined, {
+      minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 6,
+    })} ${currency || ""}`.trim();
+  };
 
   return (
     <div className="space-y-6">
@@ -139,6 +175,64 @@ export default function WalletPage() {
             Rafraichir
           </button>
         </div>
+
+        {walletSummary && (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Vue multi-devise</p>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Total estime: {formatAmount(walletSummary.estimated_total_available, displayCurrency)}
+                </h3>
+                <p className="text-sm text-slate-500">
+                  En attente: {formatAmount(walletSummary.estimated_total_pending, displayCurrency)}
+                </p>
+              </div>
+              <label className="flex flex-col gap-2 text-sm text-slate-600">
+                Devise d&apos;affichage
+                <select
+                  value={displayCurrency}
+                  onChange={(e) => updateDisplayCurrency(e.target.value)}
+                  disabled={savingDisplayCurrency}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                >
+                  {(walletSummary.available_currencies || ["BIF", "EUR", "USD", "USDC", "USDT"]).map((currency) => (
+                    <option key={currency} value={currency}>
+                      {currency}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              {balanceRows.map((balance) => (
+                <div key={balance.currency_code} className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-slate-900">{balance.currency_code}</p>
+                    {balance.rate_source && (
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-500">
+                        {balance.rate_source}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Disponible: {formatAmount(balance.available, balance.currency_code)}
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    En attente: {formatAmount(balance.pending, balance.currency_code)}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-800">
+                    Equivalent:{" "}
+                    {balance.estimated_display_available != null
+                      ? formatAmount(balance.estimated_display_available, displayCurrency)
+                      : "N/A"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
           {TABS.map((tab) => (
@@ -274,7 +368,7 @@ export default function WalletPage() {
       {showHistory.fiat && (
         <WalletHistoryTable
           walletId={wallet.wallet_id}
-          currency={wallet.display_currency_code || wallet.currency_code}
+          currency={displayCurrency || wallet.currency_code}
         />
       )}
       {showHistory.usdc && (

@@ -598,6 +598,251 @@ const api = {
     const query = search.toString();
     return this.get(`/wallet/cash/requests${query ? `?${query}` : ""}`);
   },
+  async listPaymentRequests(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+    ).toString();
+    return this.get(`/wallet/payment-requests${query ? `?${query}` : ""}`);
+  },
+  async createPaymentRequest(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/wallet/payment-requests", payload, idempotencyKey, "wallet-payment-request-create");
+  },
+  async runDuePaymentRequests(idempotencyKey = null) {
+    return this.postIdempotent("/wallet/payment-requests/run-due", {}, idempotencyKey, "wallet-payment-request-run-due");
+  },
+  async listScheduledTransfers() {
+    return this.get("/wallet/scheduled-transfers");
+  },
+  async createScheduledTransfer(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/wallet/scheduled-transfers", payload, idempotencyKey, "scheduled-transfer-create");
+  },
+  async runDueScheduledTransfers(idempotencyKey = null) {
+    return this.postIdempotent("/wallet/scheduled-transfers/run-due", {}, idempotencyKey, "scheduled-transfer-run-due");
+  },
+  async runScheduledTransferNow(scheduleId, idempotencyKey = null) {
+    return this.postIdempotent(`/wallet/scheduled-transfers/${scheduleId}/run`, {}, idempotencyKey, `scheduled-transfer-run-${scheduleId}`);
+  },
+  async pauseScheduledTransfer(scheduleId, idempotencyKey = null) {
+    return this.postIdempotent(`/wallet/scheduled-transfers/${scheduleId}/pause`, {}, idempotencyKey, `scheduled-transfer-pause-${scheduleId}`);
+  },
+  async resumeScheduledTransfer(scheduleId, idempotencyKey = null) {
+    return this.postIdempotent(`/wallet/scheduled-transfers/${scheduleId}/resume`, {}, idempotencyKey, `scheduled-transfer-resume-${scheduleId}`);
+  },
+  async cancelScheduledTransfer(scheduleId, idempotencyKey = null) {
+    return this.postIdempotent(`/wallet/scheduled-transfers/${scheduleId}/cancel`, {}, idempotencyKey, `scheduled-transfer-cancel-${scheduleId}`);
+  },
+  async listSavingsGoals() {
+    return this.get("/savings/goals");
+  },
+  async createSavingsGoal(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/savings/goals", payload, idempotencyKey, "savings-goal-create");
+  },
+  async getSavingsGoalDetail(goalId) {
+    return this.get(`/savings/goals/${goalId}`);
+  },
+  async contributeSavingsGoal(goalId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/savings/goals/${goalId}/contribute`, payload, idempotencyKey, `savings-goal-contribute-${goalId}`);
+  },
+  async withdrawSavingsGoal(goalId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/savings/goals/${goalId}/withdraw`, payload, idempotencyKey, `savings-goal-withdraw-${goalId}`);
+  },
+  async configureSavingsGoalRoundUp(goalId, payload = {}) {
+    return this.put(`/savings/goals/${goalId}/round-up`, payload);
+  },
+  async applySavingsGoalRoundUp(goalId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/savings/goals/${goalId}/round-up/apply`, payload, idempotencyKey, `savings-goal-round-up-${goalId}`);
+  },
+  async configureSavingsGoalAutoContribution(goalId, payload = {}) {
+    return this.put(`/savings/goals/${goalId}/auto-contribution`, payload);
+  },
+  async runSavingsGoalAutoContribution(goalId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/savings/goals/${goalId}/auto-contribution/run`, payload, idempotencyKey, `savings-goal-auto-contribution-${goalId}`);
+  },
+  async runDueSavingsAutoContributions(idempotencyKey = null) {
+    return this.postIdempotent("/savings/goals/auto-contribution/run-due", {}, idempotencyKey, "savings-goal-auto-contribution-run-due");
+  },
+  async listVirtualCards() {
+    return this.get("/virtual-cards");
+  },
+  async createVirtualCard(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/virtual-cards", payload, idempotencyKey, "virtual-card-create");
+  },
+  async getVirtualCardDetail(cardId) {
+    return this.get(`/virtual-cards/${cardId}`);
+  },
+  async updateVirtualCardStatus(cardId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/virtual-cards/${cardId}/status`, payload, idempotencyKey, `virtual-card-status-${cardId}`);
+  },
+  async updateVirtualCardControls(cardId, payload = {}) {
+    return this.put(`/virtual-cards/${cardId}/controls`, payload);
+  },
+  async chargeVirtualCard(cardId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/virtual-cards/${cardId}/charge`, payload, idempotencyKey, `virtual-card-charge-${cardId}`);
+  },
+  async getAdminVirtualCards(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+    ).toString();
+    return this.get(`/admin/virtual-cards${query ? `?${query}` : ""}`);
+  },
+  async getAdminVirtualCardDetail(cardId) {
+    return this.get(`/admin/virtual-cards/${cardId}`);
+  },
+  async updateAdminVirtualCardStatus(cardId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/admin/virtual-cards/${cardId}/status`, payload, idempotencyKey, `admin-virtual-card-status-${cardId}`);
+  },
+  async updateAdminVirtualCardControls(cardId, payload = {}) {
+    return this.put(`/admin/virtual-cards/${cardId}/controls`, payload);
+  },
+  async getMyReferralProfile() {
+    return this.get("/referrals/me");
+  },
+  async applyReferralCode(referralCode, idempotencyKey = null) {
+    return this.postIdempotent("/referrals/apply", { referral_code: referralCode }, idempotencyKey, "referral-apply");
+  },
+  async activateReferral(idempotencyKey = null) {
+    return this.postIdempotent("/referrals/activate", {}, idempotencyKey, "referral-activate");
+  },
+  async getBonusBalance() {
+    return this.get("/wallet/bonus");
+  },
+  async listBonusHistory() {
+    return this.get("/wallet/bonus/history");
+  },
+  async sendBonusTransfer(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/wallet/bonus/send", payload, idempotencyKey, "bonus-transfer-send");
+  },
+  async getAgentBonusUserSummary(userId) {
+    return this.get(`/agent/bonus/users/${userId}`);
+  },
+  async sendAgentBonusTransfer(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/agent/bonus/send", payload, idempotencyKey, "agent-bonus-transfer-send");
+  },
+  async listBusinessAccounts() {
+    return this.get("/business-accounts");
+  },
+  async createBusinessAccount(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/business-accounts", payload, idempotencyKey, "business-account-create");
+  },
+  async addBusinessMember(businessId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/business-accounts/${businessId}/members`, payload, idempotencyKey, `business-member-add-${businessId}`);
+  },
+  async updateBusinessMember(businessId, membershipId, payload = {}) {
+    return this.put(`/business-accounts/${businessId}/members/${membershipId}`, payload);
+  },
+  async createBusinessSubWallet(businessId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/business-accounts/${businessId}/sub-wallets`, payload, idempotencyKey, `business-sub-wallet-create-${businessId}`);
+  },
+  async updateBusinessSubWallet(subWalletId, payload = {}) {
+    return this.put(`/business-sub-wallets/${subWalletId}`, payload);
+  },
+  async listBusinessPaymentRequests(businessId, params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/business-accounts/${businessId}/payment-requests${query ? `?${query}` : ""}`);
+  },
+  async createBusinessPaymentRequest(businessId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/business-accounts/${businessId}/payment-requests`, payload, idempotencyKey, `business-payment-request-create-${businessId}`);
+  },
+  async getBusinessPaymentRequestDetail(businessId, requestId) {
+    return this.get(`/business-accounts/${businessId}/payment-requests/${requestId}`);
+  },
+  async fundBusinessSubWallet(subWalletId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/business-sub-wallets/${subWalletId}/fund`, payload, idempotencyKey, `business-sub-wallet-fund-${subWalletId}`);
+  },
+  async releaseBusinessSubWallet(subWalletId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/business-sub-wallets/${subWalletId}/release`, payload, idempotencyKey, `business-sub-wallet-release-${subWalletId}`);
+  },
+  async getBusinessMerchantIntegration(businessId) {
+    return this.get(`/merchant-api/businesses/${businessId}`);
+  },
+  async createMerchantApiKey(businessId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/merchant-api/businesses/${businessId}/keys`, payload, idempotencyKey, `merchant-api-key-${businessId}`);
+  },
+  async revokeMerchantApiKey(keyId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/merchant-api/keys/${keyId}/revoke`, payload, idempotencyKey, `merchant-api-key-revoke-${keyId}`);
+  },
+  async createMerchantWebhook(businessId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/merchant-api/businesses/${businessId}/webhooks`, payload, idempotencyKey, `merchant-webhook-create-${businessId}`);
+  },
+  async updateMerchantWebhookStatus(webhookId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/merchant-api/webhooks/${webhookId}/status`, payload, idempotencyKey, `merchant-webhook-status-${webhookId}`);
+  },
+  async sendMerchantWebhookTest(webhookId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/merchant-api/webhooks/${webhookId}/test`, payload, idempotencyKey, `merchant-webhook-test-${webhookId}`);
+  },
+  async retryMerchantWebhookEvent(eventId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/merchant-api/webhook-events/${eventId}/retry`, payload, idempotencyKey, `merchant-webhook-retry-${eventId}`);
+  },
+  async retryDueMerchantWebhookEvents(businessId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/merchant-api/businesses/${businessId}/webhooks/retry-due`, payload, idempotencyKey, `merchant-webhook-retry-due-${businessId}`);
+  },
+  async listPots() {
+    return this.get("/pots");
+  },
+  async createPot(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/pots", payload, idempotencyKey, "pot-create");
+  },
+  async getPotDetail(potId) {
+    return this.get(`/pots/${potId}`);
+  },
+  async addPotMember(potId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/pots/${potId}/members`, payload, idempotencyKey, `pot-member-add-${potId}`);
+  },
+  async updatePotMember(potId, membershipId, payload = {}) {
+    return this.put(`/pots/${potId}/members/${membershipId}`, payload);
+  },
+  async contributePot(potId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/pots/${potId}/contribute`, payload, idempotencyKey, `pot-contribute-${potId}`);
+  },
+  async leavePot(potId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/pots/${potId}/leave`, payload, idempotencyKey, `pot-leave-${potId}`);
+  },
+  async closePot(potId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/pots/${potId}/close`, payload, idempotencyKey, `pot-close-${potId}`);
+  },
+  async getPaymentRequestDetail(requestId) {
+    return this.get(`/wallet/payment-requests/${requestId}`);
+  },
+  async getPublicPaymentRequest(shareToken) {
+    return this.get(`/wallet/payment-requests/share/${shareToken}`);
+  },
+  async payPaymentRequest(requestId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(
+      `/wallet/payment-requests/${requestId}/pay`,
+      payload,
+      idempotencyKey,
+      `wallet-payment-request-pay-${requestId}`
+    );
+  },
+  async declinePaymentRequest(requestId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(
+      `/wallet/payment-requests/${requestId}/decline`,
+      payload,
+      idempotencyKey,
+      `wallet-payment-request-decline-${requestId}`
+    );
+  },
+  async cancelPaymentRequest(requestId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(
+      `/wallet/payment-requests/${requestId}/cancel`,
+      payload,
+      idempotencyKey,
+      `wallet-payment-request-cancel-${requestId}`
+    );
+  },
+  async remindPaymentRequest(requestId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(
+      `/wallet/payment-requests/${requestId}/remind`,
+      payload,
+      idempotencyKey,
+      `wallet-payment-request-remind-${requestId}`
+    );
+  },
+  async getSharedPaymentRequest(shareToken) {
+    return this.get(`/wallet/payment-requests/share/${shareToken}`);
+  },
   async requestCashDeposit(payload, idempotencyKey = null) {
     return this.postIdempotent("/wallet/cash/deposit", payload, idempotencyKey, "wallet-cash-deposit");
   },
@@ -664,6 +909,24 @@ const api = {
   },
   async getFinancialSummary() {
     return this.get("/wallet/financial-summary");
+  },
+  async getFinancialInsights() {
+    return this.get("/financial-insights/me");
+  },
+  async upsertFinancialBudgetRule(payload = {}) {
+    return this.put("/financial-insights/budget-rules", payload);
+  },
+  async deleteFinancialBudgetRule(category) {
+    return this.del(`/financial-insights/budget-rules/${encodeURIComponent(category)}`);
+  },
+  async getWalletBalancesSummary() {
+    return this.get("/wallet/balances");
+  },
+  async getMyDisplayCurrencyPreference() {
+    return this.get("/fx/preferences/me");
+  },
+  async updateMyDisplayCurrencyPreference(displayCurrency) {
+    return this.put("/fx/preferences/me", { display_currency: displayCurrency });
   },
   async getClientDashboardOverview() {
     return this.get("/wallet/overview");
@@ -838,6 +1101,63 @@ const api = {
     ).toString();
     return this.get(`/admin/payment-requests${query ? `?${query}` : ""}`);
   },
+  async getAdminPaymentRequestsV2(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/payment-requests/v2${query ? `?${query}` : ""}`);
+  },
+  async getAdminPaymentRequestDetailV2(requestId) {
+    return this.get(`/admin/payment-requests/v2/${requestId}`);
+  },
+  async listSupportCases(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+    ).toString();
+    return this.get(`/support/cases${query ? `?${query}` : ""}`);
+  },
+  async createSupportCase(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/support/cases", payload, idempotencyKey, "support-case-create");
+  },
+  async getSupportCaseDetail(caseId) {
+    return this.get(`/support/cases/${caseId}`);
+  },
+  async addSupportCaseMessage(caseId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/support/cases/${caseId}/messages`, payload, idempotencyKey, `support-case-message-${caseId}`);
+  },
+  async addSupportCaseAttachment(caseId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/support/cases/${caseId}/attachments`, payload, idempotencyKey, `support-case-attachment-${caseId}`);
+  },
+  async getAdminSupportCases(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+    ).toString();
+    return this.get(`/admin/support-cases${query ? `?${query}` : ""}`);
+  },
+  async getAdminSupportCaseDetail(caseId) {
+    return this.get(`/admin/support-cases/${caseId}`);
+  },
+  async assignAdminSupportCase(caseId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/admin/support-cases/${caseId}/assign`, payload, idempotencyKey, `admin-support-assign-${caseId}`);
+  },
+  async updateAdminSupportCaseStatus(caseId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/admin/support-cases/${caseId}/status`, payload, idempotencyKey, `admin-support-status-${caseId}`);
+  },
+  async replyAdminSupportCase(caseId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/admin/support-cases/${caseId}/reply`, payload, idempotencyKey, `admin-support-reply-${caseId}`);
+  },
+  async addAdminSupportCaseAttachment(caseId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/admin/support-cases/${caseId}/attachments`, payload, idempotencyKey, `admin-support-attachment-${caseId}`);
+  },
+  async getMyTrustProfile() {
+    return this.get("/trust/me");
+  },
+  async getUserTrustProfile(userId) {
+    return this.get(`/trust/users/${userId}`);
+  },
+  async recomputeUserTrustProfile(userId, idempotencyKey = null) {
+    return this.postIdempotent(`/admin/trust/recompute/${userId}`, {}, idempotencyKey, `admin-trust-recompute-${userId}`);
+  },
   async getAdminP2PDisputeDetail(disputeId) {
     return this.get(`/api/admin/p2p/disputes/detail/${disputeId}`);
   },
@@ -963,6 +1283,48 @@ const api = {
     if (q) search.append("q", q);
     if (limit) search.append("limit", String(limit));
     return this.get(`/agent/cash/users${search.toString() ? `?${search.toString()}` : ""}`);
+  },
+  async listAgentOfflineOperations(status = "") {
+    const search = new URLSearchParams();
+    if (status) search.append("status", status);
+    return this.get(`/agent/offline-operations${search.toString() ? `?${search.toString()}` : ""}`);
+  },
+  async getAdminAgentOfflineOperations(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/agent/offline-operations${query ? `?${query}` : ""}`);
+  },
+  async getAdminAgentOfflineOperationDetail(operationId) {
+    return this.get(`/admin/agent/offline-operations/${operationId}`);
+  },
+  async retryAdminAgentOfflineOperation(operationId, idempotencyKey = null) {
+    return this.postIdempotent(
+      `/admin/agent/offline-operations/${operationId}/retry`,
+      {},
+      idempotencyKey,
+      `admin-agent-offline-retry-${operationId}`
+    );
+  },
+  async cancelAdminAgentOfflineOperation(operationId, idempotencyKey = null) {
+    return this.postIdempotent(
+      `/admin/agent/offline-operations/${operationId}/cancel`,
+      {},
+      idempotencyKey,
+      `admin-agent-offline-cancel-${operationId}`
+    );
+  },
+  async createAgentOfflineOperation(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/agent/offline-operations", payload, idempotencyKey, "agent-offline-create");
+  },
+  async syncAgentOfflineOperation(operationId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/agent/offline-operations/${operationId}/sync`, payload, idempotencyKey, `agent-offline-sync-${operationId}`);
+  },
+  async syncPendingAgentOfflineOperations(payload = {}, idempotencyKey = null) {
+    return this.postIdempotent("/agent/offline-operations/sync-pending", payload, idempotencyKey, "agent-offline-sync-pending");
+  },
+  async cancelAgentOfflineOperation(operationId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/agent/offline-operations/${operationId}/cancel`, payload, idempotencyKey, `agent-offline-cancel-${operationId}`);
   },
   async agentCashDeposit(payload = {}, idempotencyKey = null) {
     return this.postIdempotent("/agent/cash/deposit", payload, idempotencyKey, "agent-cash-deposit");

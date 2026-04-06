@@ -132,12 +132,14 @@ function getGroupForPath(pathname = "") {
     pathname.includes("/client-wallets") ||
     pathname.includes("/wallet-analysis") ||
     pathname.includes("/mobilemoney") ||
+    pathname.includes("/virtual-cards") ||
     pathname.includes("/payment-intents") ||
     pathname.includes("/transfers") ||
     pathname.includes("/transfer-approvals") ||
     pathname.includes("/transfer-gains") ||
     pathname.includes("/cash-requests") ||
     pathname.includes("/payment-requests") ||
+    pathname.includes("/agent-offline-ops") ||
     pathname.includes("/ops/liquidity-bif") ||
     pathname.includes("/ops/errors") ||
     pathname.includes("/ops-urgencies")
@@ -554,6 +556,8 @@ export default function AdminSidebar() {
             {renderNavLink("cash-deposits", Coins, "Depots admin", onNavigate)}
             {renderNavLink("payment-intents", HandCoins, "Depots mobile money BIF", onNavigate)}
             {renderNavLink("payment-requests", HandCoins, "Demandes de paiement", onNavigate)}
+            {renderNavLink("virtual-cards", CreditCard, "Cartes virtuelles", onNavigate)}
+            {renderNavLink("agent-offline-ops", Briefcase, "Mode hors ligne agent", onNavigate)}
             {renderNavLink("ops-urgencies", ShieldAlert, "Urgences OPS", onNavigate)}
             {renderNavLink("ops/liquidity-bif", Droplets, "Liquidite BIF (OPS)", onNavigate)}
             {renderNavLink("ops/errors", Activity, "Erreurs API", onNavigate)}

@@ -3,7 +3,14 @@ import DashboardLayout from "@/pages/dashboard/DashboardLayout";
 import ClientOverviewPage from "@/pages/dashboard/ClientOverviewPage";
 import WalletPage from "@/pages/dashboard/WalletPage";
 import PaymentPage from "@/pages/dashboard/PaymentPage";
+import SupportCasesPage from "@/pages/dashboard/SupportCasesPage";
 import TransferPage from "@/pages/dashboard/TransferPage";
+import ScheduledTransfersPage from "@/pages/dashboard/ScheduledTransfersPage";
+import SavingsGoalsPage from "@/pages/dashboard/SavingsGoalsPage";
+import BusinessAccountsPage from "@/pages/dashboard/BusinessAccountsPage";
+import MerchantApiPage from "@/pages/dashboard/MerchantApiPage";
+import PotsPage from "@/pages/dashboard/PotsPage";
+import VirtualCardsPage from "@/pages/dashboard/VirtualCardsPage";
 import TransactionsPage from "@/pages/dashboard/TransactionsPage";
 import MobileTopupPage from "@/pages/dashboard/MobileTopupPage";
 import ProfilePage from "@/pages/dashboard/ProfilePage";
@@ -16,6 +23,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import FinancialSituationPage from "@/pages/dashboard/FinancialSituationPage";
 
 import HomePage from "@/pages/HomePage";
+import PublicPaymentRequestPage from "@/pages/public/PublicPaymentRequestPage";
 import AuthPage from "@/pages/auth/AuthPage";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import ResetPassword from "@/pages/auth/ResetPassword";
@@ -72,6 +80,9 @@ import AdminCreditRepayPage from "@/pages/admin/AdminCreditRepayPage";
 import TransactionAuditPage from "@/pages/admin/TransactionAuditPage";
 import TransferGainsPage from "@/pages/admin/TransferGainsPage";
 import AdminPaymentRequestsPage from "@/pages/admin/AdminPaymentRequestsPage";
+import AdminSupportCasesPage from "@/pages/admin/AdminSupportCasesPage";
+import AdminVirtualCardsPage from "@/pages/admin/AdminVirtualCardsPage";
+import AdminAgentOfflineOpsPage from "@/pages/admin/AdminAgentOfflineOpsPage";
 import AdminPaymentIntentsPage from "@/pages/admin/AdminPaymentIntentsPage";
 import AdminMicroFinancePage from "@/pages/admin/AdminMicroFinancePage";
 import AdminLoanProductsPage from "@/pages/admin/AdminLoanProductsPage";
@@ -111,6 +122,8 @@ import CashOutPage from "@/pages/agent/CashOutPage";
 import AgentHistoryPage from "@/pages/agent/AgentHistoryPage";
 import AgentAssignmentsPage from "@/pages/agent/AgentAssignmentsPage";
 import AgentConfirmPage from "@/pages/agent/AgentConfirmPage";
+import AgentOfflineOpsPage from "@/pages/agent/AgentOfflineOpsPage";
+import AgentBonusTransferPage from "@/pages/agent/AgentBonusTransferPage";
 import AgentSidebar from "@/layouts/AgentSidebar";
 import AgentOnboardingPage from "@/pages/agent/AgentOnboardingPage";
 import MyQrPage from "@/pages/profile/MyQrPage";
@@ -140,6 +153,7 @@ export default function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/pay/request/:shareToken" element={<PublicPaymentRequestPage />} />
 
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/auth/forgot-password" element={<ForgotPassword />} />
@@ -166,7 +180,14 @@ export default function AppRouter() {
         <Route path="overview" element={<ClientOverviewPage />} />
         <Route path="wallet" element={<WalletPage />} />
         <Route path="payments" element={<PaymentPage />} />
+        <Route path="support" element={<SupportCasesPage />} />
         <Route path="transfer" element={<TransferPage />} />
+        <Route path="scheduled-transfers" element={<ScheduledTransfersPage />} />
+        <Route path="savings" element={<SavingsGoalsPage />} />
+        <Route path="business" element={<BusinessAccountsPage />} />
+        <Route path="merchant-api" element={<MerchantApiPage />} />
+        <Route path="pots" element={<PotsPage />} />
+        <Route path="cards" element={<VirtualCardsPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="mobiletopup" element={<MobileTopupPage />} />
         <Route path="deposit" element={<DepositPage />} />
@@ -256,6 +277,9 @@ export default function AppRouter() {
         <Route path="credit-lines/repay" element={<AdminCreditRepayPage />} />
         <Route path="transactions-audit" element={<TransactionAuditPage />} />
         <Route path="payment-requests" element={<AdminPaymentRequestsPage />} />
+        <Route path="support-cases" element={<AdminSupportCasesPage />} />
+        <Route path="virtual-cards" element={<AdminVirtualCardsPage />} />
+        <Route path="agent-offline-ops" element={<AdminAgentOfflineOpsPage />} />
         <Route path="payment-intents" element={<AdminPaymentIntentsPage />} />
         <Route path="microfinance" element={<AdminMicroFinancePage />} />
         <Route path="loan-products" element={<AdminLoanProductsPage />} />
@@ -323,6 +347,8 @@ export default function AppRouter() {
         <Route path="history" element={<AgentHistoryPage />} />
         <Route path="assignments" element={<AgentAssignmentsPage />} />
         <Route path="assignments/:assignmentId" element={<AgentConfirmPage />} />
+        <Route path="offline" element={<AgentOfflineOpsPage />} />
+        <Route path="bonus-transfer" element={<AgentBonusTransferPage />} />
         <Route path="external-transfer" element={<AgentExternalTransferPage />} />
         <Route path="transfers/close" element={<AgentTransferClosurePage />} />
         <Route path="onboarding" element={<AgentOnboardingPage />} />

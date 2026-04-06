@@ -47,6 +47,12 @@ const menuGroups = [
     items: [
       { name: "Demandes paiement", path: "/dashboard/client/payments", icon: <Send size={18} /> },
       { name: "Transfert interne", path: "/dashboard/client/transfer", icon: <RefreshCcw size={18} /> },
+      { name: "Transfert programme", path: "/dashboard/client/scheduled-transfers", icon: <RefreshCcw size={18} /> },
+      { name: "Epargne", path: "/dashboard/client/savings", icon: <Wallet size={18} /> },
+      { name: "Cartes virtuelles", path: "/dashboard/client/cards", icon: <CreditCard size={18} /> },
+      { name: "Business", path: "/dashboard/client/business", icon: <Store size={18} /> },
+      { name: "API marchande", path: "/dashboard/client/merchant-api", icon: <Globe size={18} /> },
+      { name: "Cagnottes", path: "/dashboard/client/pots", icon: <Gift size={18} /> },
       { name: "Transfert externe", path: "/dashboard/client/external-transfer", icon: <Globe size={18} /> },
       { name: "Mobile Money", path: "/dashboard/client/mobiletopup", icon: <Smartphone size={18} /> },
       { name: "Depot cash", path: "/dashboard/client/deposit", icon: <ArrowDown size={18} /> },
@@ -152,7 +158,10 @@ function getGroupForPath(pathname = "") {
   if (pathname.includes("/profile")) return "account";
   if (
     pathname.includes("/payments") ||
+    pathname.includes("/cards") ||
     pathname.includes("/transfer") ||
+    pathname.includes("/merchant-api") ||
+    pathname.includes("/pots") ||
     pathname.includes("/external-transfer") ||
     pathname.includes("/mobiletopup") ||
     pathname.includes("/deposit") ||

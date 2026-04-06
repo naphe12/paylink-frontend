@@ -11,10 +11,12 @@ import {
   History,
   ShieldCheck,
   CheckCircle,
+  CloudOff,
   Menu,
   X,
   GraduationCap,
   BookOpen,
+  Gift,
 } from "lucide-react";
 import { getCurrentRole, logout as logoutSession } from "@/services/authStore";
 
@@ -77,6 +79,9 @@ export default function AgentSidebar() {
         <NavLink to="external-transfer" className={linkClass} onClick={onNavigate}>
           <Send size={18} /> Transfert externe
         </NavLink>
+        <NavLink to="bonus-transfer" className={linkClass} onClick={onNavigate}>
+          <Gift size={18} /> Transfert bonus
+        </NavLink>
         <NavLink to="history" className={linkClass} onClick={onNavigate}>
           <History size={18} /> Historique
         </NavLink>
@@ -88,6 +93,9 @@ export default function AgentSidebar() {
         </NavLink>
         <NavLink to="assignments" className={linkClass} onClick={onNavigate}>
           <CheckCircle size={18} /> Assignments payout
+        </NavLink>
+        <NavLink to="offline" className={linkClass} onClick={onNavigate}>
+          <CloudOff size={18} /> Mode hors ligne
         </NavLink>
         <NavLink to="transfers/close" className={linkClass} onClick={onNavigate}>
           <CheckCircle size={18} /> Transferts à clôturer
