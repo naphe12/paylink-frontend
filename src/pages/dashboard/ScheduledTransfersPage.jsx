@@ -7,11 +7,42 @@ const FREQUENCIES = [
   { value: "monthly", label: "Mensuel" },
 ];
 
+const PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
+
+const INITIAL_FORM = {
+  transfer_type: "internal",
+  receiver_identifier: "",
+  recipient_name: "",
+  recipient_phone: "",
+  recipient_email: "",
+  country_destination: "",
+  partner_name: PARTNERS[0],
+  amount: "",
+  frequency: "weekly",
+  next_run_at: "",
+  note: "",
+  remaining_runs: "",
+};
+
 function formatDateTime(value) {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString();
+}
+
+function getTargetLabel(item) {
+  if (item.transfer_type === "external") {
+    const recipientName = item.external_transfer?.recipient_name || item.receiver_identifier;
+    const recipientPhone = item.external_transfer?.recipient_phone;
+    return recipientPhone ? `${recipientName} (${recipientPhone})` : recipientName;
+  }
+  return item.receiver_identifier;
+}
+
+function getTargetSubline(item) {
+  if (item.transfer_type !== "external" || !item.external_transfer) return "";
+  return `${item.external_transfer.partner_name} | ${item.external_transfer.country_destination}`;
 }
 
 export default function ScheduledTransfersPage() {
@@ -20,15 +51,9 @@ export default function ScheduledTransfersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [form, setForm] = useState({
-    receiver_identifier: "",
-    amount: "",
-    frequency: "weekly",
-    next_run_at: "",
-    note: "",
-    remaining_runs: "",
-  });
+  const [form, setForm] = useState(INITIAL_FORM);
   const dueCount = items.filter((item) => item.is_due).length;
+  const isExternalTransfer = form.transfer_type === "external";
 
   const loadItems = async () => {
     try {
@@ -46,32 +71,54 @@ export default function ScheduledTransfersPage() {
     loadItems();
   }, []);
 
+  const resetForm = () => {
+    setForm(INITIAL_FORM);
+  };
+
   const handleCreate = async () => {
-    if (!form.receiver_identifier || !form.amount || !form.next_run_at) {
-      setError("Completer le destinataire, le montant et la premiere execution.");
+    if (!form.amount || !form.next_run_at) {
+      setError("Completer le montant et la premiere execution.");
       return;
     }
+    if (!isExternalTransfer && !form.receiver_identifier) {
+      setError("Completer le destinataire interne.");
+      return;
+    }
+    if (
+      isExternalTransfer &&
+      (!form.recipient_name || !form.recipient_phone || !form.country_destination || !form.partner_name)
+    ) {
+      setError("Completer le beneficiaire externe, le pays et le partenaire.");
+      return;
+    }
+
     try {
-      setSubmitting(true);
-      setError("");
-      setSuccess("");
-      await api.createScheduledTransfer({
-        receiver_identifier: form.receiver_identifier,
+      const payload = {
+        transfer_type: form.transfer_type,
         amount: Number(form.amount),
         frequency: form.frequency,
         next_run_at: new Date(form.next_run_at).toISOString(),
         note: form.note || null,
         remaining_runs: form.remaining_runs ? Number(form.remaining_runs) : null,
-      });
-      setSuccess("Transfert programme cree.");
-      setForm({
-        receiver_identifier: "",
-        amount: "",
-        frequency: "weekly",
-        next_run_at: "",
-        note: "",
-        remaining_runs: "",
-      });
+      };
+      if (isExternalTransfer) {
+        payload.external_transfer = {
+          recipient_name: form.recipient_name,
+          recipient_phone: form.recipient_phone,
+          recipient_email: form.recipient_email || null,
+          country_destination: form.country_destination,
+          partner_name: form.partner_name,
+        };
+      } else {
+        payload.receiver_identifier = form.receiver_identifier;
+      }
+
+      setSubmitting(true);
+      setError("");
+      setSuccess("");
+      await api.createScheduledTransfer(payload);
+      setSuccess(isExternalTransfer ? "Transfert externe programme cree." : "Transfert programme cree.");
+      resetForm();
       await loadItems();
     } catch (err) {
       setError(err?.message || "Impossible de creer le transfert programme.");
@@ -143,11 +190,11 @@ export default function ScheduledTransfersPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Transferts programmes</h1>
           <p className="text-sm text-slate-500">
-            Planifie des transferts internes recurrents vers un email ou un paytag.
+            Planifie des transferts recurrents internes ou externes depuis ton wallet.
           </p>
         </div>
 
@@ -155,14 +202,26 @@ export default function ScheduledTransfersPage() {
         {success ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</p> : null}
 
         <div className="grid gap-3 md:grid-cols-2">
-          <input
-            type="text"
-            aria-label="Destinataire programme"
-            placeholder="Email ou paytag"
-            value={form.receiver_identifier}
-            onChange={(e) => setForm((prev) => ({ ...prev, receiver_identifier: e.target.value }))}
+          <select
+            aria-label="Type de transfert programme"
+            value={form.transfer_type}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                transfer_type: e.target.value,
+                receiver_identifier: "",
+                recipient_name: "",
+                recipient_phone: "",
+                recipient_email: "",
+                country_destination: "",
+                partner_name: PARTNERS[0],
+              }))
+            }
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
+          >
+            <option value="internal">Interne</option>
+            <option value="external">Externe</option>
+          </select>
           <input
             type="number"
             aria-label="Montant programme"
@@ -211,6 +270,66 @@ export default function ScheduledTransfersPage() {
           />
         </div>
 
+        {!isExternalTransfer ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            <input
+              type="text"
+              aria-label="Destinataire programme"
+              placeholder="Email ou paytag"
+              value={form.receiver_identifier}
+              onChange={(e) => setForm((prev) => ({ ...prev, receiver_identifier: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            <input
+              type="text"
+              aria-label="Nom beneficiaire externe"
+              placeholder="Nom du beneficiaire"
+              value={form.recipient_name}
+              onChange={(e) => setForm((prev) => ({ ...prev, recipient_name: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              type="text"
+              aria-label="Telephone beneficiaire externe"
+              placeholder="+25761234567"
+              value={form.recipient_phone}
+              onChange={(e) => setForm((prev) => ({ ...prev, recipient_phone: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              type="text"
+              aria-label="Pays de destination externe"
+              placeholder="Burundi"
+              value={form.country_destination}
+              onChange={(e) => setForm((prev) => ({ ...prev, country_destination: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <select
+              aria-label="Partenaire externe"
+              value={form.partner_name}
+              onChange={(e) => setForm((prev) => ({ ...prev, partner_name: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            >
+              {PARTNERS.map((partner) => (
+                <option key={partner} value={partner}>
+                  {partner}
+                </option>
+              ))}
+            </select>
+            <input
+              type="email"
+              aria-label="Email beneficiaire externe"
+              placeholder="Email beneficiaire (optionnel)"
+              value={form.recipient_email}
+              onChange={(e) => setForm((prev) => ({ ...prev, recipient_email: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+            />
+          </div>
+        )}
+
         <button
           onClick={handleCreate}
           disabled={submitting}
@@ -253,11 +372,12 @@ export default function ScheduledTransfersPage() {
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-slate-900">
-                      {item.amount} {item.currency_code} vers {item.receiver_identifier}
+                      {item.amount} {item.currency_code} vers {getTargetLabel(item)}
                     </p>
                     <p className="text-sm text-slate-500">
-                      {item.frequency} | statut: {item.status}
+                      {item.transfer_type === "external" ? "Externe" : "Interne"} | {item.frequency} | statut: {item.status}
                     </p>
+                    {getTargetSubline(item) ? <p className="text-sm text-slate-500">{getTargetSubline(item)}</p> : null}
                     <p className="text-sm text-slate-500">Prochaine execution: {formatDateTime(item.next_run_at)}</p>
                     <p className="text-sm text-slate-500">Dernier resultat: {item.last_result || "-"}</p>
                     <p className="text-sm text-slate-500">Echeance due: {item.is_due ? "oui" : "non"}</p>

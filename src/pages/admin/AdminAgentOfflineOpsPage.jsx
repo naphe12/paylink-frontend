@@ -9,6 +9,13 @@ function formatAmount(value, currency = "") {
   })} ${currency}`.trim();
 }
 
+function formatSignedAmount(value, currency = "") {
+  if (value === null || value === undefined || value === "") return "-";
+  const amount = Number(value || 0);
+  const prefix = amount > 0 ? "+" : "";
+  return `${prefix}${formatAmount(amount, currency)}`;
+}
+
 function formatDateTime(value) {
   if (!value) return "-";
   const parsed = new Date(value);
@@ -90,6 +97,7 @@ export default function AdminAgentOfflineOpsPage() {
       queued: items.filter((item) => item.status === "queued").length,
       failed: items.filter((item) => item.status === "failed").length,
       synced: items.filter((item) => item.status === "synced").length,
+      review: items.filter((item) => item.requires_review).length,
     }),
     [items]
   );
@@ -146,10 +154,11 @@ export default function AdminAgentOfflineOpsPage() {
       {error ? <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
       {success ? <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</p> : null}
 
-      <section className="grid gap-3 md:grid-cols-3">
+      <section className="grid gap-3 md:grid-cols-4">
         <StatCard label="En attente" value={stats.queued} tone="amber" />
         <StatCard label="En echec" value={stats.failed} tone="rose" />
         <StatCard label="Synchronisees" value={stats.synced} tone="emerald" />
+        <StatCard label="A verifier" value={stats.review} tone="sky" />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1fr_1.15fr]">
@@ -226,6 +235,19 @@ export default function AdminAgentOfflineOpsPage() {
                       {formatAmount(item.amount, item.currency_code)}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">Queue: {formatDateTime(item.queued_at)}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {item.requires_review ? (
+                        <span className="rounded-full bg-sky-100 px-3 py-1 text-xs text-sky-700">A verifier</span>
+                      ) : null}
+                      {item.is_stale ? (
+                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-700">Ancienne file</span>
+                      ) : null}
+                      {item.conflict_reason_label ? (
+                        <span className="rounded-full bg-rose-100 px-3 py-1 text-xs text-rose-700">
+                          {item.conflict_reason_label}
+                        </span>
+                      ) : null}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -283,6 +305,43 @@ export default function AdminAgentOfflineOpsPage() {
                   value={`Queue: ${formatDateTime(selectedOperation.queued_at)}`}
                   helper={`Sync: ${formatDateTime(selectedOperation.synced_at)}`}
                 />
+                <DetailCard
+                  label="Age / supervision"
+                  value={`${selectedOperation.queued_age_minutes || 0} min en file`}
+                  helper={selectedOperation.requires_review ? "Revue recommandee" : "Pas d'alerte majeure"}
+                />
+                <DetailCard
+                  label="Capture wallet"
+                  value={
+                    selectedOperation.snapshot_available !== null && selectedOperation.snapshot_available !== undefined
+                      ? formatAmount(selectedOperation.snapshot_available, selectedOperation.currency_code)
+                      : "-"
+                  }
+                  helper={selectedOperation.conflict_reason_label || "Aucune divergence detectee"}
+                />
+                <DetailCard
+                  label="Actuel / ecart"
+                  value={
+                    selectedOperation.current_available !== null && selectedOperation.current_available !== undefined
+                      ? formatAmount(selectedOperation.current_available, selectedOperation.currency_code)
+                      : "-"
+                  }
+                  helper={formatSignedAmount(selectedOperation.balance_delta, selectedOperation.currency_code)}
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {selectedOperation.requires_review ? (
+                  <span className="rounded-full bg-sky-100 px-3 py-1 text-xs text-sky-700">A verifier</span>
+                ) : null}
+                {selectedOperation.is_stale ? (
+                  <span className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-700">Ancienne file</span>
+                ) : null}
+                {selectedOperation.conflict_reason_label ? (
+                  <span className="rounded-full bg-rose-100 px-3 py-1 text-xs text-rose-700">
+                    {selectedOperation.conflict_reason_label}
+                  </span>
+                ) : null}
               </div>
 
               {selectedOperation.note ? (
@@ -339,6 +398,7 @@ function StatCard({ label, value, tone = "slate" }) {
     amber: "border-amber-200 bg-amber-50 text-amber-900",
     rose: "border-rose-200 bg-rose-50 text-rose-900",
     emerald: "border-emerald-200 bg-emerald-50 text-emerald-900",
+    sky: "border-sky-200 bg-sky-50 text-sky-900",
     slate: "border-slate-200 bg-slate-50 text-slate-900",
   };
 

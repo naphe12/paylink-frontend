@@ -43,6 +43,13 @@ describe("AgentOfflineOpsPage", () => {
           currency_code: "BIF",
           offline_reference: "off_ref",
           status: "queued",
+          requires_review: true,
+          is_stale: true,
+          conflict_reason_label: "Le solde client a evolue depuis la capture offline",
+          queued_age_minutes: 240,
+          snapshot_available: 10000,
+          current_available: 7000,
+          balance_delta: -3000,
         },
       ])
       .mockResolvedValueOnce([
@@ -54,6 +61,13 @@ describe("AgentOfflineOpsPage", () => {
           currency_code: "BIF",
           offline_reference: "off_ref",
           status: "synced",
+          requires_review: true,
+          is_stale: true,
+          conflict_reason_label: "Le solde client a evolue depuis la capture offline",
+          queued_age_minutes: 245,
+          snapshot_available: 10000,
+          current_available: 7000,
+          balance_delta: -3000,
         },
       ]);
     api.searchAgentCashUsers.mockResolvedValue([
@@ -92,5 +106,9 @@ describe("AgentOfflineOpsPage", () => {
     await waitFor(() => {
       expect(api.syncAgentOfflineOperation).toHaveBeenCalledWith("op-1", {});
     });
+
+    expect((await screen.findAllByText(/A verifier/i)).length).toBeGreaterThan(0);
+    expect(await screen.findByText(/Ancienne file/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Age file/i)).toBeInTheDocument();
   });
 });

@@ -18,6 +18,13 @@ function formatAmount(value, currency) {
   })} ${currency || ""}`.trim();
 }
 
+function formatSignedAmount(value, currency) {
+  if (value === null || value === undefined || value === "") return "-";
+  const amount = Number(value || 0);
+  const prefix = amount > 0 ? "+" : "";
+  return `${prefix}${formatAmount(amount, currency)}`;
+}
+
 export default function AgentOfflineOpsPage() {
   const [items, setItems] = useState([]);
   const [query, setQuery] = useState("");
@@ -124,7 +131,8 @@ export default function AgentOfflineOpsPage() {
     const queued = items.filter((item) => item.status === "queued").length;
     const failed = items.filter((item) => item.status === "failed").length;
     const synced = items.filter((item) => item.status === "synced").length;
-    return { queued, failed, synced };
+    const review = items.filter((item) => item.requires_review).length;
+    return { queued, failed, synced, review };
   }, [items]);
 
   return (
@@ -146,10 +154,11 @@ export default function AgentOfflineOpsPage() {
         </div>
         {error ? <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
         {success ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</p> : null}
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
           <StatCard label="En attente" value={metrics.queued} tone="amber" />
           <StatCard label="En echec" value={metrics.failed} tone="rose" />
           <StatCard label="Synchronisees" value={metrics.synced} tone="emerald" />
+          <StatCard label="A verifier" value={metrics.review} tone="sky" />
         </div>
       </section>
 
@@ -264,7 +273,33 @@ export default function AgentOfflineOpsPage() {
                       {item.status}
                     </span>
                   </div>
+                  <div className="flex flex-wrap gap-2">
+                    {item.requires_review ? (
+                      <span className="rounded-full bg-sky-100 px-3 py-1 text-xs text-sky-700">A verifier</span>
+                    ) : null}
+                    {item.is_stale ? (
+                      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-700">Ancienne file</span>
+                    ) : null}
+                    {item.conflict_reason_label ? (
+                      <span className="rounded-full bg-rose-100 px-3 py-1 text-xs text-rose-700">{item.conflict_reason_label}</span>
+                    ) : null}
+                  </div>
                   {item.note ? <p className="text-sm text-slate-600">{item.note}</p> : null}
+                  <div className="grid gap-2 md:grid-cols-3">
+                    <MiniInfo label="Age file" value={`${item.queued_age_minutes || 0} min`} />
+                    <MiniInfo
+                      label="Capture"
+                      value={item.snapshot_available !== null && item.snapshot_available !== undefined ? formatAmount(item.snapshot_available, item.currency_code) : "-"}
+                    />
+                    <MiniInfo
+                      label="Actuel / ecart"
+                      value={
+                        item.current_available !== null && item.current_available !== undefined
+                          ? `${formatAmount(item.current_available, item.currency_code)} / ${formatSignedAmount(item.balance_delta, item.currency_code)}`
+                          : "-"
+                      }
+                    />
+                  </div>
                   {item.failure_reason ? <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{item.failure_reason}</p> : null}
                   <div className="flex flex-wrap gap-2">
                     {["queued", "failed", "draft"].includes(item.status) ? (
@@ -299,12 +334,22 @@ function StatCard({ label, value, tone = "slate" }) {
     amber: "border-amber-200 bg-amber-50 text-amber-900",
     rose: "border-rose-200 bg-rose-50 text-rose-900",
     emerald: "border-emerald-200 bg-emerald-50 text-emerald-900",
+    sky: "border-sky-200 bg-sky-50 text-sky-900",
     slate: "border-slate-200 bg-slate-50 text-slate-900",
   };
   return (
     <div className={`rounded-xl border px-4 py-3 ${tones[tone] || tones.slate}`}>
       <p className="text-xs uppercase tracking-wide opacity-70">{label}</p>
       <p className="text-2xl font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function MiniInfo({ label, value }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <p className="text-[11px] uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="mt-1 text-sm text-slate-700">{value || "-"}</p>
     </div>
   );
 }

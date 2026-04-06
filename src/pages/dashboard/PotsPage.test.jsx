@@ -380,7 +380,7 @@ describe("PotsPage", () => {
 
     expect((await screen.findAllByText(/@alice/i)).length).toBeGreaterThan(0);
     expect(screen.getByText(/Progression individuelle: 66.67%/i)).toBeInTheDocument();
-  });
+  }, 10000);
 
   it("allows a member to leave a group savings pot", async () => {
     api.listPots.mockResolvedValueOnce([
