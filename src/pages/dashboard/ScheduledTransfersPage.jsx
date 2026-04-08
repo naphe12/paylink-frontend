@@ -64,6 +64,12 @@ function getTargetSubline(item) {
   return `${item.external_transfer.partner_name} | ${item.external_transfer.country_destination}`;
 }
 
+function normalizeStatus(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
 export default function ScheduledTransfersPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -176,6 +182,10 @@ export default function ScheduledTransfersPage() {
   };
 
   const handleRunNow = async (scheduleId) => {
+    if (!scheduleId) {
+      setError("Programmation invalide.");
+      return;
+    }
     try {
       setError("");
       setSuccess("");
@@ -201,6 +211,10 @@ export default function ScheduledTransfersPage() {
   };
 
   const handleCancel = async (scheduleId) => {
+    if (!scheduleId) {
+      setError("Programmation invalide.");
+      return;
+    }
     try {
       setError("");
       setSuccess("");
@@ -213,6 +227,10 @@ export default function ScheduledTransfersPage() {
   };
 
   const handlePause = async (scheduleId) => {
+    if (!scheduleId) {
+      setError("Programmation invalide.");
+      return;
+    }
     try {
       setError("");
       setSuccess("");
@@ -225,6 +243,10 @@ export default function ScheduledTransfersPage() {
   };
 
   const handleResume = async (scheduleId) => {
+    if (!scheduleId) {
+      setError("Programmation invalide.");
+      return;
+    }
     try {
       setError("");
       setSuccess("");
@@ -446,6 +468,7 @@ export default function ScheduledTransfersPage() {
         )}
 
         <button
+          type="button"
           onClick={handleCreate}
           disabled={submitting}
           className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
@@ -462,12 +485,14 @@ export default function ScheduledTransfersPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <button
+              type="button"
               onClick={handleRunDue}
               className="rounded-lg border border-emerald-300 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50"
             >
               Executer les echeances dues ({dueCount})
             </button>
             <button
+              type="button"
               onClick={loadItems}
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
             >
@@ -482,15 +507,26 @@ export default function ScheduledTransfersPage() {
           <p className="mt-4 text-sm text-slate-500">Aucun transfert programme pour le moment.</p>
         ) : (
           <div className="mt-4 space-y-3">
-            {items.map((item) => (
-              <div key={item.schedule_id} className="rounded-xl border border-slate-200 p-4">
+            {items.map((item) => {
+              const status = normalizeStatus(item.status);
+              const isRunnable = ["active", "failed"].includes(status);
+              const isPaused = status === "paused";
+              const isFinal = ["cancelled", "completed"].includes(status);
+              const editDisabledReason = isFinal ? "Impossible: transfert termine ou annule." : "";
+              const runDisabledReason = isRunnable
+                ? ""
+                : "Impossible: statut requis active ou failed pour executer.";
+              const pauseDisabledReason = isFinal ? "Impossible: transfert termine ou annule." : "";
+              const cancelDisabledReason = isFinal ? "Impossible: deja termine ou annule." : "";
+              return (
+                <div key={item.schedule_id} className="rounded-xl border border-slate-200 p-4">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-slate-900">
                       {item.amount} {item.currency_code} vers {getTargetLabel(item)}
                     </p>
                     <p className="text-sm text-slate-500">
-                      {item.transfer_type === "external" ? "Externe" : "Interne"} | {item.frequency} | statut: {item.status}
+                      {item.transfer_type === "external" ? "Externe" : "Interne"} | {item.frequency} | statut: {status || "-"}
                     </p>
                     {getTargetSubline(item) ? <p className="text-sm text-slate-500">{getTargetSubline(item)}</p> : null}
                     <p className="text-sm text-slate-500">Prochaine execution: {formatDateTime(item.next_run_at)}</p>
@@ -503,34 +539,41 @@ export default function ScheduledTransfersPage() {
                       Pause auto securite: {item.auto_paused_for_failures ? "activee" : "inactive"}
                     </p>
                     <p className="text-sm text-slate-500">
-                      Action recommandee: {item.status === "paused" ? "reprendre ou annuler" : item.is_due ? "executer" : "surveiller"}
+                      Action recommandee: {isPaused ? "reprendre ou annuler" : item.is_due ? "executer" : "surveiller"}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button
+                      type="button"
                       onClick={() => startEdit(item)}
-                      disabled={["cancelled", "completed"].includes(item.status)}
+                      disabled={isFinal}
+                      title={editDisabledReason}
                       className="rounded-lg border border-indigo-300 px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
                     >
                       Editer
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleRunNow(item.schedule_id)}
-                      disabled={!["active", "failed"].includes(item.status)}
+                      disabled={!isRunnable}
+                      title={runDisabledReason}
                       className="rounded-lg border border-emerald-300 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
                     >
                       Executer maintenant
                     </button>
-                    {item.status !== "paused" ? (
+                    {!isPaused ? (
                       <button
+                        type="button"
                         onClick={() => handlePause(item.schedule_id)}
-                        disabled={["cancelled", "completed"].includes(item.status)}
+                        disabled={isFinal}
+                        title={pauseDisabledReason}
                         className="rounded-lg border border-amber-300 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 disabled:opacity-50"
                       >
                         Mettre en pause
                       </button>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => handleResume(item.schedule_id)}
                         className="rounded-lg border border-sky-300 px-3 py-2 text-sm text-sky-700 hover:bg-sky-50"
                       >
@@ -538,8 +581,10 @@ export default function ScheduledTransfersPage() {
                       </button>
                     )}
                     <button
+                      type="button"
                       onClick={() => handleCancel(item.schedule_id)}
-                      disabled={["cancelled", "completed"].includes(item.status)}
+                      disabled={isFinal}
+                      title={cancelDisabledReason}
                       className="rounded-lg border border-rose-300 px-3 py-2 text-sm text-rose-700 hover:bg-rose-50 disabled:opacity-50"
                     >
                       Annuler
@@ -605,6 +650,7 @@ export default function ScheduledTransfersPage() {
                     />
                     <div className="flex gap-2 md:col-span-2">
                       <button
+                        type="button"
                         onClick={() => handleEdit(item.schedule_id)}
                         disabled={submitting}
                         className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
@@ -612,6 +658,7 @@ export default function ScheduledTransfersPage() {
                         {submitting ? "Mise a jour..." : "Enregistrer"}
                       </button>
                       <button
+                        type="button"
                         onClick={cancelEdit}
                         className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
                       >
@@ -621,7 +668,8 @@ export default function ScheduledTransfersPage() {
                   </div>
                 ) : null}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
