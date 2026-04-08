@@ -625,6 +625,9 @@ const api = {
   async runScheduledTransferNow(scheduleId, idempotencyKey = null) {
     return this.postIdempotent(`/wallet/scheduled-transfers/${scheduleId}/run`, {}, idempotencyKey, `scheduled-transfer-run-${scheduleId}`);
   },
+  async getScheduledTransferDiagnostic(scheduleId) {
+    return this.get(`/wallet/scheduled-transfers/${scheduleId}/diagnostic`);
+  },
   async pauseScheduledTransfer(scheduleId, idempotencyKey = null) {
     return this.postIdempotent(`/wallet/scheduled-transfers/${scheduleId}/pause`, {}, idempotencyKey, `scheduled-transfer-pause-${scheduleId}`);
   },

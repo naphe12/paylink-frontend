@@ -83,6 +83,8 @@ export default function ScheduledTransfersPage() {
   const [success, setSuccess] = useState("");
   const [form, setForm] = useState(() => ({ ...INITIAL_FORM, transfer_type: defaultTransferType }));
   const [editingScheduleId, setEditingScheduleId] = useState(null);
+  const [diagnostics, setDiagnostics] = useState({});
+  const [diagnosticLoading, setDiagnosticLoading] = useState({});
   const [editForm, setEditForm] = useState({
     amount: "",
     frequency: "weekly",
@@ -315,6 +317,23 @@ export default function ScheduledTransfersPage() {
     }
   };
 
+  const handleDiagnostic = async (scheduleId) => {
+    if (!scheduleId) {
+      setError("Programmation invalide.");
+      return;
+    }
+    try {
+      setError("");
+      setDiagnosticLoading((prev) => ({ ...prev, [scheduleId]: true }));
+      const data = await api.getScheduledTransferDiagnostic(scheduleId);
+      setDiagnostics((prev) => ({ ...prev, [scheduleId]: data || null }));
+    } catch (err) {
+      setError(err?.message || "Diagnostic impossible.");
+    } finally {
+      setDiagnosticLoading((prev) => ({ ...prev, [scheduleId]: false }));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -512,6 +531,8 @@ export default function ScheduledTransfersPage() {
               const isRunnable = ["active", "failed"].includes(status);
               const isPaused = status === "paused";
               const isFinal = ["cancelled", "completed"].includes(status);
+              const itemDiagnostic = diagnostics[item.schedule_id];
+              const itemDiagnosticLoading = Boolean(diagnosticLoading[item.schedule_id]);
               const editDisabledReason = isFinal ? "Impossible: transfert termine ou annule." : "";
               const runDisabledReason = isRunnable
                 ? ""
@@ -580,6 +601,14 @@ export default function ScheduledTransfersPage() {
                         Reprendre
                       </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => handleDiagnostic(item.schedule_id)}
+                      disabled={itemDiagnosticLoading}
+                      className="rounded-lg border border-violet-300 px-3 py-2 text-sm text-violet-700 hover:bg-violet-50 disabled:opacity-50"
+                    >
+                      {itemDiagnosticLoading ? "Diagnostic..." : "Diagnostiquer"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleCancel(item.schedule_id)}
@@ -665,6 +694,31 @@ export default function ScheduledTransfersPage() {
                         Annuler edition
                       </button>
                     </div>
+                  </div>
+                ) : null}
+                {itemDiagnostic ? (
+                  <div className="mt-3 space-y-1 rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">
+                    <p>
+                      <span className="font-medium">Diagnostic:</span> {itemDiagnostic.recommended_action || "-"}
+                    </p>
+                    <p>
+                      <span className="font-medium">Blocages:</span>{" "}
+                      {Array.isArray(itemDiagnostic.blocking_reasons) && itemDiagnostic.blocking_reasons.length > 0
+                        ? itemDiagnostic.blocking_reasons.join(", ")
+                        : "aucun"}
+                    </p>
+                    {itemDiagnostic?.context?.latest_external_transfer_status ? (
+                      <p>
+                        <span className="font-medium">Statut externe:</span>{" "}
+                        {itemDiagnostic.context.latest_external_transfer_status}
+                      </p>
+                    ) : null}
+                    {itemDiagnostic?.context?.latest_external_transfer_failure_reason ? (
+                      <p>
+                        <span className="font-medium">Raison echec externe:</span>{" "}
+                        {itemDiagnostic.context.latest_external_transfer_failure_reason}
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
               </div>

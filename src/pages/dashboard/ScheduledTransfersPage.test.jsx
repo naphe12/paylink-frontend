@@ -11,6 +11,7 @@ vi.mock("@/services/api", () => ({
     createScheduledTransfer: vi.fn(),
     runDueScheduledTransfers: vi.fn(),
     runScheduledTransferNow: vi.fn(),
+    getScheduledTransferDiagnostic: vi.fn(),
     updateScheduledTransfer: vi.fn(),
     pauseScheduledTransfer: vi.fn(),
     resumeScheduledTransfer: vi.fn(),
@@ -68,6 +69,7 @@ describe("ScheduledTransfersPage", () => {
     api.createScheduledTransfer.mockReset();
     api.runDueScheduledTransfers.mockReset();
     api.runScheduledTransferNow.mockReset();
+    api.getScheduledTransferDiagnostic.mockReset();
     api.updateScheduledTransfer.mockReset();
     api.pauseScheduledTransfer.mockReset();
     api.resumeScheduledTransfer.mockReset();
@@ -415,5 +417,48 @@ describe("ScheduledTransfersPage", () => {
       );
     });
     expect(await screen.findByText(/Programmation mise a jour/i)).toBeInTheDocument();
+  });
+
+  it("shows scheduled transfer diagnostic on demand", async () => {
+    api.listScheduledTransfers.mockResolvedValueOnce([
+      {
+        schedule_id: "sch-ext-1",
+        receiver_identifier: "+25761234567",
+        transfer_type: "external",
+        external_transfer: {
+          partner_name: "Lumicash",
+          country_destination: "Burundi",
+          recipient_name: "Jean Ndayishimiye",
+          recipient_phone: "+25761234567",
+        },
+        amount: 30,
+        currency_code: "EUR",
+        frequency: "weekly",
+        status: "failed",
+        next_run_at: "2026-04-09T08:00:00Z",
+        last_result: "Echec",
+        is_due: true,
+      },
+    ]);
+    api.getScheduledTransferDiagnostic.mockResolvedValueOnce({
+      schedule_id: "sch-ext-1",
+      recommended_action: "approver_transfert_externe",
+      blocking_reasons: ["external_transfer_pending_approval", "funding_pending"],
+      context: {
+        latest_external_transfer_status: "pending_approval",
+        latest_external_transfer_failure_reason: "Validation manuelle requise",
+      },
+    });
+
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: /Diagnostiquer/i }));
+
+    await waitFor(() => {
+      expect(api.getScheduledTransferDiagnostic).toHaveBeenCalledWith("sch-ext-1");
+    });
+    expect(await screen.findByText(/approver_transfert_externe/i)).toBeInTheDocument();
+    expect(await screen.findByText(/external_transfer_pending_approval, funding_pending/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/pending_approval/i)).length).toBeGreaterThan(0);
   });
 });
