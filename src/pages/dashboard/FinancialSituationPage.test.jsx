@@ -51,6 +51,11 @@ describe("FinancialSituationPage", () => {
       remaining_to_spend: 20000,
       current_savings: 50000,
       budget_usage_percent: 93.33,
+      daily_budget_allowance: 1111.11,
+      projected_month_outflows: 350000,
+      projected_overrun_amount: 50000,
+      days_remaining_in_month: 18,
+      pace_status: "at_risk",
       over_limit_count: 1,
       alert_level: "critical",
       alert_message: "Au moins une categorie depasse son plafond.",
@@ -87,6 +92,11 @@ describe("FinancialSituationPage", () => {
       remaining_to_spend: 40000,
       current_savings: 50000,
       budget_usage_percent: 87.5,
+      daily_budget_allowance: 2222.22,
+      projected_month_outflows: 290000,
+      projected_overrun_amount: 0,
+      days_remaining_in_month: 18,
+      pace_status: "on_track",
       over_limit_count: 0,
       alert_level: "watch",
       alert_message: "Le budget du mois approche de sa limite.",
@@ -123,6 +133,11 @@ describe("FinancialSituationPage", () => {
       remaining_to_spend: 0,
       current_savings: 50000,
       budget_usage_percent: 112,
+      daily_budget_allowance: 0,
+      projected_month_outflows: 336000,
+      projected_overrun_amount: 86000,
+      days_remaining_in_month: 0,
+      pace_status: "at_risk",
       over_limit_count: 0,
       alert_level: "critical",
       alert_message: "Le budget mensuel est depasse.",
@@ -148,7 +163,9 @@ describe("FinancialSituationPage", () => {
     expect(await screen.findByText(/Budget personnalise/i)).toBeInTheDocument();
     expect(await screen.findByText(/111.11%/i)).toBeInTheDocument();
     expect(await screen.findByText(/Alerte budget/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Cadence budgetaire/i)).toBeInTheDocument();
     expect(await screen.findByText(/Categories depassees: 1/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Projection fin de mois/i)).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/Categorie budgetaire/i), {
       target: { value: "transferts" },

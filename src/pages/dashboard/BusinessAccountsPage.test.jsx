@@ -9,6 +9,7 @@ vi.mock("@/services/api", () => ({
   default: {
     listBusinessAccounts: vi.fn(),
     createBusinessAccount: vi.fn(),
+    updateBusinessAccountStatus: vi.fn(),
     addBusinessMember: vi.fn(),
     updateBusinessMember: vi.fn(),
     createBusinessSubWallet: vi.fn(),
@@ -30,6 +31,7 @@ describe("BusinessAccountsPage", () => {
   beforeEach(() => {
     api.listBusinessAccounts.mockReset();
     api.createBusinessAccount.mockReset();
+    api.updateBusinessAccountStatus.mockReset();
     api.addBusinessMember.mockReset();
     api.updateBusinessMember.mockReset();
     api.createBusinessSubWallet.mockReset();
@@ -168,6 +170,79 @@ describe("BusinessAccountsPage", () => {
     expect(await screen.findByText(/Lecture seule/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Ajouter/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /^Creer$/i })).toBeDisabled();
+  });
+
+  it("allows owner to deactivate then reactivate a business structure", async () => {
+    api.listBusinessAccounts
+      .mockResolvedValueOnce([
+        {
+          business_id: "biz-4",
+          legal_name: "Delta SARL",
+          display_name: "Delta",
+          is_active: true,
+          current_membership_role: "owner",
+          members: [{ membership_id: "m-1", member_label: "@owner", role: "owner", status: "active", user_id: "u-1" }],
+          sub_wallets: [],
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          business_id: "biz-4",
+          legal_name: "Delta SARL",
+          display_name: "Delta",
+          is_active: false,
+          current_membership_role: "owner",
+          members: [{ membership_id: "m-1", member_label: "@owner", role: "owner", status: "active", user_id: "u-1" }],
+          sub_wallets: [],
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          business_id: "biz-4",
+          legal_name: "Delta SARL",
+          display_name: "Delta",
+          is_active: true,
+          current_membership_role: "owner",
+          members: [{ membership_id: "m-1", member_label: "@owner", role: "owner", status: "active", user_id: "u-1" }],
+          sub_wallets: [],
+        },
+      ]);
+    api.updateBusinessAccountStatus
+      .mockResolvedValueOnce({
+        business_id: "biz-4",
+        legal_name: "Delta SARL",
+        display_name: "Delta",
+        is_active: false,
+        current_membership_role: "owner",
+        members: [{ membership_id: "m-1", member_label: "@owner", role: "owner", status: "active", user_id: "u-1" }],
+        sub_wallets: [],
+      })
+      .mockResolvedValueOnce({
+        business_id: "biz-4",
+        legal_name: "Delta SARL",
+        display_name: "Delta",
+        is_active: true,
+        current_membership_role: "owner",
+        members: [{ membership_id: "m-1", member_label: "@owner", role: "owner", status: "active", user_id: "u-1" }],
+        sub_wallets: [],
+      });
+
+    renderPage();
+
+    expect(await screen.findByText(/structure active/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Desactiver la structure/i }));
+    await waitFor(() => {
+      expect(api.updateBusinessAccountStatus).toHaveBeenCalledWith("biz-4", { is_active: false });
+    });
+    expect(await screen.findByText(/structure inactive/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Ajouter/i })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: /Reactiver la structure/i }));
+    await waitFor(() => {
+      expect(api.updateBusinessAccountStatus).toHaveBeenLastCalledWith("biz-4", { is_active: true });
+    });
+    expect(await screen.findByText(/structure active/i)).toBeInTheDocument();
   });
 
   it("updates a business member and sub-wallet settings", async () => {
@@ -331,5 +406,38 @@ describe("BusinessAccountsPage", () => {
         status: "suspended",
       });
     });
+  });
+
+  it("prevents funding a sub-wallet above remaining capacity", async () => {
+    api.listBusinessAccounts.mockResolvedValue([
+      {
+        business_id: "biz-3",
+        legal_name: "Gamma SARL",
+        display_name: "Gamma",
+        current_membership_role: "owner",
+        members: [{ membership_id: "m-1", member_label: "@owner", role: "owner", status: "active", user_id: "u-1" }],
+        sub_wallets: [
+          {
+            sub_wallet_id: "sw-3",
+            label: "Caisse point vente",
+            current_amount: 9000,
+            spending_limit: 10000,
+            currency_code: "BIF",
+            status: "active",
+          },
+        ],
+      },
+    ]);
+
+    renderPage();
+
+    expect(await screen.findByRole("heading", { name: /^Gamma$/i })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/Montant action sous wallet Caisse point vente/i), {
+      target: { value: "2000" },
+    });
+
+    expect(screen.getByText(/Le montant depasse le plafond restant du sous-wallet/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Alimenter/i })).toBeDisabled();
+    expect(api.fundBusinessSubWallet).not.toHaveBeenCalled();
   });
 });

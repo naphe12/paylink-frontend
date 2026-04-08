@@ -96,6 +96,12 @@ export default function AdminUserProfilePanel() {
   const hasDebt = walletAvailable < 0 || creditUsed > 0;
   const latestCreditLine = creditLines[0] || null;
   const trustProfile = trustDetail?.profile || null;
+  const formatRate = (value) => {
+    if (value === undefined || value === null || value === "") return "-";
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "-";
+    return `${(numeric * 100).toFixed(1)}%`;
+  };
 
   return (
     <div className="space-y-6">
@@ -305,8 +311,23 @@ export default function AdminUserProfilePanel() {
                 Demandes payees: <strong>{trustProfile.successful_payment_requests}</strong>
               </p>
               <p className="text-sm text-slate-700">
+                Taux paiement reussi: <strong>{formatRate(trustProfile.payment_request_success_rate)}</strong>
+              </p>
+              <p className="text-sm text-slate-700">
+                P2P reussi: <strong>{trustProfile.successful_p2p_trades ?? 0}</strong> / <strong>{trustProfile.total_p2p_trades ?? 0}</strong>
+              </p>
+              <p className="text-sm text-slate-700">
+                Taux litige P2P: <strong>{formatRate(trustProfile.p2p_dispute_rate)}</strong>
+              </p>
+              <p className="text-sm text-slate-700">
                 Litiges: <strong>{trustProfile.dispute_count}</strong>
               </p>
+              <p className="text-sm text-slate-700">
+                Reputation: <strong>{trustProfile.reputation_tier || "watch"}</strong>
+              </p>
+              {trustProfile.reputation_note ? (
+                <p className="text-xs text-slate-600">{trustProfile.reputation_note}</p>
+              ) : null}
               {trustProfile.limit_multiplier ? (
                 <p className="text-sm text-slate-700">
                   Multiplicateur confiance: <strong>x{trustProfile.limit_multiplier}</strong>

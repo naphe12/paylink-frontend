@@ -65,22 +65,31 @@ describe("WalletPage", () => {
         available_currencies: ["BIF", "EUR", "USD", "USDC", "USDT"],
         estimated_total_available: 278000,
         estimated_total_pending: 1000,
+        estimated_currencies_count: 2,
+        non_estimated_currencies_count: 0,
         balances: [
           {
             currency_code: "BIF",
             available: 250000,
             pending: 1000,
             estimated_display_available: 250000,
+            estimated_display_pending: 1000,
+            rate_to_display_currency: 1,
             rate_source: "identity",
+            included_in_total: true,
           },
           {
             currency_code: "USDC",
             available: 10,
             pending: 0,
             estimated_display_available: 28000,
+            estimated_display_pending: 0,
+            rate_to_display_currency: 2800,
             rate_source: "internal_fx_conversion",
+            included_in_total: true,
           },
         ],
+        generated_at: "2026-04-08T10:00:00Z",
       })
       .mockResolvedValueOnce({
         display_currency: "USD",
@@ -88,22 +97,31 @@ describe("WalletPage", () => {
         available_currencies: ["BIF", "EUR", "USD", "USDC", "USDT"],
         estimated_total_available: 100,
         estimated_total_pending: 0.36,
+        estimated_currencies_count: 2,
+        non_estimated_currencies_count: 0,
         balances: [
           {
             currency_code: "BIF",
             available: 250000,
             pending: 1000,
             estimated_display_available: 89.28,
+            estimated_display_pending: 0.36,
+            rate_to_display_currency: 0.00035712,
             rate_source: "internal_fx_conversion",
+            included_in_total: true,
           },
           {
             currency_code: "USDC",
             available: 10,
             pending: 0,
             estimated_display_available: 10,
+            estimated_display_pending: 0,
+            rate_to_display_currency: 1,
             rate_source: "identity",
+            included_in_total: true,
           },
         ],
+        generated_at: "2026-04-08T10:05:00Z",
       });
     api.updateMyDisplayCurrencyPreference.mockResolvedValue({
       display_currency: "USD",
@@ -121,6 +139,7 @@ describe("WalletPage", () => {
 
     expect(await screen.findByRole("heading", { name: /Total estime:/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /278.*BIF/i })).toBeInTheDocument();
+    expect(screen.getByText(/1 USDC =/i)).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/Devise d'affichage/i), {
       target: { value: "USD" },

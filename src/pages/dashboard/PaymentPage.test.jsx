@@ -15,6 +15,7 @@ vi.mock("@/services/api", () => ({
     declinePaymentRequest: vi.fn(),
     cancelPaymentRequest: vi.fn(),
     remindPaymentRequest: vi.fn(),
+    updatePaymentRequestAutoPay: vi.fn(),
   },
 }));
 
@@ -36,6 +37,7 @@ describe("PaymentPage", () => {
     api.declinePaymentRequest.mockReset();
     api.cancelPaymentRequest.mockReset();
     api.remindPaymentRequest.mockReset();
+    api.updatePaymentRequestAutoPay.mockReset();
   });
 
   it("creates a payment request and reloads the sent view", async () => {
@@ -284,6 +286,7 @@ describe("PaymentPage", () => {
         events: [{ event_id: "evt-reminder", event_type: "reminder_sent", created_at: "2026-04-06T09:30:00Z" }],
       });
     api.runDuePaymentRequests.mockResolvedValue({
+      auto_paid_count: 0,
       reminded_count: 1,
       expired_count: 0,
       processed_requests: [
@@ -308,6 +311,149 @@ describe("PaymentPage", () => {
       expect(api.runDuePaymentRequests).toHaveBeenCalled();
     });
 
-    expect(await screen.findByText(/Echeances traitees: 1 relance\(s\) automatique\(s\), 0 expiration\(s\)\./i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Echeances traitees: 0 auto-paiement\(s\), 1 relance\(s\) automatique\(s\), 0 expiration\(s\)\./i)
+    ).toBeInTheDocument();
+  });
+
+  it("updates auto-pay from the payer detail panel", async () => {
+    api.listPaymentRequests
+      .mockResolvedValueOnce([
+        {
+          request_id: "req-4",
+          amount: 90,
+          currency_code: "EUR",
+          status: "pending",
+          title: "Abonnement",
+          share_token: "PR-4",
+          created_at: "2026-04-05T09:00:00Z",
+          updated_at: "2026-04-05T09:00:00Z",
+          requester_user_id: "u-1",
+          payer_user_id: "u-2",
+          counterpart_label: "@alice",
+          role: "payer",
+          auto_pay_enabled: false,
+          auto_pay_max_amount: null,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          request_id: "req-4",
+          amount: 90,
+          currency_code: "EUR",
+          status: "pending",
+          title: "Abonnement",
+          share_token: "PR-4",
+          created_at: "2026-04-05T09:00:00Z",
+          updated_at: "2026-04-05T10:00:00Z",
+          requester_user_id: "u-1",
+          payer_user_id: "u-2",
+          counterpart_label: "@alice",
+          role: "payer",
+          auto_pay_enabled: true,
+          auto_pay_max_amount: 120,
+        },
+      ]);
+    api.getPaymentRequestDetail
+      .mockResolvedValueOnce({
+        request: {
+          request_id: "req-4",
+          amount: 90,
+          currency_code: "EUR",
+          status: "pending",
+          title: "Abonnement",
+          share_token: "PR-4",
+          created_at: "2026-04-05T09:00:00Z",
+          updated_at: "2026-04-05T09:00:00Z",
+          requester_user_id: "u-1",
+          payer_user_id: "u-2",
+          counterpart_label: "@alice",
+          role: "payer",
+          auto_pay_enabled: false,
+          auto_pay_max_amount: null,
+        },
+        events: [],
+      })
+      .mockResolvedValueOnce({
+        request: {
+          request_id: "req-4",
+          amount: 90,
+          currency_code: "EUR",
+          status: "pending",
+          title: "Abonnement",
+          share_token: "PR-4",
+          created_at: "2026-04-05T09:00:00Z",
+          updated_at: "2026-04-05T10:00:00Z",
+          requester_user_id: "u-1",
+          payer_user_id: "u-2",
+          counterpart_label: "@alice",
+          role: "payer",
+          auto_pay_enabled: true,
+          auto_pay_max_amount: 120,
+        },
+        events: [{ event_id: "evt-autopay", event_type: "autopay_updated", created_at: "2026-04-05T10:00:00Z" }],
+      });
+    api.updatePaymentRequestAutoPay.mockResolvedValue({});
+
+    renderPage();
+
+    expect(await screen.findAllByText("Abonnement")).toHaveLength(2);
+    fireEvent.change(screen.getByLabelText(/Plafond auto-pay detail/i), {
+      target: { value: "120" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Activer \/ mettre a jour/i }));
+
+    await waitFor(() => {
+      expect(api.updatePaymentRequestAutoPay).toHaveBeenCalledWith("req-4", { enabled: true, max_amount: 120 });
+    });
+  });
+
+  it("disables manual reminder when cooldown is active", async () => {
+    api.listPaymentRequests.mockResolvedValueOnce([
+      {
+        request_id: "req-5",
+        amount: 42,
+        currency_code: "EUR",
+        status: "pending",
+        title: "Facture eau",
+        share_token: "PR-5",
+        created_at: "2026-04-05T09:00:00Z",
+        updated_at: "2026-04-05T09:30:00Z",
+        requester_user_id: "u-1",
+        payer_user_id: "u-2",
+        counterpart_label: "@client",
+        role: "requester",
+        manual_reminder_count: 1,
+        next_manual_reminder_at: "2026-04-06T18:00:00Z",
+        can_send_manual_reminder: false,
+      },
+    ]);
+    api.getPaymentRequestDetail.mockResolvedValueOnce({
+      request: {
+        request_id: "req-5",
+        amount: 42,
+        currency_code: "EUR",
+        status: "pending",
+        title: "Facture eau",
+        share_token: "PR-5",
+        created_at: "2026-04-05T09:00:00Z",
+        updated_at: "2026-04-05T09:30:00Z",
+        requester_user_id: "u-1",
+        payer_user_id: "u-2",
+        counterpart_label: "@client",
+        role: "requester",
+        manual_reminder_count: 1,
+        next_manual_reminder_at: "2026-04-06T18:00:00Z",
+        can_send_manual_reminder: false,
+      },
+      events: [],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText(/Facture eau/i)).toBeInTheDocument();
+    expect(screen.getByText(/Relance manuelle temporairement indisponible/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Relancer/i })).toBeDisabled();
+    expect(api.remindPaymentRequest).not.toHaveBeenCalled();
   });
 });

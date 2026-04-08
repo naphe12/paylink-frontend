@@ -646,6 +646,9 @@ const api = {
   async withdrawSavingsGoal(goalId, payload = {}, idempotencyKey = null) {
     return this.postIdempotent(`/savings/goals/${goalId}/withdraw`, payload, idempotencyKey, `savings-goal-withdraw-${goalId}`);
   },
+  async updateSavingsGoalLock(goalId, payload = {}) {
+    return this.put(`/savings/goals/${goalId}/lock`, payload);
+  },
   async configureSavingsGoalRoundUp(goalId, payload = {}) {
     return this.put(`/savings/goals/${goalId}/round-up`, payload);
   },
@@ -724,6 +727,9 @@ const api = {
   async createBusinessAccount(payload = {}, idempotencyKey = null) {
     return this.postIdempotent("/business-accounts", payload, idempotencyKey, "business-account-create");
   },
+  async updateBusinessAccountStatus(businessId, payload = {}) {
+    return this.put(`/business-accounts/${businessId}/status`, payload);
+  },
   async addBusinessMember(businessId, payload = {}, idempotencyKey = null) {
     return this.postIdempotent(`/business-accounts/${businessId}/members`, payload, idempotencyKey, `business-member-add-${businessId}`);
   },
@@ -768,6 +774,9 @@ const api = {
   },
   async updateMerchantWebhookStatus(webhookId, payload = {}, idempotencyKey = null) {
     return this.postIdempotent(`/merchant-api/webhooks/${webhookId}/status`, payload, idempotencyKey, `merchant-webhook-status-${webhookId}`);
+  },
+  async rotateMerchantWebhookSecret(webhookId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/merchant-api/webhooks/${webhookId}/rotate-secret`, payload, idempotencyKey, `merchant-webhook-secret-rotate-${webhookId}`);
   },
   async sendMerchantWebhookTest(webhookId, payload = {}, idempotencyKey = null) {
     return this.postIdempotent(`/merchant-api/webhooks/${webhookId}/test`, payload, idempotencyKey, `merchant-webhook-test-${webhookId}`);
@@ -838,6 +847,14 @@ const api = {
       payload,
       idempotencyKey,
       `wallet-payment-request-remind-${requestId}`
+    );
+  },
+  async updatePaymentRequestAutoPay(requestId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(
+      `/wallet/payment-requests/${requestId}/autopay`,
+      payload,
+      idempotencyKey,
+      `wallet-payment-request-autopay-${requestId}`
     );
   },
   async getSharedPaymentRequest(shareToken) {
@@ -1128,6 +1145,9 @@ const api = {
   async addSupportCaseAttachment(caseId, payload = {}, idempotencyKey = null) {
     return this.postIdempotent(`/support/cases/${caseId}/attachments`, payload, idempotencyKey, `support-case-attachment-${caseId}`);
   },
+  async updateSupportCaseStatus(caseId, payload = {}, idempotencyKey = null) {
+    return this.postIdempotent(`/support/cases/${caseId}/status`, payload, idempotencyKey, `support-case-status-${caseId}`);
+  },
   async getAdminSupportCases(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
@@ -1298,10 +1318,10 @@ const api = {
   async getAdminAgentOfflineOperationDetail(operationId) {
     return this.get(`/admin/agent/offline-operations/${operationId}`);
   },
-  async retryAdminAgentOfflineOperation(operationId, idempotencyKey = null) {
+  async retryAdminAgentOfflineOperation(operationId, payload = {}, idempotencyKey = null) {
     return this.postIdempotent(
       `/admin/agent/offline-operations/${operationId}/retry`,
-      {},
+      payload,
       idempotencyKey,
       `admin-agent-offline-retry-${operationId}`
     );

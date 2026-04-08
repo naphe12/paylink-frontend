@@ -44,7 +44,7 @@ export const CLIENT_QUICK_ACTION_GROUPS = [
       { label: "Transfert programme", to: "/dashboard/client/scheduled-transfers", icon: RefreshCcw, description: "Executions recurrentes" },
       {
         label: "Transfert externe programme",
-        to: "/dashboard/client/scheduled-transfers?type=external",
+        to: "/dashboard/client/scheduled-transfers/external",
         icon: Globe,
         description: "Vers un partenaire (recurrent)",
       },

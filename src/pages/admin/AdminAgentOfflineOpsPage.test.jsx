@@ -209,7 +209,7 @@ describe("AdminAgentOfflineOpsPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /Relancer/i }));
 
     await waitFor(() => {
-      expect(api.retryAdminAgentOfflineOperation).toHaveBeenCalledWith("op-1");
+      expect(api.retryAdminAgentOfflineOperation).toHaveBeenCalledWith("op-1", { force: false });
     });
 
     expect(await screen.findByText(/Operation offline relancee/i)).toBeInTheDocument();

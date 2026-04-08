@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import api from "@/services/api";
 
 function buildPublicPaymentLink(shareToken) {
@@ -46,10 +47,12 @@ export default function MerchantApiPage() {
   const [plainApiKey, setPlainApiKey] = useState("");
   const [plainWebhookSecret, setPlainWebhookSecret] = useState("");
   const [createdPaymentLink, setCreatedPaymentLink] = useState("");
+  const [createdScanToPayValue, setCreatedScanToPayValue] = useState("");
   const [keyForm, setKeyForm] = useState({ key_name: "" });
   const [webhookForm, setWebhookForm] = useState({
     target_url: "",
     event_types: "payment.request.paid, wallet.balance.updated",
+    max_consecutive_failures: "3",
   });
   const [paymentLinkForm, setPaymentLinkForm] = useState({
     payer_identifier: "",
@@ -59,6 +62,7 @@ export default function MerchantApiPage() {
     note: "",
     merchant_reference: "",
     expires_at: "",
+    channel: "business_link",
   });
   const dueRetryCount = (integration?.recent_events || []).filter((event) => {
     if (String(event.delivery_status || "").toLowerCase() !== "failed") return false;
@@ -120,6 +124,7 @@ export default function MerchantApiPage() {
       setPlainApiKey("");
       setPlainWebhookSecret("");
       setCreatedPaymentLink("");
+      setCreatedScanToPayValue("");
       await Promise.all([loadIntegration(businessId), loadPaymentLinks(businessId)]);
     } catch (err) {
       setError(err?.message || "Impossible de charger cette structure.");
@@ -175,11 +180,13 @@ export default function MerchantApiPage() {
       const created = await api.createMerchantWebhook(selectedBusinessId, {
         target_url: webhookForm.target_url.trim(),
         event_types: eventTypes,
+        max_consecutive_failures: Number(webhookForm.max_consecutive_failures || 3),
       });
       setPlainWebhookSecret(created?.plain_signing_secret || "");
       setWebhookForm({
         target_url: "",
         event_types: "payment.request.paid, wallet.balance.updated",
+        max_consecutive_failures: "3",
       });
       setSuccess("Webhook marchand cree.");
       await loadIntegration(selectedBusinessId);
@@ -197,6 +204,19 @@ export default function MerchantApiPage() {
       await loadIntegration(selectedBusinessId);
     } catch (err) {
       setError(err?.message || "Mise a jour webhook impossible.");
+    }
+  };
+
+  const handleRotateWebhookSecret = async (webhookId) => {
+    try {
+      setError("");
+      setSuccess("");
+      const rotated = await api.rotateMerchantWebhookSecret(webhookId, {});
+      setPlainWebhookSecret(rotated?.plain_signing_secret || "");
+      setSuccess("Secret webhook regenere.");
+      await loadIntegration(selectedBusinessId);
+    } catch (err) {
+      setError(err?.message || "Rotation du secret impossible.");
     }
   };
 
@@ -266,8 +286,11 @@ export default function MerchantApiPage() {
         note: paymentLinkForm.note.trim() || undefined,
         merchant_reference: paymentLinkForm.merchant_reference.trim() || undefined,
         expires_at: paymentLinkForm.expires_at ? new Date(paymentLinkForm.expires_at).toISOString() : undefined,
+        channel: paymentLinkForm.channel || "business_link",
       });
-      setCreatedPaymentLink(buildPublicPaymentLink(created?.share_token));
+      const publicPayUrl = created?.public_pay_url || buildPublicPaymentLink(created?.share_token);
+      setCreatedPaymentLink(publicPayUrl);
+      setCreatedScanToPayValue(created?.scan_to_pay_payload?.pay_url || publicPayUrl);
       setSuccess("Lien de paiement marchand cree.");
       setPaymentLinkForm({
         payer_identifier: "",
@@ -277,6 +300,7 @@ export default function MerchantApiPage() {
         note: "",
         merchant_reference: "",
         expires_at: "",
+        channel: paymentLinkForm.channel || "business_link",
       });
       await loadPaymentLinks(selectedBusinessId);
     } catch (err) {
@@ -309,6 +333,17 @@ export default function MerchantApiPage() {
           <p className="rounded-lg bg-indigo-50 px-3 py-2 text-sm text-indigo-800">
             Nouveau lien de paiement: <span className="font-mono break-all">{createdPaymentLink}</span>
           </p>
+        ) : null}
+        {createdScanToPayValue ? (
+          <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3 text-indigo-900">
+            <p className="text-xs uppercase tracking-wide text-indigo-700">Scan to Pay</p>
+            <div className="mt-2 flex items-center gap-4">
+              <div className="rounded-md bg-white p-2">
+                <QRCodeSVG value={createdScanToPayValue} size={96} />
+              </div>
+              <p className="text-xs text-indigo-700">Le client peut scanner ce QR pour ouvrir le paiement.</p>
+            </div>
+          </div>
         ) : null}
       </section>
 
@@ -429,6 +464,16 @@ export default function MerchantApiPage() {
                     onChange={(e) => setPaymentLinkForm((prev) => ({ ...prev, expires_at: e.target.value }))}
                     className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
                   />
+                  <select
+                    aria-label="Canal lien marchand"
+                    value={paymentLinkForm.channel}
+                    onChange={(e) => setPaymentLinkForm((prev) => ({ ...prev, channel: e.target.value }))}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  >
+                    <option value="business_link">Lien partage</option>
+                    <option value="static_qr">QR statique</option>
+                    <option value="dynamic_qr">QR dynamique</option>
+                  </select>
                   <div className="md:col-span-2">
                     <textarea
                       aria-label="Note lien marchand"
@@ -459,10 +504,29 @@ export default function MerchantApiPage() {
                         </div>
                         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">{item.status}</span>
                       </div>
+                      <div className="flex items-center gap-4 rounded-lg border border-slate-100 bg-slate-50 p-3">
+                        <div className="rounded-md bg-white p-2">
+                          <QRCodeSVG
+                            value={item.public_pay_url || item.scan_to_pay_payload?.pay_url || buildPublicPaymentLink(item.share_token)}
+                            size={88}
+                          />
+                        </div>
+                        <div className="space-y-1 text-xs text-slate-500">
+                          <p>
+                            Mode scan:{" "}
+                            {item.channel === "static_qr"
+                              ? "QR statique"
+                              : item.channel === "dynamic_qr"
+                                ? "QR dynamique"
+                                : "Lien partage"}
+                          </p>
+                          <p>Le QR ouvre le paiement public et permet l'encaissement rapide.</p>
+                        </div>
+                      </div>
                       <div className="space-y-1 text-xs text-slate-500">
                         <p>Reference: {item.metadata?.merchant_reference || "-"}</p>
                         <p>Expire le: {formatDateTime(item.expires_at)}</p>
-                        <p className="font-mono break-all">{buildPublicPaymentLink(item.share_token)}</p>
+                        <p className="font-mono break-all">{item.public_pay_url || buildPublicPaymentLink(item.share_token)}</p>
                       </div>
                     </div>
                   ))}
@@ -547,6 +611,16 @@ export default function MerchantApiPage() {
                     onChange={(e) => setWebhookForm((prev) => ({ ...prev, event_types: e.target.value }))}
                     className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
                   />
+                  <input
+                    aria-label="Echecs consecutifs webhook marchand"
+                    type="number"
+                    min="1"
+                    max="10"
+                    placeholder="Seuil pause auto (defaut 3)"
+                    value={webhookForm.max_consecutive_failures}
+                    onChange={(e) => setWebhookForm((prev) => ({ ...prev, max_consecutive_failures: e.target.value }))}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
                   <button
                     onClick={handleCreateWebhook}
                     className="w-fit rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
@@ -561,6 +635,12 @@ export default function MerchantApiPage() {
                         <div>
                           <p className="text-sm font-medium text-slate-900">{item.target_url}</p>
                           <p className="text-xs text-slate-500">{(item.event_types || []).join(", ")}</p>
+                          <p className="text-xs text-slate-500">
+                            Echecs consecutifs: {Number(item.consecutive_failures || 0)} / {Number(item.max_consecutive_failures || 3)}
+                          </p>
+                          {item.auto_paused_for_failures ? (
+                            <p className="text-xs text-amber-700">Pause auto activee suite aux echecs repetes.</p>
+                          ) : null}
                         </div>
                         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">{item.status}</span>
                       </div>
@@ -571,6 +651,14 @@ export default function MerchantApiPage() {
                         >
                           Tester
                         </button>
+                        {item.status !== "revoked" ? (
+                          <button
+                            onClick={() => handleRotateWebhookSecret(item.webhook_id)}
+                            className="rounded-lg border border-indigo-300 px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-50"
+                          >
+                            Regenerer secret
+                          </button>
+                        ) : null}
                         {item.status !== "active" ? (
                           <button
                             onClick={() => handleWebhookStatus(item.webhook_id, "active")}

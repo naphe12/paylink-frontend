@@ -115,6 +115,10 @@ export default function BonusPage() {
         setSuccess(
           `Parrainage active: ${formatAmount(result.amount, result.currency_code)} credites.`
         );
+      } else if (result?.status === "pending") {
+        setSuccess(
+          `Activation en cours: ${Number(result.progress_percent || 0)}%${result.next_step ? ` - ${result.next_step}` : ""}`
+        );
       } else {
         setSuccess("Aucune activation supplementaire detectee.");
       }
@@ -304,6 +308,11 @@ export default function BonusPage() {
                     <StatCard label="Gains" value={formatAmount(profile.rewards_earned, profile.currency_code)} />
                   </div>
                 </div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <StatCard label="Taux activation" value={`${Number(profile.activation_rate_percent || 0)}%`} />
+                  <StatCard label="Mon activation" value={`${Number(profile.my_activation_progress_percent || 0)}%`} />
+                  <StatCard label="Politique" value={profile.targeted_bonus_policy || "real-activity-only"} />
+                </div>
               </section>
 
               <div className="grid gap-6 xl:grid-cols-[1.05fr,1.35fr]">
@@ -334,6 +343,19 @@ export default function BonusPage() {
                   >
                     Verifier mon activation reelle
                   </button>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600">
+                    <p>
+                      Progression d&apos;activation:{" "}
+                      <span className="font-semibold text-slate-900">
+                        {Number(profile.my_activation_progress_percent || 0)}%
+                      </span>
+                    </p>
+                    {profile.my_activation_next_step ? (
+                      <p className="mt-1">Prochaine etape: {profile.my_activation_next_step}</p>
+                    ) : (
+                      <p className="mt-1">Aucune action requise pour le moment.</p>
+                    )}
+                  </div>
                 </section>
 
                 <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
@@ -354,8 +376,13 @@ export default function BonusPage() {
                               <p className="text-sm font-semibold text-slate-900">{formatAmount(reward.amount, reward.currency_code)}</p>
                               <p className="text-xs text-slate-500">Filleul: {reward.referred_user_id}</p>
                               <p className="mt-1 text-xs text-slate-500">
-                                Activation: {reward.activation_reason || "en attente d'activite reelle"}
+                                Activation: {reward.activation_reason || "en attente d'activite reelle qualifiee"}
                               </p>
+                              {Number(reward.activation_progress_percent || 0) > 0 && reward.status !== "activated" ? (
+                                <p className="mt-1 text-xs text-slate-500">
+                                  Progression: {Number(reward.activation_progress_percent || 0)}%
+                                </p>
+                              ) : null}
                             </div>
                             <span
                               className={`rounded-full px-3 py-1 text-xs ${

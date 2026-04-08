@@ -29,8 +29,10 @@ function parseBlockedCategories(value) {
 
 function controlsFormFromCard(card) {
   return {
+    per_tx_limit: card?.per_tx_limit ? String(card.per_tx_limit) : "",
     daily_limit: card?.daily_limit ? String(card.daily_limit) : "",
     monthly_limit: card?.monthly_limit ? String(card.monthly_limit) : "",
+    max_consecutive_declines: String(card?.max_consecutive_declines || 3),
     blocked_categories: Array.isArray(card?.blocked_categories) ? card.blocked_categories.join(", ") : "",
   };
 }
@@ -169,8 +171,10 @@ export default function AdminVirtualCardsPage() {
       setDetailError("");
       setSuccess("");
       const updated = await api.updateAdminVirtualCardControls(selectedCard.card_id, {
+        per_tx_limit: Number(controlsForm.per_tx_limit || 0),
         daily_limit: Number(controlsForm.daily_limit || 0),
         monthly_limit: Number(controlsForm.monthly_limit || 0),
+        max_consecutive_declines: Number(controlsForm.max_consecutive_declines || 3),
         blocked_categories: parseBlockedCategories(controlsForm.blocked_categories),
       });
       setSelectedCard(updated);
@@ -336,6 +340,15 @@ export default function AdminVirtualCardsPage() {
                             : "Aucune"}
                         </span>
                       </p>
+                      <p className="mt-1">
+                        Refus consecutifs:{" "}
+                        <span className="font-medium text-slate-900">
+                          {Number(selectedCard.consecutive_declines || 0)}/{Number(selectedCard.max_consecutive_declines || 3)}
+                        </span>
+                      </p>
+                      {selectedCard.auto_frozen_for_declines ? (
+                        <p className="mt-1 text-amber-700">Carte gelee automatiquement suite aux refus repetes.</p>
+                      ) : null}
                       {selectedCard.last_decline_reason ? (
                         <p className="mt-1">
                           Dernier refus: <span className="font-medium text-rose-700">{selectedCard.last_decline_reason}</span>
@@ -389,6 +402,7 @@ export default function AdminVirtualCardsPage() {
                     </div>
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                       <InlineMetric label="Plafond jour" value={formatLimit(selectedCard.daily_limit, selectedCard.currency_code)} />
+                      <InlineMetric label="Par transaction" value={formatLimit(selectedCard.per_tx_limit, selectedCard.currency_code)} />
                       <InlineMetric
                         label="Reste jour"
                         value={
@@ -416,7 +430,17 @@ export default function AdminVirtualCardsPage() {
                   <h3 className="font-semibold text-slate-900">Controles operateur</h3>
                   <p className="text-sm text-slate-500">Ajuste les plafonds et les categories bloquees sans recreer la carte.</p>
                 </div>
-                <div className="grid gap-3 md:grid-cols-[0.9fr,0.9fr,1.4fr,auto]">
+                <div className="grid gap-3 md:grid-cols-[0.8fr,0.8fr,0.8fr,0.7fr,1.4fr,auto]">
+                  <input
+                    aria-label="Admin plafond transaction carte virtuelle"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Plafond transaction"
+                    value={controlsForm.per_tx_limit}
+                    onChange={(e) => setControlsForm((prev) => ({ ...prev, per_tx_limit: e.target.value }))}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
                   <input
                     aria-label="Admin plafond journalier carte virtuelle"
                     type="number"
@@ -435,6 +459,17 @@ export default function AdminVirtualCardsPage() {
                     placeholder="Plafond mois"
                     value={controlsForm.monthly_limit}
                     onChange={(e) => setControlsForm((prev) => ({ ...prev, monthly_limit: e.target.value }))}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                  <input
+                    aria-label="Admin refus consecutifs max carte virtuelle"
+                    type="number"
+                    min="1"
+                    max="10"
+                    step="1"
+                    placeholder="Refus max"
+                    value={controlsForm.max_consecutive_declines}
+                    onChange={(e) => setControlsForm((prev) => ({ ...prev, max_consecutive_declines: e.target.value }))}
                     className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
                   />
                   <input

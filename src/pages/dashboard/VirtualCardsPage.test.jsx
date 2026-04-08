@@ -49,6 +49,7 @@ describe("VirtualCardsPage", () => {
       exp_month: 4,
       exp_year: 2029,
       spending_limit: 50,
+      per_tx_limit: 25,
       spent_amount: 0,
       daily_limit: 20,
       monthly_limit: 40,
@@ -57,6 +58,9 @@ describe("VirtualCardsPage", () => {
       monthly_spent: 0,
       daily_remaining: 20,
       monthly_remaining: 40,
+      consecutive_declines: 0,
+      max_consecutive_declines: 3,
+      auto_frozen_for_declines: false,
       last_decline_reason: null,
       status: "active",
       created_at: "2026-04-06T10:00:00Z",
@@ -78,6 +82,7 @@ describe("VirtualCardsPage", () => {
       exp_month: 4,
       exp_year: 2029,
       spending_limit: 50,
+      per_tx_limit: 25,
       spent_amount: 0,
       daily_limit: 25,
       monthly_limit: 45,
@@ -86,6 +91,9 @@ describe("VirtualCardsPage", () => {
       monthly_spent: 0,
       daily_remaining: 25,
       monthly_remaining: 45,
+      consecutive_declines: 0,
+      max_consecutive_declines: 4,
+      auto_frozen_for_declines: false,
       last_decline_reason: null,
       status: "active",
       created_at: "2026-04-06T10:00:00Z",
@@ -105,6 +113,7 @@ describe("VirtualCardsPage", () => {
       exp_month: 4,
       exp_year: 2029,
       spending_limit: 50,
+      per_tx_limit: 25,
       spent_amount: 25,
       daily_limit: 25,
       monthly_limit: 45,
@@ -113,6 +122,9 @@ describe("VirtualCardsPage", () => {
       monthly_spent: 25,
       daily_remaining: 0,
       monthly_remaining: 20,
+      consecutive_declines: 0,
+      max_consecutive_declines: 4,
+      auto_frozen_for_declines: false,
       last_decline_reason: null,
       status: "consumed",
       created_at: "2026-04-06T10:00:00Z",
@@ -145,11 +157,17 @@ describe("VirtualCardsPage", () => {
     fireEvent.change(screen.getByLabelText(/^Plafond carte virtuelle$/i), {
       target: { value: "50" },
     });
+    fireEvent.change(screen.getByLabelText(/Plafond transaction carte virtuelle/i), {
+      target: { value: "25" },
+    });
     fireEvent.change(screen.getByLabelText(/Plafond journalier carte virtuelle/i), {
       target: { value: "20" },
     });
     fireEvent.change(screen.getByLabelText(/Plafond mensuel carte virtuelle/i), {
       target: { value: "40" },
+    });
+    fireEvent.change(screen.getByLabelText(/Refus consecutifs max carte virtuelle/i), {
+      target: { value: "4" },
     });
     fireEvent.change(screen.getByLabelText(/Categories bloquees carte virtuelle/i), {
       target: { value: "betting" },
@@ -161,19 +179,27 @@ describe("VirtualCardsPage", () => {
         cardholder_name: "Alice Demo",
         card_type: "single_use",
         spending_limit: 50,
+        per_tx_limit: 25,
         daily_limit: 20,
         monthly_limit: 40,
+        max_consecutive_declines: 4,
         blocked_categories: ["betting"],
       });
     });
 
     expect(await screen.findByText(/4263901234561234/i)).toBeInTheDocument();
 
+    fireEvent.change(screen.getByLabelText(/Edition plafond transaction carte virtuelle/i), {
+      target: { value: "25" },
+    });
     fireEvent.change(screen.getByLabelText(/Edition plafond journalier carte virtuelle/i), {
       target: { value: "25" },
     });
     fireEvent.change(screen.getByLabelText(/Edition plafond mensuel carte virtuelle/i), {
       target: { value: "45" },
+    });
+    fireEvent.change(screen.getByLabelText(/Edition refus consecutifs max carte virtuelle/i), {
+      target: { value: "4" },
     });
     fireEvent.change(screen.getByLabelText(/Edition categories bloquees carte virtuelle/i), {
       target: { value: "betting, streaming" },
@@ -182,8 +208,10 @@ describe("VirtualCardsPage", () => {
 
     await waitFor(() => {
       expect(api.updateVirtualCardControls).toHaveBeenCalledWith("card-1", {
+        per_tx_limit: 25,
         daily_limit: 25,
         monthly_limit: 45,
+        max_consecutive_declines: 4,
         blocked_categories: ["betting", "streaming"],
       });
     });

@@ -12,6 +12,7 @@ vi.mock("@/services/api", () => ({
     getSavingsGoalDetail: vi.fn(),
     contributeSavingsGoal: vi.fn(),
     withdrawSavingsGoal: vi.fn(),
+    updateSavingsGoalLock: vi.fn(),
     configureSavingsGoalRoundUp: vi.fn(),
     applySavingsGoalRoundUp: vi.fn(),
     configureSavingsGoalAutoContribution: vi.fn(),
@@ -87,6 +88,7 @@ describe("SavingsGoalsPage", () => {
     api.getSavingsGoalDetail.mockReset();
     api.contributeSavingsGoal.mockReset();
     api.withdrawSavingsGoal.mockReset();
+    api.updateSavingsGoalLock.mockReset();
     api.configureSavingsGoalRoundUp.mockReset();
     api.applySavingsGoalRoundUp.mockReset();
     api.configureSavingsGoalAutoContribution.mockReset();
@@ -188,6 +190,34 @@ describe("SavingsGoalsPage", () => {
     await waitFor(() => {
       expect(api.contributeSavingsGoal).toHaveBeenCalledWith("goal-1", { amount: 150 });
     });
+  });
+
+  it("shows recommended weekly and monthly contributions when available", async () => {
+    api.listSavingsGoals.mockResolvedValue([
+      buildGoal({
+        title: "Projet maison",
+        current_amount: 200,
+        target_amount: 1000,
+        remaining_amount: 800,
+        recommended_weekly_amount: 100,
+        recommended_monthly_amount: 400,
+      }),
+    ]);
+    api.getSavingsGoalDetail.mockResolvedValue(
+      buildGoal({
+        title: "Projet maison",
+        current_amount: 200,
+        target_amount: 1000,
+        remaining_amount: 800,
+        recommended_weekly_amount: 100,
+        recommended_monthly_amount: 400,
+      })
+    );
+
+    renderPage();
+
+    expect(await screen.findByText(/Suggestion hebdomadaire/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Suggestion mensuelle/i)).toBeInTheDocument();
   });
 
   it("configures and applies a round-up rule", async () => {
@@ -312,6 +342,45 @@ describe("SavingsGoalsPage", () => {
     await waitFor(() => {
       expect(api.applySavingsGoalRoundUp).toHaveBeenCalledWith("goal-1", {
         spent_amount: 458,
+      });
+    });
+  });
+
+  it("locks and unlocks a savings goal", async () => {
+    api.listSavingsGoals
+      .mockResolvedValueOnce([buildGoal({ goal_id: "goal-3", title: "Urgences", locked: false })])
+      .mockResolvedValueOnce([buildGoal({ goal_id: "goal-3", title: "Urgences", locked: true })])
+      .mockResolvedValueOnce([buildGoal({ goal_id: "goal-3", title: "Urgences", locked: false })]);
+    api.getSavingsGoalDetail
+      .mockResolvedValueOnce(buildGoal({ goal_id: "goal-3", title: "Urgences", locked: false }))
+      .mockResolvedValueOnce(buildGoal({ goal_id: "goal-3", title: "Urgences", locked: true }))
+      .mockResolvedValueOnce(buildGoal({ goal_id: "goal-3", title: "Urgences", locked: false }));
+    api.updateSavingsGoalLock
+      .mockResolvedValueOnce(buildGoal({ goal_id: "goal-3", title: "Urgences", locked: true }))
+      .mockResolvedValueOnce(buildGoal({ goal_id: "goal-3", title: "Urgences", locked: false }));
+
+    renderPage();
+
+    expect((await screen.findAllByText(/Urgences/i)).length).toBeGreaterThan(0);
+
+    fireEvent.change(screen.getByLabelText(/Raison verrouillage epargne/i), {
+      target: { value: "Objectif bloque jusqu'a fin du mois" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Verrouiller le coffre/i }));
+
+    await waitFor(() => {
+      expect(api.updateSavingsGoalLock).toHaveBeenCalledWith("goal-3", {
+        locked: true,
+        reason: "Objectif bloque jusqu'a fin du mois",
+      });
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Deverrouiller le coffre/i }));
+
+    await waitFor(() => {
+      expect(api.updateSavingsGoalLock).toHaveBeenCalledWith("goal-3", {
+        locked: false,
+        reason: undefined,
       });
     });
   });

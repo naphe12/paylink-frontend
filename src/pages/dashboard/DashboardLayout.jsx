@@ -50,7 +50,7 @@ const menuGroups = [
       { name: "Transfert programme", path: "/dashboard/client/scheduled-transfers", icon: <RefreshCcw size={18} /> },
       {
         name: "Transfert externe programme",
-        path: "/dashboard/client/scheduled-transfers?type=external",
+        path: "/dashboard/client/scheduled-transfers/external",
         icon: <Globe size={18} />,
       },
       { name: "Epargne", path: "/dashboard/client/savings", icon: <Wallet size={18} /> },

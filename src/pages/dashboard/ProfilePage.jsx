@@ -4,6 +4,18 @@ import { Link } from "react-router-dom";
 import api from "@/services/api";
 import { User } from "lucide-react";
 
+const REPUTATION_TONE = {
+  excellent: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  good: "border-sky-200 bg-sky-50 text-sky-800",
+  fair: "border-amber-200 bg-amber-50 text-amber-800",
+  watch: "border-rose-200 bg-rose-50 text-rose-800",
+};
+
+const TRUST_EVENT_REASON_LABELS = {
+  profile_recomputed: "Profil recalcule",
+  trust_limit_uplift_applied: "Relèvement automatique des limites",
+};
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [trust, setTrust] = useState(null);
@@ -34,6 +46,19 @@ export default function ProfilePage() {
   const creditUsed = profile.credit_used ?? 0;
   const creditAvailable = Math.max(0, creditLimit - creditUsed);
   const trustProfile = trust?.profile || null;
+  const trustEvents = Array.isArray(trust?.events) ? trust.events : [];
+  const formatRate = (value) => {
+    if (value === undefined || value === null || value === "") return "-";
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "-";
+    return `${(numeric * 100).toFixed(1)}%`;
+  };
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" });
+  };
 
   const reloadReferral = async () => {
     try {
@@ -123,6 +148,9 @@ export default function ProfilePage() {
         {trustProfile && (
           <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-sm font-semibold text-slate-900">Confiance & reputation</p>
+            <div className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${REPUTATION_TONE[trustProfile.reputation_tier] || REPUTATION_TONE.watch}`}>
+              Reputation {trustProfile.reputation_tier || "watch"}
+            </div>
             <p className="mt-2">
               <strong>Score confiance :</strong> {trustProfile.trust_score}/100
             </p>
@@ -138,6 +166,22 @@ export default function ProfilePage() {
             <p>
               <strong>Demandes payees :</strong> {trustProfile.successful_payment_requests}
             </p>
+            <p>
+              <strong>Taux paiement reussi :</strong> {formatRate(trustProfile.payment_request_success_rate)}
+            </p>
+            <p>
+              <strong>Volume P2P :</strong> {trustProfile.successful_p2p_trades ?? 0}/{trustProfile.total_p2p_trades ?? 0}
+            </p>
+            <p>
+              <strong>Taux P2P reussi :</strong> {formatRate(trustProfile.p2p_completion_rate)}
+            </p>
+            <p>
+              <strong>Taux litige P2P :</strong> {formatRate(trustProfile.p2p_dispute_rate)}
+            </p>
+            <p>
+              <strong>Reputation :</strong> {trustProfile.reputation_tier || "watch"}
+            </p>
+            {trustProfile.reputation_note ? <p className="text-sm text-slate-600">{trustProfile.reputation_note}</p> : null}
             <p>
               <strong>Anciennete compte :</strong> {trustProfile.account_age_days} jours
             </p>
@@ -172,6 +216,29 @@ export default function ProfilePage() {
                 ))}
               </div>
             )}
+            {trustProfile.last_computed_at ? (
+              <p className="mt-3 text-xs text-slate-500">
+                Dernier recalcul confiance: {formatDateTime(trustProfile.last_computed_at)}
+              </p>
+            ) : null}
+            {trustEvents.length > 0 ? (
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Historique confiance</p>
+                <div className="mt-2 space-y-2">
+                  {trustEvents.slice(0, 5).map((event) => (
+                    <div key={event.event_id} className="rounded-lg border border-slate-100 px-3 py-2">
+                      <p className="text-sm text-slate-800">
+                        {TRUST_EVENT_REASON_LABELS[event.reason_code] || event.reason_code}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Delta score: {Number(event.score_delta || 0) >= 0 ? "+" : ""}
+                        {event.score_delta || 0} · {formatDateTime(event.created_at)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
         {referral && (

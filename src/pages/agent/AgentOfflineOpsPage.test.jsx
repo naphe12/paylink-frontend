@@ -104,7 +104,7 @@ describe("AgentOfflineOpsPage", () => {
     fireEvent.click(syncButtons[syncButtons.length - 1]);
 
     await waitFor(() => {
-      expect(api.syncAgentOfflineOperation).toHaveBeenCalledWith("op-1", {});
+      expect(api.syncAgentOfflineOperation).toHaveBeenCalledWith("op-1", { force: false });
     });
 
     expect((await screen.findAllByText(/A verifier/i)).length).toBeGreaterThan(0);

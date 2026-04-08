@@ -1,4 +1,4 @@
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -25,6 +25,38 @@ function renderPageAt(initialEntry) {
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <ScheduledTransfersPage />
+    </MemoryRouter>
+  );
+}
+
+function LocationProbe() {
+  const location = useLocation();
+  return <p data-testid="location-path">{location.pathname}</p>;
+}
+
+function renderPageWithRoutes(initialEntry) {
+  return render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <Routes>
+        <Route
+          path="/dashboard/client/scheduled-transfers"
+          element={
+            <>
+              <ScheduledTransfersPage />
+              <LocationProbe />
+            </>
+          }
+        />
+        <Route
+          path="/dashboard/client/scheduled-transfers/external"
+          element={
+            <>
+              <ScheduledTransfersPage />
+              <LocationProbe />
+            </>
+          }
+        />
+      </Routes>
     </MemoryRouter>
   );
 }
@@ -119,6 +151,7 @@ describe("ScheduledTransfersPage", () => {
       frequency: "weekly",
       note: null,
       remaining_runs: null,
+      max_consecutive_failures: 3,
     });
     expect(new Date(internalPayload.next_run_at).toISOString()).toBe(internalPayload.next_run_at);
 
@@ -269,6 +302,7 @@ describe("ScheduledTransfersPage", () => {
       frequency: "monthly",
       note: null,
       remaining_runs: null,
+      max_consecutive_failures: 3,
       external_transfer: {
         recipient_name: "Jean Ndayishimiye",
         recipient_phone: "+25761234567",
@@ -289,6 +323,28 @@ describe("ScheduledTransfersPage", () => {
     api.listScheduledTransfers.mockResolvedValueOnce([]);
 
     renderPageAt("/dashboard/client/scheduled-transfers?type=external");
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Type de transfert programme/i)).toHaveValue("external");
+    });
+    expect(screen.getByLabelText(/Nom beneficiaire externe/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Telephone beneficiaire externe/i)).toBeInTheDocument();
+  });
+
+  it("redirects legacy external query to the explicit external route", async () => {
+    api.listScheduledTransfers.mockResolvedValueOnce([]);
+
+    renderPageWithRoutes("/dashboard/client/scheduled-transfers?type=external");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("location-path")).toHaveTextContent("/dashboard/client/scheduled-transfers/external");
+    });
+  });
+
+  it("preselects external transfer type from the external route", async () => {
+    api.listScheduledTransfers.mockResolvedValueOnce([]);
+
+    renderPageAt("/dashboard/client/scheduled-transfers/external");
 
     await waitFor(() => {
       expect(screen.getByLabelText(/Type de transfert programme/i)).toHaveValue("external");

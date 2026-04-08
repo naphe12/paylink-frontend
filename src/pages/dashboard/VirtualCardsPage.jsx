@@ -32,8 +32,10 @@ function parseBlockedCategories(value) {
 
 function controlsFormFromCard(card) {
   return {
+    per_tx_limit: card?.per_tx_limit ? String(card.per_tx_limit) : "",
     daily_limit: card?.daily_limit ? String(card.daily_limit) : "",
     monthly_limit: card?.monthly_limit ? String(card.monthly_limit) : "",
+    max_consecutive_declines: String(card?.max_consecutive_declines || 3),
     blocked_categories: Array.isArray(card?.blocked_categories) ? card.blocked_categories.join(", ") : "",
   };
 }
@@ -235,8 +237,10 @@ export default function VirtualCardsPage() {
     cardholder_name: "",
     card_type: "standard",
     spending_limit: "",
+    per_tx_limit: "",
     daily_limit: "",
     monthly_limit: "",
+    max_consecutive_declines: "3",
     blocked_categories: "",
   });
   const [chargeForm, setChargeForm] = useState({
@@ -309,8 +313,10 @@ export default function VirtualCardsPage() {
         cardholder_name: createForm.cardholder_name || null,
         card_type: createForm.card_type,
         spending_limit: Number(createForm.spending_limit || 0),
+        per_tx_limit: Number(createForm.per_tx_limit || 0),
         daily_limit: Number(createForm.daily_limit || 0),
         monthly_limit: Number(createForm.monthly_limit || 0),
+        max_consecutive_declines: Number(createForm.max_consecutive_declines || 3),
         blocked_categories: parseBlockedCategories(createForm.blocked_categories),
       });
       setRevealedCard({ plain_pan: created?.plain_pan || "", plain_cvv: created?.plain_cvv || "" });
@@ -322,8 +328,10 @@ export default function VirtualCardsPage() {
         cardholder_name: "",
         card_type: "standard",
         spending_limit: "",
+        per_tx_limit: "",
         daily_limit: "",
         monthly_limit: "",
+        max_consecutive_declines: "3",
         blocked_categories: "",
       });
     } catch (err) {
@@ -351,8 +359,10 @@ export default function VirtualCardsPage() {
       setError("");
       setSuccess("");
       const updated = await api.updateVirtualCardControls(selectedCard.card_id, {
+        per_tx_limit: Number(controlsForm.per_tx_limit || 0),
         daily_limit: Number(controlsForm.daily_limit || 0),
         monthly_limit: Number(controlsForm.monthly_limit || 0),
+        max_consecutive_declines: Number(controlsForm.max_consecutive_declines || 3),
         blocked_categories: parseBlockedCategories(controlsForm.blocked_categories),
       });
       mergeCardIntoList(updated);
@@ -557,6 +567,18 @@ export default function VirtualCardsPage() {
                         className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm"
                       />
                     </CreateField>
+                    <CreateField label="Plafond transaction" hint="Montant maximum par achat">
+                      <input
+                        aria-label="Plafond transaction carte virtuelle"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Plafond transaction"
+                        value={createForm.per_tx_limit}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, per_tx_limit: e.target.value }))}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm"
+                      />
+                    </CreateField>
                     <CreateField label="Plafond jour" hint="Controle par fenetre quotidienne">
                       <input
                         aria-label="Plafond journalier carte virtuelle"
@@ -578,6 +600,19 @@ export default function VirtualCardsPage() {
                         placeholder="Plafond mois"
                         value={createForm.monthly_limit}
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, monthly_limit: e.target.value }))}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm"
+                      />
+                    </CreateField>
+                    <CreateField label="Refus consecutifs max" hint="Gel automatique de la carte ensuite">
+                      <input
+                        aria-label="Refus consecutifs max carte virtuelle"
+                        type="number"
+                        min="1"
+                        max="10"
+                        step="1"
+                        placeholder="3"
+                        value={createForm.max_consecutive_declines}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, max_consecutive_declines: e.target.value }))}
                         className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm"
                       />
                     </CreateField>
@@ -609,6 +644,7 @@ export default function VirtualCardsPage() {
                   <p className="mt-1 text-sm text-slate-500">{getCardTypeDescription(createForm.card_type)}</p>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                    <StatCard label="Par achat" value={formatLimit(createForm.per_tx_limit, previewCard.currency_code)} />
                     <StatCard label="Jour" value={formatLimit(createForm.daily_limit, previewCard.currency_code)} />
                     <StatCard label="Mois" value={formatLimit(createForm.monthly_limit, previewCard.currency_code)} />
                   </div>
@@ -693,6 +729,15 @@ export default function VirtualCardsPage() {
                     <CardVisual card={selectedCard} />
                     <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                       <p>Categories bloquees: <span className="font-medium text-slate-900">{(selectedCard.blocked_categories || []).length > 0 ? selectedCard.blocked_categories.join(", ") : "Aucune"}</span></p>
+                      <p className="mt-1">
+                        Refus consecutifs:{" "}
+                        <span className="font-medium text-slate-900">
+                          {Number(selectedCard.consecutive_declines || 0)}/{Number(selectedCard.max_consecutive_declines || 3)}
+                        </span>
+                      </p>
+                      {selectedCard.auto_frozen_for_declines ? (
+                        <p className="mt-1 text-amber-700">Carte gelee automatiquement suite aux refus repetes.</p>
+                      ) : null}
                       {selectedCard.last_decline_reason ? <p className="mt-1">Dernier refus: <span className="font-medium text-rose-700">{selectedCard.last_decline_reason}</span></p> : null}
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -710,12 +755,14 @@ export default function VirtualCardsPage() {
                       <StatCard label="Statut" value={selectedCard.status} />
                       <StatCard label="Type" value={selectedCard.card_type} />
                       <StatCard label="Plafond" value={formatAmount(selectedCard.spending_limit, selectedCard.currency_code)} />
+                      <StatCard label="Par achat" value={formatLimit(selectedCard.per_tx_limit, selectedCard.currency_code)} />
                       <StatCard label="Depense" value={formatAmount(selectedCard.spent_amount, selectedCard.currency_code)} />
                       <StatCard label="Jour" value={formatAmount(selectedCard.daily_spent, selectedCard.currency_code)} />
                       <StatCard label="Mois" value={formatAmount(selectedCard.monthly_spent, selectedCard.currency_code)} />
                       <StatCard label="Plafond jour" value={formatLimit(selectedCard.daily_limit, selectedCard.currency_code)} />
                       <StatCard label="Reste jour" value={selectedCard.daily_remaining == null ? "Aucun" : formatAmount(selectedCard.daily_remaining, selectedCard.currency_code)} />
                       <StatCard label="Reste mois" value={selectedCard.monthly_remaining == null ? "Aucun" : formatAmount(selectedCard.monthly_remaining, selectedCard.currency_code)} />
+                      <StatCard label="Refus max" value={String(selectedCard.max_consecutive_declines || 3)} />
                     </div>
                   </div>
                 </div>
@@ -726,9 +773,11 @@ export default function VirtualCardsPage() {
                   <h3 className="text-lg font-semibold text-slate-900">Regles avancees</h3>
                   <p className="text-sm text-slate-500">Fixe un plafond journalier, un plafond mensuel et bloque des categories marchandes.</p>
                 </div>
-                <div className="grid gap-3 md:grid-cols-[0.9fr,0.9fr,1.4fr,auto]">
+                <div className="grid gap-3 md:grid-cols-[0.8fr,0.8fr,0.8fr,0.7fr,1.4fr,auto]">
+                  <input aria-label="Edition plafond transaction carte virtuelle" type="number" min="0" step="0.01" placeholder="Plafond transaction" value={controlsForm.per_tx_limit} onChange={(e) => setControlsForm((prev) => ({ ...prev, per_tx_limit: e.target.value }))} className="rounded-xl border border-slate-300 px-3 py-2 text-sm" />
                   <input aria-label="Edition plafond journalier carte virtuelle" type="number" min="0" step="0.01" placeholder="Plafond jour" value={controlsForm.daily_limit} onChange={(e) => setControlsForm((prev) => ({ ...prev, daily_limit: e.target.value }))} className="rounded-xl border border-slate-300 px-3 py-2 text-sm" />
                   <input aria-label="Edition plafond mensuel carte virtuelle" type="number" min="0" step="0.01" placeholder="Plafond mois" value={controlsForm.monthly_limit} onChange={(e) => setControlsForm((prev) => ({ ...prev, monthly_limit: e.target.value }))} className="rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+                  <input aria-label="Edition refus consecutifs max carte virtuelle" type="number" min="1" max="10" step="1" placeholder="Refus max" value={controlsForm.max_consecutive_declines} onChange={(e) => setControlsForm((prev) => ({ ...prev, max_consecutive_declines: e.target.value }))} className="rounded-xl border border-slate-300 px-3 py-2 text-sm" />
                   <input aria-label="Edition categories bloquees carte virtuelle" type="text" placeholder="streaming, gaming, betting" value={controlsForm.blocked_categories} onChange={(e) => setControlsForm((prev) => ({ ...prev, blocked_categories: e.target.value }))} className="rounded-xl border border-slate-300 px-3 py-2 text-sm" />
                   <button onClick={handleSaveControls} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Enregistrer</button>
                 </div>

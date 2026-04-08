@@ -92,6 +92,20 @@ export default function FinancialSituationPage() {
       : insights?.alert_level === "watch"
         ? "border-amber-200 bg-amber-50 text-amber-800"
         : "border-emerald-200 bg-emerald-50 text-emerald-800";
+  const paceTone =
+    insights?.pace_status === "at_risk" || insights?.pace_status === "above_pace"
+      ? "border-rose-200 bg-rose-50 text-rose-800"
+      : insights?.pace_status === "below_pace"
+        ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+        : "border-slate-200 bg-slate-50 text-slate-800";
+  const paceLabel =
+    insights?.pace_status === "at_risk"
+      ? "Risque de depassement"
+      : insights?.pace_status === "above_pace"
+        ? "Cadence elevee"
+        : insights?.pace_status === "below_pace"
+          ? "Cadence prudente"
+          : "Cadence stable";
 
   const cards = [
     {
@@ -176,6 +190,13 @@ export default function FinancialSituationPage() {
                     Categories depassees: {insights.over_limit_count || 0}
                   </p>
                 </div>
+                <div className={`rounded-xl border p-4 ${paceTone}`}>
+                  <p className="text-sm font-semibold">Cadence budgetaire</p>
+                  <p className="mt-1 text-sm">{paceLabel}</p>
+                  <p className="mt-2 text-xs">
+                    Jours restants: {Number(insights.days_remaining_in_month || 0).toLocaleString("fr-FR")}
+                  </p>
+                </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <StatCard
                     label="Entrees du mois"
@@ -205,6 +226,21 @@ export default function FinancialSituationPage() {
                   <StatCard
                     label="Epargne detectee"
                     value={Number(insights.current_savings).toLocaleString()}
+                    currency={insights.currency_code}
+                  />
+                  <StatCard
+                    label="Projection fin de mois"
+                    value={Number(insights.projected_month_outflows || 0).toLocaleString()}
+                    currency={insights.currency_code}
+                  />
+                  <StatCard
+                    label="Depassement projete"
+                    value={Number(insights.projected_overrun_amount || 0).toLocaleString()}
+                    currency={insights.currency_code}
+                  />
+                  <StatCard
+                    label="Cap quotidien restant"
+                    value={Number(insights.daily_budget_allowance || 0).toLocaleString()}
                     currency={insights.currency_code}
                   />
                 </div>

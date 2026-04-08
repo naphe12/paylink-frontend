@@ -34,6 +34,8 @@ export default function AgentOfflineOpsPage() {
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [forceBatchSync, setForceBatchSync] = useState(false);
+  const [forceSyncById, setForceSyncById] = useState({});
   const [form, setForm] = useState({
     operation_type: "cash_in",
     amount: "",
@@ -91,11 +93,11 @@ export default function AgentOfflineOpsPage() {
     }
   };
 
-  const handleSyncOne = async (operationId) => {
+  const handleSyncOne = async (operationId, force = false) => {
     try {
       setError("");
       setSuccess("");
-      await api.syncAgentOfflineOperation(operationId, {});
+      await api.syncAgentOfflineOperation(operationId, { force: Boolean(force) });
       setSuccess("Operation synchronisee.");
       await loadOperations();
     } catch (err) {
@@ -107,8 +109,10 @@ export default function AgentOfflineOpsPage() {
     try {
       setError("");
       setSuccess("");
-      const summary = await api.syncPendingAgentOfflineOperations({});
-      setSuccess(`${summary?.synced || 0} operation(s) synchronisee(s), ${summary?.failed || 0} en echec.`);
+      const summary = await api.syncPendingAgentOfflineOperations({ force: Boolean(forceBatchSync) });
+      setSuccess(
+        `${summary?.synced || 0} synchronisee(s), ${summary?.failed || 0} en echec, ${summary?.skipped || 0} en attente de revue.`
+      );
       await loadOperations();
     } catch (err) {
       setError(err?.message || "Synchronisation batch impossible.");
@@ -152,6 +156,15 @@ export default function AgentOfflineOpsPage() {
             Synchroniser la file
           </button>
         </div>
+        <label className="flex items-center gap-2 text-xs text-slate-600">
+          <input
+            type="checkbox"
+            checked={forceBatchSync}
+            onChange={(event) => setForceBatchSync(event.target.checked)}
+            className="h-4 w-4 rounded border-slate-300"
+          />
+          Forcer la sync des operations a risque
+        </label>
         {error ? <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
         {success ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</p> : null}
         <div className="grid gap-3 md:grid-cols-4">
@@ -302,9 +315,25 @@ export default function AgentOfflineOpsPage() {
                   </div>
                   {item.failure_reason ? <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{item.failure_reason}</p> : null}
                   <div className="flex flex-wrap gap-2">
+                    {item.requires_review || item.conflict_reason || item.is_stale ? (
+                      <label className="flex items-center gap-2 text-xs text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(forceSyncById[item.operation_id])}
+                          onChange={(event) =>
+                            setForceSyncById((prev) => ({
+                              ...prev,
+                              [item.operation_id]: event.target.checked,
+                            }))
+                          }
+                          className="h-4 w-4 rounded border-slate-300"
+                        />
+                        Forcer la sync
+                      </label>
+                    ) : null}
                     {["queued", "failed", "draft"].includes(item.status) ? (
                       <button
-                        onClick={() => handleSyncOne(item.operation_id)}
+                        onClick={() => handleSyncOne(item.operation_id, Boolean(forceSyncById[item.operation_id]))}
                         className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800"
                       >
                         Synchroniser

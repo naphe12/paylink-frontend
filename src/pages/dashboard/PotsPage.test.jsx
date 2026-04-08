@@ -424,4 +424,49 @@ describe("PotsPage", () => {
       expect(api.leavePot).toHaveBeenCalledWith("pot-2", {});
     });
   });
+
+  it("shows deadline guardrails when contributions are blocked", async () => {
+    api.listPots.mockResolvedValueOnce([
+      {
+        pot_id: "pot-3",
+        title: "Collecte urgence",
+        current_amount: 1200,
+        target_amount: 5000,
+        currency_code: "BIF",
+        status: "active",
+        progress_percent: 24,
+        pot_mode: "collection",
+        access_role: "owner",
+        days_remaining: 0,
+        deadline_passed: true,
+        can_contribute: false,
+        contribution_block_reason: "Date limite depassee",
+        members: [],
+      },
+    ]);
+    api.getPotDetail.mockResolvedValueOnce({
+      pot_id: "pot-3",
+      title: "Collecte urgence",
+      description: "Frais imprevus",
+      current_amount: 1200,
+      target_amount: 5000,
+      currency_code: "BIF",
+      status: "active",
+      progress_percent: 24,
+      contributions: [],
+      share_token: "share3",
+      pot_mode: "collection",
+      access_role: "owner",
+      days_remaining: 0,
+      deadline_passed: true,
+      can_contribute: false,
+      contribution_block_reason: "Date limite depassee",
+      members: [],
+    });
+
+    renderPage();
+
+    expect((await screen.findAllByText(/Date limite depassee/i)).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /Contribuer/i })).toBeDisabled();
+  });
 });

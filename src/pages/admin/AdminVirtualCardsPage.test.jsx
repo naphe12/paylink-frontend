@@ -46,6 +46,7 @@ describe("AdminVirtualCardsPage", () => {
         exp_year: 2029,
         spending_limit: 100,
         spent_amount: 25,
+        per_tx_limit: 20,
         daily_limit: 30,
         monthly_limit: 90,
         blocked_categories: ["betting"],
@@ -53,6 +54,9 @@ describe("AdminVirtualCardsPage", () => {
         monthly_spent: 25,
         daily_remaining: 20,
         monthly_remaining: 65,
+        consecutive_declines: 0,
+        max_consecutive_declines: 3,
+        auto_frozen_for_declines: false,
         last_decline_reason: null,
         status: "active",
         user_label: "Alice Demo",
@@ -80,6 +84,7 @@ describe("AdminVirtualCardsPage", () => {
       exp_year: 2029,
       spending_limit: 100,
       spent_amount: 25,
+      per_tx_limit: 20,
       daily_limit: 30,
       monthly_limit: 90,
       blocked_categories: ["betting"],
@@ -87,6 +92,9 @@ describe("AdminVirtualCardsPage", () => {
       monthly_spent: 25,
       daily_remaining: 20,
       monthly_remaining: 65,
+      consecutive_declines: 0,
+      max_consecutive_declines: 3,
+      auto_frozen_for_declines: false,
       last_decline_reason: null,
       status: "active",
       user_label: "Alice Demo",
@@ -124,6 +132,7 @@ describe("AdminVirtualCardsPage", () => {
       exp_year: 2029,
       spending_limit: 100,
       spent_amount: 25,
+      per_tx_limit: 20,
       daily_limit: 35,
       monthly_limit: 95,
       blocked_categories: ["betting", "streaming"],
@@ -131,6 +140,9 @@ describe("AdminVirtualCardsPage", () => {
       monthly_spent: 25,
       daily_remaining: 25,
       monthly_remaining: 70,
+      consecutive_declines: 0,
+      max_consecutive_declines: 4,
+      auto_frozen_for_declines: false,
       last_decline_reason: null,
       status: "active",
       user_label: "Alice Demo",
@@ -168,6 +180,7 @@ describe("AdminVirtualCardsPage", () => {
       exp_year: 2029,
       spending_limit: 100,
       spent_amount: 25,
+      per_tx_limit: 20,
       daily_limit: 35,
       monthly_limit: 95,
       blocked_categories: ["betting", "streaming"],
@@ -175,6 +188,9 @@ describe("AdminVirtualCardsPage", () => {
       monthly_spent: 25,
       daily_remaining: 25,
       monthly_remaining: 70,
+      consecutive_declines: 0,
+      max_consecutive_declines: 4,
+      auto_frozen_for_declines: false,
       last_decline_reason: null,
       status: "frozen",
       user_label: "Alice Demo",
@@ -208,8 +224,14 @@ describe("AdminVirtualCardsPage", () => {
     fireEvent.change(screen.getByLabelText(/Admin plafond journalier carte virtuelle/i), {
       target: { value: "35" },
     });
+    fireEvent.change(screen.getByLabelText(/Admin plafond transaction carte virtuelle/i), {
+      target: { value: "20" },
+    });
     fireEvent.change(screen.getByLabelText(/Admin plafond mensuel carte virtuelle/i), {
       target: { value: "95" },
+    });
+    fireEvent.change(screen.getByLabelText(/Admin refus consecutifs max carte virtuelle/i), {
+      target: { value: "4" },
     });
     fireEvent.change(screen.getByLabelText(/Admin categories bloquees carte virtuelle/i), {
       target: { value: "betting, streaming" },
@@ -218,8 +240,10 @@ describe("AdminVirtualCardsPage", () => {
 
     await waitFor(() => {
       expect(api.updateAdminVirtualCardControls).toHaveBeenCalledWith("card-1", {
+        per_tx_limit: 20,
         daily_limit: 35,
         monthly_limit: 95,
+        max_consecutive_declines: 4,
         blocked_categories: ["betting", "streaming"],
       });
     });

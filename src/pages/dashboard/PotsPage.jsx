@@ -55,7 +55,11 @@ export default function PotsPage() {
   const [memberDrafts, setMemberDrafts] = useState({});
 
   const canManageMembers = selectedPot?.access_role === "owner" && selectedPot?.pot_mode === "group_savings";
-  const canContribute = Boolean(selectedPot && ["owner", "member"].includes(selectedPot.access_role));
+  const canContribute = Boolean(
+    selectedPot &&
+      ["owner", "member"].includes(selectedPot.access_role) &&
+      (selectedPot.can_contribute ?? true)
+  );
   const canClose = selectedPot?.access_role === "owner";
   const canLeave = selectedPot?.access_role === "member";
 
@@ -327,7 +331,9 @@ export default function PotsPage() {
                   <p className="mt-2 text-sm text-slate-500">
                     {formatAmount(item.current_amount, item.currency_code)} / {formatAmount(item.target_amount, item.currency_code)}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">{item.progress_percent}%</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {item.progress_percent}%{item.days_remaining != null ? ` | ${item.days_remaining}j restants` : ""}
+                  </p>
                 </button>
               ))}
             </div>
@@ -360,6 +366,24 @@ export default function PotsPage() {
                 <p className="text-sm text-slate-600">
                   {formatAmount(selectedPot.current_amount, selectedPot.currency_code)} collectes sur {formatAmount(selectedPot.target_amount, selectedPot.currency_code)}
                 </p>
+                {selectedPot.days_remaining != null ? (
+                  <p className="text-xs text-slate-500">
+                    {selectedPot.deadline_passed
+                      ? "Date limite depassee"
+                      : `Date limite dans ${selectedPot.days_remaining} jour(s)`}
+                  </p>
+                ) : null}
+                {selectedPot.recommended_daily_contribution != null ? (
+                  <p className="text-xs text-slate-500">
+                    Rythme conseille: {formatAmount(selectedPot.recommended_daily_contribution, selectedPot.currency_code)} / jour
+                  </p>
+                ) : null}
+                {selectedPot.recommended_per_member_contribution != null ? (
+                  <p className="text-xs text-slate-500">
+                    Reste conseille par membre actif:{" "}
+                    {formatAmount(selectedPot.recommended_per_member_contribution, selectedPot.currency_code)}
+                  </p>
+                ) : null}
                 {selectedPot.share_token ? (
                   <p className="text-xs font-mono text-slate-500">Lien partage: /collect/{selectedPot.share_token}</p>
                 ) : null}
@@ -491,6 +515,9 @@ export default function PotsPage() {
                 >
                   Contribuer
                 </button>
+                {!canContribute && selectedPot?.contribution_block_reason ? (
+                  <p className="self-center text-xs text-amber-700">{selectedPot.contribution_block_reason}</p>
+                ) : null}
                 {canLeave ? (
                   <button
                     onClick={handleLeave}

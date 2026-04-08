@@ -15,6 +15,7 @@ vi.mock("@/services/api", () => ({
     revokeMerchantApiKey: vi.fn(),
     createMerchantWebhook: vi.fn(),
     updateMerchantWebhookStatus: vi.fn(),
+    rotateMerchantWebhookSecret: vi.fn(),
     sendMerchantWebhookTest: vi.fn(),
     retryMerchantWebhookEvent: vi.fn(),
     retryDueMerchantWebhookEvents: vi.fn(),
@@ -109,6 +110,25 @@ describe("MerchantApiPage", () => {
         recent_events: [{
           event_id: "evt-1",
           event_type: "merchant.webhook.test",
+          delivery_status: "failed",
+          request_signature: "abc123",
+          response_status_code: 503,
+          response_body: "Upstream unavailable",
+          attempt_count: 1,
+          last_attempted_at: "2026-04-06T10:00:00Z",
+          next_retry_at: "2000-01-01T00:00:00Z",
+          created_at: "2026-04-06T10:00:00Z",
+        }],
+      })
+      .mockResolvedValueOnce({
+        business_id: "biz-1",
+        business_label: "Alpha Shop",
+        membership_role: "owner",
+        api_keys: [{ key_id: "key-1", key_name: "Serveur prod", key_prefix: "pk_live_alpha", is_active: true, metadata: { last4: "9z9z" } }],
+        webhooks: [{ webhook_id: "wh-1", target_url: "https://merchant.example.com/webhook", status: "active", event_types: ["payment.request.paid"] }],
+        recent_events: [{
+          event_id: "evt-1",
+          event_type: "merchant.webhook.test",
           delivery_status: "delivered",
           request_signature: "abc123",
           response_status_code: 200,
@@ -121,6 +141,7 @@ describe("MerchantApiPage", () => {
       });
     api.createMerchantApiKey.mockResolvedValue({ plain_api_key: "pk_live_secret" });
     api.createMerchantWebhook.mockResolvedValue({ plain_signing_secret: "whsec_secret" });
+    api.rotateMerchantWebhookSecret.mockResolvedValue({ plain_signing_secret: "whsec_rotated" });
     api.sendMerchantWebhookTest.mockResolvedValue({ event_id: "evt-1", delivery_status: "failed" });
     api.retryMerchantWebhookEvent.mockResolvedValue({ event_id: "evt-1", delivery_status: "delivered" });
     api.retryDueMerchantWebhookEvents.mockResolvedValue([]);
@@ -143,12 +164,16 @@ describe("MerchantApiPage", () => {
     fireEvent.change(screen.getByLabelText(/Evenements webhook marchand/i), {
       target: { value: "payment.request.paid" },
     });
+    fireEvent.change(screen.getByLabelText(/Echecs consecutifs webhook marchand/i), {
+      target: { value: "4" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /Creer un webhook/i }));
 
     await waitFor(() => {
       expect(api.createMerchantWebhook).toHaveBeenCalledWith("biz-1", {
         target_url: "https://merchant.example.com/webhook",
         event_types: ["payment.request.paid"],
+        max_consecutive_failures: 4,
       });
     });
 
@@ -161,6 +186,13 @@ describe("MerchantApiPage", () => {
     expect(await screen.findByText(/Tentatives: 1/i)).toBeInTheDocument();
     expect(screen.getByText(/Upstream unavailable/i)).toBeInTheDocument();
     expect(screen.getByText(/A echeance: 1/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Regenerer secret/i }));
+
+    await waitFor(() => {
+      expect(api.rotateMerchantWebhookSecret).toHaveBeenCalledWith("wh-1", {});
+    });
+    expect(await screen.findByText(/whsec_rotated/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /^Relancer$/i }));
 
@@ -177,6 +209,9 @@ describe("MerchantApiPage", () => {
     fireEvent.change(screen.getByLabelText(/Reference lien marchand/i), {
       target: { value: "CMD-42" },
     });
+    fireEvent.change(screen.getByLabelText(/Canal lien marchand/i), {
+      target: { value: "static_qr" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /Creer un lien de paiement/i }));
 
     await waitFor(() => {
@@ -188,6 +223,7 @@ describe("MerchantApiPage", () => {
         note: undefined,
         merchant_reference: "CMD-42",
         expires_at: undefined,
+        channel: "static_qr",
       });
     });
 

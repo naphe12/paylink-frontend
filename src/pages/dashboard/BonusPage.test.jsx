@@ -41,6 +41,11 @@ describe("BonusPage", () => {
         pending_rewards: 1,
         rewards_earned: 2500,
         currency_code: "BIF",
+        activation_rate_percent: 50,
+        my_activation_progress_percent: 0,
+        my_activation_ready: false,
+        my_activation_next_step: null,
+        targeted_bonus_policy: "real-activity-only",
         rewards: [
           {
             reward_id: "rw-1",
@@ -49,6 +54,7 @@ describe("BonusPage", () => {
             currency_code: "BIF",
             status: "pending",
             activation_reason: null,
+            activation_progress_percent: 40,
           },
         ],
       })
@@ -60,6 +66,11 @@ describe("BonusPage", () => {
         pending_rewards: 2,
         rewards_earned: 2500,
         currency_code: "BIF",
+        activation_rate_percent: 33.33,
+        my_activation_progress_percent: 60,
+        my_activation_ready: false,
+        my_activation_next_step: "Realiser encore une operation wallet d'un type different pour valider l'activation.",
+        targeted_bonus_policy: "real-activity-only",
         rewards: [],
       })
       .mockResolvedValueOnce({
@@ -70,6 +81,11 @@ describe("BonusPage", () => {
         pending_rewards: 1,
         rewards_earned: 5000,
         currency_code: "BIF",
+        activation_rate_percent: 66.67,
+        my_activation_progress_percent: 100,
+        my_activation_ready: true,
+        my_activation_next_step: null,
+        targeted_bonus_policy: "real-activity-only",
         rewards: [
           {
             reward_id: "rw-2",
@@ -77,7 +93,8 @@ describe("BonusPage", () => {
             amount: 2500,
             currency_code: "BIF",
             status: "activated",
-            activation_reason: "first_real_activity",
+            activation_reason: "qualified_real_activity",
+            activation_progress_percent: 100,
           },
         ],
       });
@@ -106,7 +123,7 @@ describe("BonusPage", () => {
     });
 
     expect(await screen.findByText(/5.?000 BIF/i)).toBeInTheDocument();
-    expect(screen.getByText(/first_real_activity/i)).toBeInTheDocument();
+    expect(screen.getByText(/qualified_real_activity/i)).toBeInTheDocument();
   });
 
   it("sends a bonus transfer and refreshes history", async () => {

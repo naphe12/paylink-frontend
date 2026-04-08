@@ -44,6 +44,7 @@ export default function AdminAgentOfflineOpsPage() {
   const [error, setError] = useState("");
   const [detailError, setDetailError] = useState("");
   const [success, setSuccess] = useState("");
+  const [forceRetry, setForceRetry] = useState(false);
 
   const loadOperations = async (preserveSelection = true) => {
     try {
@@ -72,6 +73,7 @@ export default function AdminAgentOfflineOpsPage() {
 
   useEffect(() => {
     const loadDetail = async () => {
+      setForceRetry(false);
       if (!selectedOperationId) {
         setSelectedOperation(null);
         setDetailError("");
@@ -112,7 +114,9 @@ export default function AdminAgentOfflineOpsPage() {
       setError("");
       setDetailError("");
       setSuccess("");
-      const updated = await api.retryAdminAgentOfflineOperation(selectedOperation.operation_id);
+      const updated = await api.retryAdminAgentOfflineOperation(selectedOperation.operation_id, {
+        force: Boolean(forceRetry),
+      });
       setSelectedOperation(updated);
       setSuccess("Operation offline relancee.");
       await loadOperations(true);
@@ -368,6 +372,17 @@ export default function AdminAgentOfflineOpsPage() {
               ) : null}
 
               <div className="flex flex-wrap gap-2">
+                {selectedOperation.requires_review || selectedOperation.conflict_reason || selectedOperation.is_stale ? (
+                  <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={forceRetry}
+                      onChange={(event) => setForceRetry(event.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300"
+                    />
+                    Forcer la relance
+                  </label>
+                ) : null}
                 {["queued", "failed", "draft"].includes(selectedOperation.status) ? (
                   <button
                     onClick={handleRetry}

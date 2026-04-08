@@ -188,6 +188,7 @@ export default function AppRouter() {
         <Route path="support" element={<SupportCasesPage />} />
         <Route path="transfer" element={<TransferPage />} />
         <Route path="scheduled-transfers" element={<ScheduledTransfersPage />} />
+        <Route path="scheduled-transfers/external" element={<ScheduledTransfersPage />} />
         <Route path="savings" element={<SavingsGoalsPage />} />
         <Route path="business" element={<BusinessAccountsPage />} />
         <Route path="merchant-api" element={<MerchantApiPage />} />

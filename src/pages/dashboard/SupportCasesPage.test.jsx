@@ -12,6 +12,7 @@ vi.mock("@/services/api", () => ({
     getSupportCaseDetail: vi.fn(),
     addSupportCaseMessage: vi.fn(),
     addSupportCaseAttachment: vi.fn(),
+    updateSupportCaseStatus: vi.fn(),
   },
 }));
 
@@ -30,6 +31,7 @@ describe("SupportCasesPage", () => {
     api.getSupportCaseDetail.mockReset();
     api.addSupportCaseMessage.mockReset();
     api.addSupportCaseAttachment.mockReset();
+    api.updateSupportCaseStatus.mockReset();
   });
 
   it("creates a support case and refreshes the list", async () => {
@@ -42,6 +44,8 @@ describe("SupportCasesPage", () => {
           description: "Mon retrait reste bloque",
           category: "wallet",
           status: "open",
+          sla_status: "due_soon",
+          sla_remaining_seconds: 3600,
           created_at: "2026-04-05T10:00:00Z",
         },
       ]);
@@ -53,6 +57,8 @@ describe("SupportCasesPage", () => {
         description: "Mon retrait reste bloque",
         category: "wallet",
         status: "open",
+        sla_status: "due_soon",
+        sla_remaining_seconds: 3600,
         created_at: "2026-04-05T10:00:00Z",
       },
       messages: [],
@@ -78,6 +84,7 @@ describe("SupportCasesPage", () => {
     });
 
     expect(await screen.findAllByText("Blocage wallet")).toHaveLength(2);
+    expect((await screen.findAllByText(/SLA proche/i)).length).toBeGreaterThan(0);
   });
 
   it("adds an attachment to an existing support case", async () => {
@@ -146,6 +153,73 @@ describe("SupportCasesPage", () => {
         storage_key: "https://files.example.com/capture.png",
         file_mime_type: "image/png",
       });
+    });
+  });
+
+  it("closes an existing support case from self-service", async () => {
+    api.listSupportCases
+      .mockResolvedValueOnce([
+        {
+          case_id: "case-3",
+          subject: "Litige transfert",
+          description: "Incident traite",
+          category: "payment_request",
+          status: "in_review",
+          sla_status: "on_time",
+          sla_remaining_seconds: 7200,
+          created_at: "2026-04-05T10:00:00Z",
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          case_id: "case-3",
+          subject: "Litige transfert",
+          description: "Incident traite",
+          category: "payment_request",
+          status: "closed",
+          sla_status: "none",
+          sla_remaining_seconds: null,
+          created_at: "2026-04-05T10:00:00Z",
+        },
+      ]);
+    api.getSupportCaseDetail.mockResolvedValue({
+      case: {
+        case_id: "case-3",
+        subject: "Litige transfert",
+        description: "Incident traite",
+        category: "payment_request",
+        status: "in_review",
+        sla_status: "on_time",
+        sla_remaining_seconds: 7200,
+        created_at: "2026-04-05T10:00:00Z",
+      },
+      messages: [],
+      attachments: [],
+      events: [],
+    });
+    api.updateSupportCaseStatus.mockResolvedValue({
+      case: {
+        case_id: "case-3",
+        subject: "Litige transfert",
+        description: "Incident traite",
+        category: "payment_request",
+        status: "closed",
+        sla_status: "none",
+        sla_remaining_seconds: null,
+        created_at: "2026-04-05T10:00:00Z",
+      },
+      messages: [],
+      attachments: [],
+      events: [],
+    });
+
+    renderPage();
+
+    await screen.findAllByText(/Litige transfert/i);
+    fireEvent.click(screen.getByRole("button", { name: /Clore le dossier/i }));
+
+    await waitFor(() => {
+      expect(api.updateSupportCaseStatus).toHaveBeenCalledWith("case-3", { action: "close" });
     });
   });
 });

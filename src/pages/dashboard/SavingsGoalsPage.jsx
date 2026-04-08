@@ -59,6 +59,7 @@ export default function SavingsGoalsPage() {
     locked: false,
   });
   const [movementAmount, setMovementAmount] = useState("");
+  const [lockReason, setLockReason] = useState("");
   const [roundUpForm, setRoundUpForm] = useState({
     enabled: true,
     increment: "100",
@@ -210,6 +211,25 @@ export default function SavingsGoalsPage() {
       await loadGoals(selectedGoal.goal_id);
     } catch (err) {
       setError(err?.message || "Retrait impossible.");
+    }
+  };
+
+  const handleToggleLock = async () => {
+    if (!selectedGoal) return;
+    try {
+      setError("");
+      setSuccess("");
+      const nextLocked = !selectedGoal.locked;
+      const detail = await api.updateSavingsGoalLock(selectedGoal.goal_id, {
+        locked: nextLocked,
+        reason: lockReason.trim() || undefined,
+      });
+      setSelectedGoal(detail);
+      setLockReason("");
+      setSuccess(nextLocked ? "Coffre verrouille." : "Coffre deverrouille.");
+      await loadGoals(selectedGoal.goal_id);
+    } catch (err) {
+      setError(err?.message || "Mise a jour du verrouillage impossible.");
     }
   };
 
@@ -470,6 +490,23 @@ export default function SavingsGoalsPage() {
                 </p>
               </div>
 
+              {(selectedGoal.recommended_weekly_amount || selectedGoal.recommended_monthly_amount) && (
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3">
+                    <p className="text-xs uppercase tracking-wide text-sky-700">Suggestion hebdomadaire</p>
+                    <p className="mt-1 text-sm font-semibold text-sky-900">
+                      {formatAmount(selectedGoal.recommended_weekly_amount, selectedGoal.currency_code)}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+                    <p className="text-xs uppercase tracking-wide text-indigo-700">Suggestion mensuelle</p>
+                    <p className="mt-1 text-sm font-semibold text-indigo-900">
+                      {formatAmount(selectedGoal.recommended_monthly_amount, selectedGoal.currency_code)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-3">
                 <input
                   aria-label="Montant mouvement epargne"
@@ -494,6 +531,30 @@ export default function SavingsGoalsPage() {
                 >
                   Retirer
                 </button>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    aria-label="Raison verrouillage epargne"
+                    type="text"
+                    placeholder="Raison (optionnel)"
+                    value={lockReason}
+                    onChange={(e) => setLockReason(e.target.value)}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                  <button
+                    onClick={handleToggleLock}
+                    className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${
+                      selectedGoal.locked ? "bg-sky-600 hover:bg-sky-700" : "bg-slate-900 hover:bg-slate-800"
+                    }`}
+                  >
+                    {selectedGoal.locked ? "Deverrouiller le coffre" : "Verrouiller le coffre"}
+                  </button>
+                  <span className="rounded-full bg-white px-3 py-2 text-xs text-slate-600">
+                    Etat: {selectedGoal.locked ? "verrouille" : "deverrouille"}
+                  </span>
+                </div>
               </div>
 
               <div className="rounded-xl border border-slate-200 bg-amber-50 p-4 space-y-4">

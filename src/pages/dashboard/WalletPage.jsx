@@ -143,6 +143,9 @@ export default function WalletPage() {
   const theme = CRYPTO_THEME[activeToken];
   const displayCurrency = walletSummary?.display_currency || wallet.display_currency_code || wallet.currency_code;
   const balanceRows = Array.isArray(walletSummary?.balances) ? walletSummary.balances : [];
+  const summaryGeneratedAt = walletSummary?.generated_at
+    ? new Date(walletSummary.generated_at).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" })
+    : null;
 
   const formatAmount = (value, currency) => {
     const amount = Number(value || 0);
@@ -187,6 +190,14 @@ export default function WalletPage() {
                 <p className="text-sm text-slate-500">
                   En attente: {formatAmount(walletSummary.estimated_total_pending, displayCurrency)}
                 </p>
+                <p className="text-xs text-slate-500">
+                  {walletSummary.non_estimated_currencies_count > 0
+                    ? `Total partiel (${walletSummary.estimated_currencies_count} devise(s) estimee(s), ${walletSummary.non_estimated_currencies_count} non estimee(s))`
+                    : `Couverture FX complete (${walletSummary.estimated_currencies_count} devise(s) estimee(s))`}
+                </p>
+                {summaryGeneratedAt ? (
+                  <p className="text-xs text-slate-500">Taux mis a jour: {summaryGeneratedAt}</p>
+                ) : null}
               </div>
               <label className="flex flex-col gap-2 text-sm text-slate-600">
                 Devise d&apos;affichage
@@ -210,12 +221,21 @@ export default function WalletPage() {
                 <div key={balance.currency_code} className="rounded-xl border border-slate-200 bg-white p-3">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-slate-900">{balance.currency_code}</p>
-                    {balance.rate_source && (
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-500">
-                        {balance.rate_source}
-                      </span>
-                    )}
+                    <span className={`rounded-full px-2 py-1 text-[11px] ${balance.included_in_total ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                      {balance.included_in_total ? "estime" : "taux manquant"}
+                    </span>
                   </div>
+                  {balance.rate_to_display_currency != null ? (
+                    <p className="mt-1 text-xs text-slate-500">
+                      1 {balance.currency_code} = {formatAmount(balance.rate_to_display_currency, displayCurrency)}
+                      {balance.rate_source ? ` (${balance.rate_source})` : ""}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-xs text-amber-700">
+                      Taux indisponible vers {displayCurrency}
+                      {balance.rate_source ? ` (${balance.rate_source})` : ""}
+                    </p>
+                  )}
                   <p className="mt-2 text-sm text-slate-600">
                     Disponible: {formatAmount(balance.available, balance.currency_code)}
                   </p>
@@ -228,6 +248,16 @@ export default function WalletPage() {
                       ? formatAmount(balance.estimated_display_available, displayCurrency)
                       : "N/A"}
                   </p>
+                  {balance.estimated_display_pending != null ? (
+                    <p className="text-xs text-slate-500">
+                      En attente (equiv.): {formatAmount(balance.estimated_display_pending, displayCurrency)}
+                    </p>
+                  ) : null}
+                  {!balance.included_in_total ? (
+                    <p className="text-xs text-amber-700">
+                      Cette devise est exclue du total estime tant que le taux manque.
+                    </p>
+                  ) : null}
                 </div>
               ))}
             </div>

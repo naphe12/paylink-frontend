@@ -33,6 +33,7 @@ const EVENT_LABELS = {
   sent: "Envoi",
   viewed: "Consultation",
   reminder_sent: "Relance",
+  autopay_updated: "Auto-pay",
   paid: "Paiement",
   declined: "Refus",
   cancelled: "Annulation",
@@ -55,6 +56,12 @@ function formatDateTime(value) {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+function buildPaymentRequestShareUrl(shareToken) {
+  if (!shareToken) return "";
+  if (typeof window === "undefined") return `/pay/request/${shareToken}`;
+  return `${window.location.origin}/pay/request/${shareToken}`;
 }
 
 function inferRequestScope(item, activeFilter) {
@@ -82,6 +89,7 @@ export default function PaymentPage() {
   const [error, setError] = useState("");
   const [detailError, setDetailError] = useState("");
   const [activeFilter, setActiveFilter] = useState("received");
+  const [autoPayMaxAmount, setAutoPayMaxAmount] = useState("");
   const [form, setForm] = useState({
     payer_identifier: "",
     amount: "",
@@ -90,6 +98,9 @@ export default function PaymentPage() {
     note: "",
     due_at: "",
     expires_at: "",
+    recurrence_frequency: "none",
+    recurrence_count: "",
+    recurrence_end_at: "",
   });
 
   const fetchRequests = async (preserveSelection = true) => {
@@ -150,6 +161,23 @@ export default function PaymentPage() {
   const selectedRequest =
     selectedDetail?.request || filteredRequests.find((item) => item.request_id === selectedId) || null;
 
+  useEffect(() => {
+    if (!selectedRequest) {
+      setAutoPayMaxAmount("");
+      return;
+    }
+    const existing = selectedRequest.auto_pay_max_amount;
+    if (existing !== null && existing !== undefined && existing !== "") {
+      setAutoPayMaxAmount(String(existing));
+      return;
+    }
+    if (selectedRequest.amount !== null && selectedRequest.amount !== undefined) {
+      setAutoPayMaxAmount(String(selectedRequest.amount));
+      return;
+    }
+    setAutoPayMaxAmount("");
+  }, [selectedRequest?.request_id, selectedRequest?.auto_pay_max_amount, selectedRequest?.amount]);
+
   const createRequest = async () => {
     if (!form.amount.trim()) {
       setError("Le montant est obligatoire.");
@@ -167,6 +195,9 @@ export default function PaymentPage() {
         note: form.note.trim() || undefined,
         due_at: form.due_at ? new Date(form.due_at).toISOString() : undefined,
         expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : undefined,
+        recurrence_frequency: form.recurrence_frequency || "none",
+        recurrence_count: form.recurrence_count ? Number(form.recurrence_count) : undefined,
+        recurrence_end_at: form.recurrence_end_at ? new Date(form.recurrence_end_at).toISOString() : undefined,
       };
       await api.createPaymentRequest(payload);
       setForm({
@@ -177,6 +208,9 @@ export default function PaymentPage() {
         note: "",
         due_at: "",
         expires_at: "",
+        recurrence_frequency: "none",
+        recurrence_count: "",
+        recurrence_end_at: "",
       });
       await fetchRequests(false);
       setActiveFilter("sent");
@@ -212,6 +246,32 @@ export default function PaymentPage() {
     }
   };
 
+  const updateAutoPay = async (enabled) => {
+    if (!selectedRequest?.request_id) return;
+    setSubmitting(true);
+    setDetailError("");
+    setMaintenanceMessage("");
+    try {
+      let payload = { enabled };
+      if (enabled) {
+        const parsedMaxAmount = Number(autoPayMaxAmount);
+        if (!Number.isFinite(parsedMaxAmount) || parsedMaxAmount <= 0) {
+          throw new Error("Le plafond auto-pay doit etre superieur a 0.");
+        }
+        payload = { enabled: true, max_amount: parsedMaxAmount };
+      }
+      await api.updatePaymentRequestAutoPay(selectedRequest.request_id, payload);
+      await fetchRequests();
+      const detail = await api.getPaymentRequestDetail(selectedRequest.request_id).catch(() => null);
+      setSelectedDetail(detail);
+      setMaintenanceMessage(enabled ? "Auto-pay activee." : "Auto-pay desactivee.");
+    } catch (err) {
+      setDetailError(err?.message || "Configuration auto-pay impossible.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const runDueMaintenance = async () => {
     setSubmitting(true);
     setError("");
@@ -226,8 +286,9 @@ export default function PaymentPage() {
       }
       const reminded = Number(result?.reminded_count || 0);
       const expired = Number(result?.expired_count || 0);
+      const autoPaid = Number(result?.auto_paid_count || 0);
       setMaintenanceMessage(
-        `Echeances traitees: ${reminded} relance(s) automatique(s), ${expired} expiration(s).`
+        `Echeances traitees: ${autoPaid} auto-paiement(s), ${reminded} relance(s) automatique(s), ${expired} expiration(s).`
       );
     } catch (err) {
       setError(err?.message || "Impossible de traiter les echeances dues.");
@@ -236,10 +297,25 @@ export default function PaymentPage() {
     }
   };
 
+  const copyShareLink = async () => {
+    const shareUrl = buildPaymentRequestShareUrl(selectedRequest?.share_token);
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setMaintenanceMessage("Lien de demande copie.");
+    } catch (_err) {
+      setDetailError("Copie du lien impossible.");
+    }
+  };
+
   const canPay = selectedRequest?.role === "payer" && selectedRequest?.status === "pending";
   const canDecline = selectedRequest?.role === "payer" && selectedRequest?.status === "pending";
   const canCancel = selectedRequest?.role === "requester" && selectedRequest?.status === "pending";
-  const canRemind = selectedRequest?.role === "requester" && selectedRequest?.status === "pending";
+  const canRemind =
+    selectedRequest?.role === "requester" &&
+    selectedRequest?.status === "pending" &&
+    selectedRequest?.can_send_manual_reminder !== false;
+  const canManageAutoPay = selectedRequest?.role === "payer" && selectedRequest?.status === "pending";
 
   return (
     <div className="space-y-6">
@@ -332,6 +408,32 @@ export default function PaymentPage() {
             onChange={(e) => setForm((prev) => ({ ...prev, expires_at: e.target.value }))}
             className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
           />
+          <select
+            value={form.recurrence_frequency}
+            onChange={(e) => setForm((prev) => ({ ...prev, recurrence_frequency: e.target.value }))}
+            className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+            aria-label="Frequence recurrence"
+          >
+            <option value="none">Sans recurrence</option>
+            <option value="daily">Quotidienne</option>
+            <option value="weekly">Hebdomadaire</option>
+            <option value="monthly">Mensuelle</option>
+          </select>
+          <input
+            type="number"
+            min="1"
+            max="365"
+            placeholder="Nombre d'occurrences"
+            value={form.recurrence_count}
+            onChange={(e) => setForm((prev) => ({ ...prev, recurrence_count: e.target.value }))}
+            className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+          />
+          <input
+            type="datetime-local"
+            value={form.recurrence_end_at}
+            onChange={(e) => setForm((prev) => ({ ...prev, recurrence_end_at: e.target.value }))}
+            className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+          />
           <div className="md:col-span-2">
             <textarea
               rows={3}
@@ -410,6 +512,16 @@ export default function PaymentPage() {
                           Echeance due
                         </span>
                       ) : null}
+                      {item.recurrence_frequency && item.recurrence_frequency !== "none" ? (
+                        <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-medium text-sky-800">
+                          Recurrence {item.recurrence_frequency}
+                        </span>
+                      ) : null}
+                      {item.auto_pay_enabled ? (
+                        <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-800">
+                          Auto-pay
+                        </span>
+                      ) : null}
                       <span
                         className={`rounded-full border px-2 py-1 text-xs font-medium ${
                           STATUS_STYLES[item.status] || STATUS_STYLES.draft
@@ -445,9 +557,18 @@ export default function PaymentPage() {
               </p>
             </div>
             {selectedRequest?.share_token && (
-              <code className="rounded-lg bg-slate-100 px-2 py-1 text-xs text-slate-700">
-                {selectedRequest.share_token}
-              </code>
+              <div className="flex items-center gap-2">
+                <code className="rounded-lg bg-slate-100 px-2 py-1 text-xs text-slate-700">
+                  {selectedRequest.share_token}
+                </code>
+                <button
+                  type="button"
+                  onClick={copyShareLink}
+                  className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Copier le lien
+                </button>
+              </div>
             )}
           </div>
 
@@ -477,6 +598,16 @@ export default function PaymentPage() {
                     {selectedRequest.is_due && selectedRequest.status === "pending" ? (
                       <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800">
                         Echeance due
+                      </span>
+                    ) : null}
+                    {selectedRequest.recurrence_frequency && selectedRequest.recurrence_frequency !== "none" ? (
+                      <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-medium text-sky-800">
+                        Recurrence {selectedRequest.recurrence_frequency}
+                      </span>
+                    ) : null}
+                    {selectedRequest.auto_pay_enabled ? (
+                      <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-800">
+                        Auto-pay
                       </span>
                     ) : null}
                     <span
@@ -518,6 +649,17 @@ export default function PaymentPage() {
                     ou constater son expiration.
                   </div>
                 ) : null}
+                {selectedRequest.role === "requester" && selectedRequest.status === "pending" ? (
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Relances manuelles</p>
+                    <p className="mt-1 text-sm text-slate-700">
+                      Nombre envoye: {Number(selectedRequest.manual_reminder_count || 0).toLocaleString("fr-FR")}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Prochaine relance autorisee: {formatDateTime(selectedRequest.next_manual_reminder_at)}
+                    </p>
+                  </div>
+                ) : null}
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -554,6 +696,49 @@ export default function PaymentPage() {
                   <BellRing size={16} /> Relancer
                 </button>
               </div>
+              {selectedRequest?.role === "requester" &&
+              selectedRequest?.status === "pending" &&
+              selectedRequest?.can_send_manual_reminder === false ? (
+                <p className="text-xs text-amber-700">
+                  Relance manuelle temporairement indisponible (cooldown actif).
+                </p>
+              ) : null}
+
+              {canManageAutoPay ? (
+                <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+                  <p className="text-sm font-semibold text-indigo-900">Auto-pay</p>
+                  <p className="mt-1 text-xs text-indigo-800">
+                    Active ou desactive le paiement automatique avec plafond de securite.
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      aria-label="Plafond auto-pay detail"
+                      value={autoPayMaxAmount}
+                      onChange={(e) => setAutoPayMaxAmount(e.target.value)}
+                      className="w-44 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => updateAutoPay(true)}
+                      className="rounded-lg bg-indigo-700 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-800 disabled:opacity-60"
+                    >
+                      Activer / mettre a jour
+                    </button>
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => updateAutoPay(false)}
+                      className="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-sm font-medium text-indigo-800 hover:bg-indigo-100 disabled:opacity-60"
+                    >
+                      Desactiver
+                    </button>
+                  </div>
+                </div>
+              ) : null}
 
               <div>
                 <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">

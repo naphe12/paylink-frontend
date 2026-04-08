@@ -33,10 +33,22 @@ export default function BusinessAccountsPage() {
   const [memberDrafts, setMemberDrafts] = useState({});
   const [subWalletDrafts, setSubWalletDrafts] = useState({});
   const currentRole = selectedBusiness?.current_membership_role || null;
-  const canManageMembers = currentRole === "owner" || currentRole === "admin";
-  const canCreateSubWallet = currentRole === "owner" || currentRole === "admin";
-  const canManageSubWalletSettings = currentRole === "owner" || currentRole === "admin";
-  const canFundOrReleaseSubWallet = currentRole === "owner";
+  const isBusinessActive = selectedBusiness ? selectedBusiness.is_active !== false : true;
+  const canToggleBusinessStatus = currentRole === "owner";
+  const canManageMembers = isBusinessActive && (currentRole === "owner" || currentRole === "admin");
+  const canCreateSubWallet = isBusinessActive && (currentRole === "owner" || currentRole === "admin");
+  const canManageSubWalletSettings = isBusinessActive && (currentRole === "owner" || currentRole === "admin");
+  const canFundOrReleaseSubWallet = isBusinessActive && currentRole === "owner";
+  const getRemainingCapacity = (subWallet) => {
+    const current = Number(subWallet?.current_amount || 0);
+    const limit = Number(subWallet?.spending_limit || 0);
+    return Math.max(0, limit - current);
+  };
+  const canFundWithAmount = (subWallet) => {
+    const amount = Number(subWalletAmounts[subWallet.sub_wallet_id] || 0);
+    if (!Number.isFinite(amount) || amount <= 0) return false;
+    return amount <= getRemainingCapacity(subWallet);
+  };
 
   const loadItems = async (targetBusinessId = null) => {
     try {
@@ -133,6 +145,22 @@ export default function BusinessAccountsPage() {
       await loadItems(selectedBusiness.business_id);
     } catch (err) {
       setError(err?.message || "Creation sous-wallet impossible.");
+    }
+  };
+
+  const handleToggleBusinessStatus = async () => {
+    if (!selectedBusiness || !canToggleBusinessStatus) return;
+    try {
+      setError("");
+      setSuccess("");
+      const updated = await api.updateBusinessAccountStatus(selectedBusiness.business_id, {
+        is_active: !isBusinessActive,
+      });
+      setSelectedBusiness(updated);
+      setSuccess(!isBusinessActive ? "Structure business reactivee." : "Structure business desactivee.");
+      await loadItems(selectedBusiness.business_id);
+    } catch (err) {
+      setError(err?.message || "Mise a jour du statut business impossible.");
     }
   };
 
@@ -299,13 +327,27 @@ export default function BusinessAccountsPage() {
                 <h2 className="text-xl font-semibold text-slate-900">{selectedBusiness.display_name}</h2>
                 <p className="text-sm text-slate-500">{selectedBusiness.legal_name}</p>
               </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`rounded-full px-3 py-1 text-xs font-medium ${isBusinessActive ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                  {isBusinessActive ? "structure active" : "structure inactive"}
+                </span>
+                <button
+                  onClick={handleToggleBusinessStatus}
+                  disabled={!canToggleBusinessStatus}
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  {isBusinessActive ? "Desactiver la structure" : "Reactiver la structure"}
+                </button>
+              </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Votre role</p>
                 <p className="mt-1 text-sm font-semibold text-slate-900">
                   {ROLE_LABELS[currentRole] || "Non defini"}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
-                  {canFundOrReleaseSubWallet
+                  {!isBusinessActive
+                    ? "La structure est inactive. Les actions operationnelles sont bloquees."
+                    : canFundOrReleaseSubWallet
                     ? "Vous pouvez gerer l'equipe et les sous-wallets."
                     : canCreateSubWallet
                       ? "Vous pouvez gerer l'equipe et creer des sous-wallets."
@@ -495,6 +537,9 @@ export default function BusinessAccountsPage() {
                                 Limite: {Number(subWallet.spending_limit || 0).toLocaleString()} {subWallet.currency_code}
                                 {subWallet.assigned_label ? ` | Assigne a ${subWallet.assigned_label}` : ""}
                               </p>
+                              <p className="text-xs text-slate-500">
+                                Capacite restante: {getRemainingCapacity(subWallet).toLocaleString()} {subWallet.currency_code}
+                              </p>
                             </div>
                             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">{subWallet.status}</span>
                           </div>
@@ -604,19 +649,24 @@ export default function BusinessAccountsPage() {
                             />
                             <button
                               onClick={() => handleFundSubWallet(subWallet.sub_wallet_id)}
-                              disabled={!canFundOrReleaseSubWallet || subWallet.status !== "active"}
+                              disabled={!canFundOrReleaseSubWallet || subWallet.status !== "active" || !canFundWithAmount(subWallet)}
                               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
                             >
                               Alimenter
                             </button>
                             <button
                               onClick={() => handleReleaseSubWallet(subWallet.sub_wallet_id)}
-                              disabled={!canFundOrReleaseSubWallet || subWallet.status !== "active"}
+                              disabled={!canFundOrReleaseSubWallet || subWallet.status !== "active" || !Number(subWalletAmounts[subWallet.sub_wallet_id] || 0)}
                               className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                             >
                               Recuperer
                             </button>
                           </div>
+                          {Number(subWalletAmounts[subWallet.sub_wallet_id] || 0) > getRemainingCapacity(subWallet) ? (
+                            <p className="text-xs text-amber-700">
+                              Le montant depasse le plafond restant du sous-wallet.
+                            </p>
+                          ) : null}
                         </div>
                       ))}
                     </div>

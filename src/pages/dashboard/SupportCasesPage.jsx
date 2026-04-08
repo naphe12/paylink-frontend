@@ -20,6 +20,20 @@ const STATUS_STYLES = {
   closed: "bg-slate-100 text-slate-700 border-slate-200",
 };
 
+const SLA_LABELS = {
+  on_time: "SLA OK",
+  due_soon: "SLA proche",
+  overdue: "SLA depassee",
+  none: "Sans SLA",
+};
+
+const SLA_STYLES = {
+  on_time: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  due_soon: "bg-amber-100 text-amber-800 border-amber-200",
+  overdue: "bg-rose-100 text-rose-800 border-rose-200",
+  none: "bg-slate-100 text-slate-700 border-slate-200",
+};
+
 const CATEGORY_OPTIONS = [
   { value: "payment_request", label: "Demande de paiement" },
   { value: "wallet", label: "Wallet" },
@@ -41,6 +55,16 @@ function formatDateTime(value) {
 
 function isExternalLink(value) {
   return /^https?:\/\//i.test(String(value || ""));
+}
+
+function formatSlaRemaining(seconds) {
+  if (!Number.isFinite(seconds)) return "-";
+  if (seconds < 0) return "depassee";
+  const totalMinutes = Math.floor(seconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours <= 0) return `${minutes} min`;
+  return `${hours} h ${minutes} min`;
 }
 
 export default function SupportCasesPage() {
@@ -188,6 +212,21 @@ export default function SupportCasesPage() {
     }
   };
 
+  const updateCaseStatus = async (action) => {
+    if (!selectedCase?.case_id) return;
+    setSubmitting(true);
+    setDetailError("");
+    try {
+      const detail = await api.updateSupportCaseStatus(selectedCase.case_id, { action });
+      setSelectedDetail(detail);
+      await fetchCases();
+    } catch (err) {
+      setDetailError(err?.message || "Impossible de mettre a jour le statut du dossier.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -323,7 +362,9 @@ export default function SupportCasesPage() {
                   <div className="mb-2 flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-slate-900">{item.subject}</p>
-                      <p className="text-xs text-slate-500">{item.category}</p>
+                      <p className="text-xs text-slate-500">
+                        {item.category} | {SLA_LABELS[item.sla_status] || SLA_LABELS.none}
+                      </p>
                     </div>
                     <span className={`rounded-full border px-2 py-1 text-xs font-medium ${STATUS_STYLES[item.status] || STATUS_STYLES.open}`}>
                       {STATUS_LABELS[item.status] || item.status}
@@ -371,6 +412,38 @@ export default function SupportCasesPage() {
                     </p>
                   </div>
                   <p className="text-xs text-slate-500">{formatDateTime(selectedCase.created_at)}</p>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span
+                    className={`rounded-full border px-2 py-1 text-xs font-medium ${
+                      SLA_STYLES[selectedCase.sla_status] || SLA_STYLES.none
+                    }`}
+                  >
+                    {SLA_LABELS[selectedCase.sla_status] || SLA_LABELS.none}
+                  </span>
+                  <span className="rounded-full border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600">
+                    Restant: {formatSlaRemaining(Number(selectedCase.sla_remaining_seconds))}
+                  </span>
+                  {selectedCase.status !== "closed" ? (
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => updateCaseStatus("close")}
+                      className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                    >
+                      Clore le dossier
+                    </button>
+                  ) : null}
+                  {["resolved", "closed"].includes(String(selectedCase.status || "").toLowerCase()) ? (
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => updateCaseStatus("reopen")}
+                      className="rounded-full border border-sky-300 bg-white px-3 py-1 text-xs text-sky-700 hover:bg-sky-50 disabled:opacity-60"
+                    >
+                      Rouvrir
+                    </button>
+                  ) : null}
                 </div>
                 <p className="mt-3 text-sm text-slate-700">{selectedCase.description}</p>
               </div>

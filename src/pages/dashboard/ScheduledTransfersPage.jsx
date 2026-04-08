@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "@/services/api";
 
 const FREQUENCIES = [
@@ -23,9 +23,11 @@ const INITIAL_FORM = {
   next_run_at: "",
   note: "",
   remaining_runs: "",
+  max_consecutive_failures: "3",
 };
 
-function getTransferTypeFromSearch(search = "") {
+function getTransferTypeFromLocation(pathname = "", search = "") {
+  if (String(pathname).endsWith("/scheduled-transfers/external")) return "external";
   if (!search) return "internal";
   const type = new URLSearchParams(search).get("type");
   return type === "external" ? "external" : "internal";
@@ -54,7 +56,10 @@ function getTargetSubline(item) {
 
 export default function ScheduledTransfersPage() {
   const location = useLocation();
-  const [defaultTransferType, setDefaultTransferType] = useState(() => getTransferTypeFromSearch(location.search));
+  const navigate = useNavigate();
+  const [defaultTransferType, setDefaultTransferType] = useState(() =>
+    getTransferTypeFromLocation(location.pathname, location.search)
+  );
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -81,13 +86,18 @@ export default function ScheduledTransfersPage() {
   }, []);
 
   useEffect(() => {
-    const nextDefault = getTransferTypeFromSearch(location.search);
+    const params = new URLSearchParams(location.search);
+    if (location.pathname.endsWith("/scheduled-transfers") && params.get("type") === "external") {
+      navigate("/dashboard/client/scheduled-transfers/external", { replace: true });
+      return;
+    }
+    const nextDefault = getTransferTypeFromLocation(location.pathname, location.search);
     setDefaultTransferType(nextDefault);
     setForm((prev) => {
       if (prev.transfer_type === nextDefault) return prev;
       return { ...prev, transfer_type: nextDefault };
     });
-  }, [location.search]);
+  }, [location.pathname, location.search, navigate]);
 
   const resetForm = () => {
     setForm({ ...INITIAL_FORM, transfer_type: defaultTransferType });
@@ -118,6 +128,7 @@ export default function ScheduledTransfersPage() {
         next_run_at: new Date(form.next_run_at).toISOString(),
         note: form.note || null,
         remaining_runs: form.remaining_runs ? Number(form.remaining_runs) : null,
+        max_consecutive_failures: form.max_consecutive_failures ? Number(form.max_consecutive_failures) : 3,
       };
       if (isExternalTransfer) {
         payload.external_transfer = {
@@ -279,6 +290,16 @@ export default function ScheduledTransfersPage() {
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
           <input
+            type="number"
+            aria-label="Limite echecs consecutifs"
+            min="1"
+            max="10"
+            placeholder="Pause auto apres N echecs"
+            value={form.max_consecutive_failures}
+            onChange={(e) => setForm((prev) => ({ ...prev, max_consecutive_failures: e.target.value }))}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+          <input
             type="text"
             aria-label="Note programmee"
             placeholder="Note (optionnel)"
@@ -399,6 +420,12 @@ export default function ScheduledTransfersPage() {
                     <p className="text-sm text-slate-500">Prochaine execution: {formatDateTime(item.next_run_at)}</p>
                     <p className="text-sm text-slate-500">Dernier resultat: {item.last_result || "-"}</p>
                     <p className="text-sm text-slate-500">Echeance due: {item.is_due ? "oui" : "non"}</p>
+                    <p className="text-sm text-slate-500">
+                      Echecs consecutifs: {item.failure_count ?? 0} / {item.max_consecutive_failures ?? 3}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      Pause auto securite: {item.auto_paused_for_failures ? "activee" : "inactive"}
+                    </p>
                     <p className="text-sm text-slate-500">
                       Action recommandee: {item.status === "paused" ? "reprendre ou annuler" : item.is_due ? "executer" : "surveiller"}
                     </p>
