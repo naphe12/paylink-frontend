@@ -48,6 +48,11 @@ const menuGroups = [
       { name: "Demandes paiement", path: "/dashboard/client/payments", icon: <Send size={18} /> },
       { name: "Transfert interne", path: "/dashboard/client/transfer", icon: <RefreshCcw size={18} /> },
       { name: "Transfert programme", path: "/dashboard/client/scheduled-transfers", icon: <RefreshCcw size={18} /> },
+      {
+        name: "Transfert externe programme",
+        path: "/dashboard/client/scheduled-transfers?type=external",
+        icon: <Globe size={18} />,
+      },
       { name: "Epargne", path: "/dashboard/client/savings", icon: <Wallet size={18} /> },
       { name: "Cartes virtuelles", path: "/dashboard/client/cards", icon: <CreditCard size={18} /> },
       { name: "Business", path: "/dashboard/client/business", icon: <Store size={18} /> },
@@ -112,6 +117,26 @@ const menuGroups = [
   },
 ];
 
+const PATHNAME_VARIANTS = (() => {
+  const seen = new Map();
+  for (const group of menuGroups) {
+    for (const item of group.items) {
+      const pathname = String(item.path || "").split("?")[0];
+      if (!pathname) continue;
+      const prev = seen.get(pathname) || { count: 0, hasQuery: false };
+      seen.set(pathname, {
+        count: prev.count + 1,
+        hasQuery: prev.hasQuery || String(item.path || "").includes("?"),
+      });
+    }
+  }
+  const variants = new Set();
+  for (const [pathname, meta] of seen.entries()) {
+    if (meta.count > 1 && meta.hasQuery) variants.add(pathname);
+  }
+  return variants;
+})();
+
 const DEFAULT_COLLAPSED_GROUPS = {
   wallet: false,
   payments: true,
@@ -160,6 +185,7 @@ function getGroupForPath(pathname = "") {
     pathname.includes("/payments") ||
     pathname.includes("/cards") ||
     pathname.includes("/transfer") ||
+    pathname.includes("/scheduled-transfers") ||
     pathname.includes("/merchant-api") ||
     pathname.includes("/pots") ||
     pathname.includes("/external-transfer") ||
@@ -210,16 +236,23 @@ export default function DashboardLayout() {
     setCollapsedGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
   };
 
-  const linkClass = ({ isActive }) =>
+  const isMenuItemActive = (itemPath) => {
+    const [itemPathname, itemQuery = ""] = String(itemPath || "").split("?");
+    if (!itemPathname) return false;
+    if (location.pathname !== itemPathname) return false;
+    if (itemQuery) return location.search === `?${itemQuery}`;
+    if (PATHNAME_VARIANTS.has(itemPathname)) return !location.search;
+    return true;
+  };
+
+  const linkClass = (active) =>
     `flex items-center gap-3 px-4 py-2 rounded-xl transition ${
-      isActive
-        ? "bg-white/15 text-white shadow-lg shadow-indigo-900/40"
-        : "text-slate-200 hover:bg-white/10"
+      active ? "bg-white/15 text-white shadow-lg shadow-indigo-900/40" : "text-slate-200 hover:bg-white/10"
     }`;
 
-  const assistantLinkClass = ({ isActive }) =>
+  const assistantLinkClass = (active) =>
     `flex items-center gap-3 px-4 py-2 rounded-2xl border transition ${
-      isActive
+      active
         ? "border-cyan-200 bg-white text-indigo-950 shadow-lg shadow-cyan-900/20"
         : "border-white/10 bg-white/5 text-white hover:bg-white/12 hover:border-cyan-200/40"
     }`;
@@ -265,7 +298,7 @@ export default function DashboardLayout() {
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    className={group.key === "assistants" ? assistantLinkClass : linkClass}
+                    className={group.key === "assistants" ? assistantLinkClass(isMenuItemActive(item.path)) : linkClass(isMenuItemActive(item.path))}
                     onClick={onNavigate}
                   >
                     {item.icon} {item.name}

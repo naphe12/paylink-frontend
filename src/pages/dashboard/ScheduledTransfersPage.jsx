@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import api from "@/services/api";
 
 const FREQUENCIES = [
@@ -24,6 +25,12 @@ const INITIAL_FORM = {
   remaining_runs: "",
 };
 
+function getTransferTypeFromSearch(search = "") {
+  if (!search) return "internal";
+  const type = new URLSearchParams(search).get("type");
+  return type === "external" ? "external" : "internal";
+}
+
 function formatDateTime(value) {
   if (!value) return "-";
   const date = new Date(value);
@@ -46,12 +53,14 @@ function getTargetSubline(item) {
 }
 
 export default function ScheduledTransfersPage() {
+  const location = useLocation();
+  const [defaultTransferType, setDefaultTransferType] = useState(() => getTransferTypeFromSearch(location.search));
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [form, setForm] = useState(() => ({ ...INITIAL_FORM, transfer_type: defaultTransferType }));
   const dueCount = items.filter((item) => item.is_due).length;
   const isExternalTransfer = form.transfer_type === "external";
 
@@ -71,8 +80,17 @@ export default function ScheduledTransfersPage() {
     loadItems();
   }, []);
 
+  useEffect(() => {
+    const nextDefault = getTransferTypeFromSearch(location.search);
+    setDefaultTransferType(nextDefault);
+    setForm((prev) => {
+      if (prev.transfer_type === nextDefault) return prev;
+      return { ...prev, transfer_type: nextDefault };
+    });
+  }, [location.search]);
+
   const resetForm = () => {
-    setForm(INITIAL_FORM);
+    setForm({ ...INITIAL_FORM, transfer_type: defaultTransferType });
   };
 
   const handleCreate = async () => {

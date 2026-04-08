@@ -18,8 +18,12 @@ vi.mock("@/services/api", () => ({
 }));
 
 function renderPage() {
+  return renderPageAt("/");
+}
+
+function renderPageAt(initialEntry) {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <ScheduledTransfersPage />
     </MemoryRouter>
   );
@@ -279,5 +283,17 @@ describe("ScheduledTransfersPage", () => {
     expect(await screen.findByText(/Jean Ndayishimiye/i)).toBeInTheDocument();
     expect(await screen.findByText(/Lumicash \| Burundi/i)).toBeInTheDocument();
     expect(await screen.findByText(/Externe \| monthly \| statut: active/i)).toBeInTheDocument();
+  });
+
+  it("preselects external transfer type from the menu querystring", async () => {
+    api.listScheduledTransfers.mockResolvedValueOnce([]);
+
+    renderPageAt("/dashboard/client/scheduled-transfers?type=external");
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Type de transfert programme/i)).toHaveValue("external");
+    });
+    expect(screen.getByLabelText(/Nom beneficiaire externe/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Telephone beneficiaire externe/i)).toBeInTheDocument();
   });
 });

@@ -42,6 +42,12 @@ export const CLIENT_QUICK_ACTION_GROUPS = [
       { label: "Reclamations", to: "/dashboard/client/support", icon: MessageSquare, description: "Suivre un incident" },
       { label: "Transfert interne", to: "/dashboard/client/transfer", icon: RefreshCcw, description: "Vers un autre utilisateur" },
       { label: "Transfert programme", to: "/dashboard/client/scheduled-transfers", icon: RefreshCcw, description: "Executions recurrentes" },
+      {
+        label: "Transfert externe programme",
+        to: "/dashboard/client/scheduled-transfers?type=external",
+        icon: Globe,
+        description: "Vers un partenaire (recurrent)",
+      },
       { label: "Epargne", to: "/dashboard/client/savings", icon: Wallet, description: "Objectifs et coffre" },
       { label: "Cartes virtuelles", to: "/dashboard/client/cards", icon: CreditCard, description: "Paiements web et plafonds" },
       { label: "Business", to: "/dashboard/client/business", icon: Store, description: "Equipe et roles" },
