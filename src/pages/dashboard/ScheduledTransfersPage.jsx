@@ -40,6 +40,16 @@ function formatDateTime(value) {
   return date.toLocaleString();
 }
 
+function toDateTimeLocalInput(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (num) => String(num).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(
+    date.getMinutes()
+  )}`;
+}
+
 function getTargetLabel(item) {
   if (item.transfer_type === "external") {
     const recipientName = item.external_transfer?.recipient_name || item.receiver_identifier;
@@ -66,6 +76,15 @@ export default function ScheduledTransfersPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [form, setForm] = useState(() => ({ ...INITIAL_FORM, transfer_type: defaultTransferType }));
+  const [editingScheduleId, setEditingScheduleId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    amount: "",
+    frequency: "weekly",
+    next_run_at: "",
+    remaining_runs: "",
+    max_consecutive_failures: "3",
+    note: "",
+  });
   const dueCount = items.filter((item) => item.is_due).length;
   const isExternalTransfer = form.transfer_type === "external";
 
@@ -214,6 +233,63 @@ export default function ScheduledTransfersPage() {
       await loadItems();
     } catch (err) {
       setError(err?.message || "Reprise impossible.");
+    }
+  };
+
+  const startEdit = (item) => {
+    setEditingScheduleId(item.schedule_id);
+    setEditForm({
+      amount: item.amount ?? "",
+      frequency: item.frequency ?? "weekly",
+      next_run_at: toDateTimeLocalInput(item.next_run_at),
+      remaining_runs: item.remaining_runs ?? "",
+      max_consecutive_failures: item.max_consecutive_failures ?? 3,
+      note: item.note ?? "",
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingScheduleId(null);
+    setEditForm({
+      amount: "",
+      frequency: "weekly",
+      next_run_at: "",
+      remaining_runs: "",
+      max_consecutive_failures: "3",
+      note: "",
+    });
+  };
+
+  const handleEdit = async (scheduleId) => {
+    if (!editForm.next_run_at) {
+      setError("Complete la prochaine execution.");
+      return;
+    }
+    if (!editForm.amount || Number(editForm.amount) <= 0) {
+      setError("Montant invalide.");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      setError("");
+      setSuccess("");
+      await api.updateScheduledTransfer(scheduleId, {
+        amount: Number(editForm.amount),
+        frequency: editForm.frequency,
+        next_run_at: new Date(editForm.next_run_at).toISOString(),
+        remaining_runs: editForm.remaining_runs === "" ? null : Number(editForm.remaining_runs),
+        max_consecutive_failures: editForm.max_consecutive_failures
+          ? Number(editForm.max_consecutive_failures)
+          : 3,
+        note: editForm.note || null,
+      });
+      setSuccess("Programmation mise a jour.");
+      cancelEdit();
+      await loadItems();
+    } catch (err) {
+      setError(err?.message || "Mise a jour impossible.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -432,6 +508,13 @@ export default function ScheduledTransfersPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button
+                      onClick={() => startEdit(item)}
+                      disabled={["cancelled", "completed"].includes(item.status)}
+                      className="rounded-lg border border-indigo-300 px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
+                    >
+                      Editer
+                    </button>
+                    <button
                       onClick={() => handleRunNow(item.schedule_id)}
                       disabled={!["active", "failed"].includes(item.status)}
                       className="rounded-lg border border-emerald-300 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
@@ -463,6 +546,80 @@ export default function ScheduledTransfersPage() {
                     </button>
                   </div>
                 </div>
+                {editingScheduleId === item.schedule_id ? (
+                  <div className="mt-3 grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 md:grid-cols-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editForm.amount}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, amount: e.target.value }))}
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      aria-label="Montant edition"
+                    />
+                    <select
+                      value={editForm.frequency}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, frequency: e.target.value }))}
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      aria-label="Frequence edition"
+                    >
+                      {FREQUENCIES.map((frequency) => (
+                        <option key={frequency.value} value={frequency.value}>
+                          {frequency.label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="datetime-local"
+                      value={editForm.next_run_at}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, next_run_at: e.target.value }))}
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      aria-label="Execution edition"
+                    />
+                    <input
+                      type="number"
+                      min="1"
+                      value={editForm.remaining_runs}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, remaining_runs: e.target.value }))}
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      aria-label="Executions edition"
+                      placeholder="Executions (vide = illimite)"
+                    />
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={editForm.max_consecutive_failures}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({ ...prev, max_consecutive_failures: e.target.value }))
+                      }
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      aria-label="Echecs edition"
+                    />
+                    <input
+                      type="text"
+                      value={editForm.note}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, note: e.target.value }))}
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      aria-label="Note edition"
+                    />
+                    <div className="flex gap-2 md:col-span-2">
+                      <button
+                        onClick={() => handleEdit(item.schedule_id)}
+                        disabled={submitting}
+                        className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+                      >
+                        {submitting ? "Mise a jour..." : "Enregistrer"}
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                      >
+                        Annuler edition
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>

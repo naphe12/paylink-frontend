@@ -11,6 +11,7 @@ vi.mock("@/services/api", () => ({
     createScheduledTransfer: vi.fn(),
     runDueScheduledTransfers: vi.fn(),
     runScheduledTransferNow: vi.fn(),
+    updateScheduledTransfer: vi.fn(),
     pauseScheduledTransfer: vi.fn(),
     resumeScheduledTransfer: vi.fn(),
     cancelScheduledTransfer: vi.fn(),
@@ -67,6 +68,7 @@ describe("ScheduledTransfersPage", () => {
     api.createScheduledTransfer.mockReset();
     api.runDueScheduledTransfers.mockReset();
     api.runScheduledTransferNow.mockReset();
+    api.updateScheduledTransfer.mockReset();
     api.pauseScheduledTransfer.mockReset();
     api.resumeScheduledTransfer.mockReset();
     api.cancelScheduledTransfer.mockReset();
@@ -351,5 +353,67 @@ describe("ScheduledTransfersPage", () => {
     });
     expect(screen.getByLabelText(/Nom beneficiaire externe/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Telephone beneficiaire externe/i)).toBeInTheDocument();
+  });
+
+  it("edits a scheduled transfer programming", async () => {
+    api.listScheduledTransfers
+      .mockResolvedValueOnce([
+        {
+          schedule_id: "sch-9",
+          receiver_identifier: "@alice",
+          transfer_type: "internal",
+          external_transfer: null,
+          amount: 15,
+          currency_code: "EUR",
+          frequency: "weekly",
+          status: "active",
+          next_run_at: "2026-04-08T08:00:00Z",
+          remaining_runs: 4,
+          max_consecutive_failures: 3,
+          last_result: null,
+          is_due: false,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          schedule_id: "sch-9",
+          receiver_identifier: "@alice",
+          transfer_type: "internal",
+          external_transfer: null,
+          amount: 20,
+          currency_code: "EUR",
+          frequency: "monthly",
+          status: "active",
+          next_run_at: "2026-05-08T08:00:00Z",
+          remaining_runs: 2,
+          max_consecutive_failures: 5,
+          last_result: "Programmation modifiee par l'utilisateur",
+          is_due: false,
+        },
+      ]);
+    api.updateScheduledTransfer.mockResolvedValue({});
+
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: /Editer/i }));
+    fireEvent.change(screen.getByLabelText(/Montant edition/i), { target: { value: "20" } });
+    fireEvent.change(screen.getByLabelText(/Frequence edition/i), { target: { value: "monthly" } });
+    fireEvent.change(screen.getByLabelText(/Execution edition/i), { target: { value: "2026-05-08T08:00" } });
+    fireEvent.change(screen.getByLabelText(/Executions edition/i), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText(/Echecs edition/i), { target: { value: "5" } });
+    fireEvent.click(screen.getByRole("button", { name: /Enregistrer/i }));
+
+    await waitFor(() => {
+      expect(api.updateScheduledTransfer).toHaveBeenCalledWith(
+        "sch-9",
+        expect.objectContaining({
+          amount: 20,
+          frequency: "monthly",
+          remaining_runs: 2,
+          max_consecutive_failures: 5,
+        })
+      );
+    });
+    expect(await screen.findByText(/Programmation mise a jour/i)).toBeInTheDocument();
   });
 });

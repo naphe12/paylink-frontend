@@ -616,6 +616,9 @@ const api = {
   async createScheduledTransfer(payload = {}, idempotencyKey = null) {
     return this.postIdempotent("/wallet/scheduled-transfers", payload, idempotencyKey, "scheduled-transfer-create");
   },
+  async updateScheduledTransfer(scheduleId, payload = {}) {
+    return this.put(`/wallet/scheduled-transfers/${scheduleId}`, payload);
+  },
   async runDueScheduledTransfers(idempotencyKey = null) {
     return this.postIdempotent("/wallet/scheduled-transfers/run-due", {}, idempotencyKey, "scheduled-transfer-run-due");
   },
