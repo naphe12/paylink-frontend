@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import WalletCard from "@/components/WalletCard";
 import QuickActions from "@/components/QuickActions";
-import { CLIENT_QUICK_ACTION_GROUPS } from "@/constants/clientQuickActionGroups";
+import { getClientQuickActionGroups } from "@/constants/clientQuickActionGroups";
 import WalletHistoryTable from "@/components/wallet/WalletHistoryTable";
 import api from "@/services/api";
+import { CLIENT_UI_MODES, getClientUiMode, subscribeClientUiMode } from "@/utils/clientUiMode";
 
 const TABS = [
   { id: "fiat", label: "BIF / EUR" },
@@ -43,6 +44,7 @@ export default function WalletPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("fiat");
   const [savingDisplayCurrency, setSavingDisplayCurrency] = useState(false);
+  const [uiMode, setUiMode] = useState(getClientUiMode());
   const [showHistory, setShowHistory] = useState({
     fiat: false,
     usdc: false,
@@ -126,6 +128,8 @@ export default function WalletPage() {
     loadWallet();
   }, []);
 
+  useEffect(() => subscribeClientUiMode(setUiMode), []);
+
   if (loading) {
     return <p className="p-4">Chargement du portefeuille...</p>;
   }
@@ -159,8 +163,8 @@ export default function WalletPage() {
     <div className="space-y-6">
       <QuickActions
         title="Actions rapides"
-        subtitle="Les groupes reprennent les ensembles du menu client."
-        groups={CLIENT_QUICK_ACTION_GROUPS}
+        subtitle={`Les groupes suivent le mode ${CLIENT_UI_MODES[uiMode]?.label?.toLowerCase() || "expert"} du menu client.`}
+        groups={getClientQuickActionGroups(uiMode)}
       />
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">

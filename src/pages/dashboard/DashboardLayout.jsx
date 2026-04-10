@@ -23,12 +23,21 @@ import {
   ChevronRight,
   ArrowLeft,
   BookOpen,
+  Settings,
 } from "lucide-react";
 import NotificationsBell from "@/components/NotificationsBell";
 import useNotifications from "@/hooks/useNotifications";
 import ToastStream from "@/components/Toast";
 import api from "@/services/api";
 import { logout as logoutSession } from "@/services/authStore";
+import {
+  CLIENT_UI_MODES,
+  getClientUiMode,
+  getClientUiVisibleGroups,
+  getDefaultClientRouteForMode,
+  isClientPathAllowed,
+  subscribeClientUiMode,
+} from "@/utils/clientUiMode";
 
 const menuGroups = [
   {
@@ -113,7 +122,10 @@ const menuGroups = [
   {
     key: "account",
     title: "Compte",
-    items: [{ name: "Profil", path: "/dashboard/client/profile", icon: <User size={18} /> }],
+    items: [
+      { name: "Profil", path: "/dashboard/client/profile", icon: <User size={18} /> },
+      { name: "Mode interface", path: "/dashboard/client/interface-mode", icon: <Settings size={18} /> },
+    ],
   },
 ];
 
@@ -180,7 +192,7 @@ function getGroupForPath(pathname = "") {
     return "credit";
   }
   if (pathname.includes("/tontines") || pathname.includes("/bonus")) return "community";
-  if (pathname.includes("/profile")) return "account";
+  if (pathname.includes("/profile") || pathname.includes("/interface-mode")) return "account";
   if (
     pathname.includes("/payments") ||
     pathname.includes("/cards") ||
@@ -206,7 +218,9 @@ export default function DashboardLayout() {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [profile, setProfile] = useState(null);
   const [collapsedGroups, setCollapsedGroups] = useState(DEFAULT_COLLAPSED_GROUPS);
+  const [uiMode, setUiMode] = useState(getClientUiMode());
   const storedRole = (localStorage.getItem("role") || "client").toLowerCase();
+  const visibleGroups = new Set(getClientUiVisibleGroups(uiMode));
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -227,6 +241,14 @@ export default function DashboardLayout() {
       return { ...prev, [activeGroup]: false };
     });
   }, [location.pathname]);
+
+  useEffect(() => subscribeClientUiMode(setUiMode), []);
+
+  useEffect(() => {
+    if (!location.pathname.startsWith("/dashboard/client") && !location.pathname.startsWith("/app")) return;
+    if (isClientPathAllowed(location.pathname, uiMode)) return;
+    navigate(getDefaultClientRouteForMode(uiMode), { replace: true });
+  }, [location.pathname, navigate, uiMode]);
 
   const handleLogout = () => {
     logoutSession().finally(() => navigate("/"));
@@ -286,7 +308,14 @@ export default function DashboardLayout() {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
-        {menuGroups.map((group) => (
+        {menuGroups
+          .filter((group) => visibleGroups.has(group.key))
+          .map((group) => {
+            const allowedItems = (group.items || []).filter((item) =>
+              isClientPathAllowed(String(item.path || "").split("?")[0], uiMode)
+            );
+            if (!allowedItems.length) return null;
+            return (
           <div key={group.key}>
             <button className={groupButtonClass} onClick={() => toggleGroup(group.key)}>
               <span className="truncate whitespace-nowrap">{group.title}</span>
@@ -294,7 +323,7 @@ export default function DashboardLayout() {
             </button>
             {!collapsedGroups[group.key] && (
               <div className={`mt-2 ${group.key === "assistants" ? "grid gap-2" : "flex flex-col gap-2"}`}>
-                {group.items.map((item) => (
+                {allowedItems.map((item) => (
                   <NavLink
                     key={item.path}
                     to={item.path}
@@ -307,7 +336,8 @@ export default function DashboardLayout() {
               </div>
             )}
           </div>
-        ))}
+            );
+          })}
       </nav>
 
       <div className="px-4 py-6 border-t border-white/10">
@@ -377,7 +407,12 @@ export default function DashboardLayout() {
             </button>
             <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Tableau de bord</h2>
           </div>
-          <NotificationsBell />
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+              Mode {CLIENT_UI_MODES[uiMode]?.label || "Expert"}
+            </span>
+            <NotificationsBell />
+          </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-slate-50">
           <Outlet />

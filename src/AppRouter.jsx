@@ -128,6 +128,7 @@ const AgentTransferClosurePage = lazy(() => import("@/pages/agent/AgentTransferC
 const AgentExternalTransferPage = lazy(() => import("@/pages/agent/AgentExternalTransferPage"));
 const RoleDashboardRedirect = lazy(() => import("@/pages/dashboard/RoleDashboardRedirect"));
 const BalanceHistoryPage = lazy(() => import("@/pages/dashboard/BalanceHistoryPage"));
+const ClientInterfaceModePage = lazy(() => import("@/pages/dashboard/ClientInterfaceModePage"));
 const EscrowQueue = lazy(() => import("@/pages/EscrowQueue"));
 const LedgerBalances = lazy(() => import("@/pages/LedgerBalances"));
 const TAccounts = lazy(() => import("@/pages/TAccounts"));
@@ -207,6 +208,7 @@ export default function AppRouter() {
         <Route path="financial" element={<FinancialSituationPage />} />
         <Route path="balance-history" element={<BalanceHistoryPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="interface-mode" element={<ClientInterfaceModePage />} />
         <Route path="profile/change-password" element={<ChangePasswordPage />} />
         <Route path="agent-transfers" element={<AgentTransfersPage />} />
         <Route path="external-transfer" element={<ExternalTransferPage />} />

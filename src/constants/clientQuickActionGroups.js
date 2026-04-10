@@ -16,8 +16,9 @@ import {
   User,
   Wallet,
 } from "lucide-react";
+import { getClientUiVisibleGroups, isClientPathAllowed, normalizeClientUiMode } from "@/utils/clientUiMode";
 
-export const CLIENT_QUICK_ACTION_GROUPS = [
+const CLIENT_QUICK_ACTION_GROUPS_BASE = [
   {
     key: "wallet",
     title: "Portefeuille",
@@ -121,6 +122,26 @@ export const CLIENT_QUICK_ACTION_GROUPS = [
     description: "Profil et informations personnelles.",
     icon: User,
     className: "border-sky-200 bg-sky-50 hover:bg-sky-100/60",
-    actions: [{ label: "Profil", to: "/dashboard/client/profile", icon: User, description: "Parametres du compte" }],
+    actions: [
+      { label: "Profil", to: "/dashboard/client/profile", icon: User, description: "Parametres du compte" },
+      { label: "Mode interface", to: "/dashboard/client/interface-mode", icon: User, description: "Simple ou expert" },
+    ],
   },
 ];
+
+export function getClientQuickActionGroups(mode = "expert") {
+  const normalizedMode = normalizeClientUiMode(mode);
+  const visibleGroups = new Set(getClientUiVisibleGroups(normalizedMode));
+  return CLIENT_QUICK_ACTION_GROUPS_BASE
+    .filter((group) => visibleGroups.has(group.key))
+    .map((group) => ({
+      ...group,
+      actions: (group.actions || []).filter((action) =>
+        isClientPathAllowed(String(action.to || "").split("?")[0], normalizedMode)
+      ),
+    }))
+    .filter((group) => (group.actions || []).length > 0);
+}
+
+export const CLIENT_QUICK_ACTION_GROUPS = getClientQuickActionGroups("expert");
+
