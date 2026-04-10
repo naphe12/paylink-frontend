@@ -76,6 +76,7 @@ const AdminCashDepositsPage = lazy(() => import("@/pages/admin/AdminCashDeposits
 const AdminCreditHistoryPage = lazy(() => import("@/pages/admin/AdminCreditHistoryPage"));
 const AdminCreditLinesPage = lazy(() => import("@/pages/admin/AdminCreditLinesPage"));
 const AdminCreditRepayPage = lazy(() => import("@/pages/admin/AdminCreditRepayPage"));
+const AdminDebtClientsPage = lazy(() => import("@/pages/admin/AdminDebtClientsPage"));
 const TransactionAuditPage = lazy(() => import("@/pages/admin/TransactionAuditPage"));
 const TransferGainsPage = lazy(() => import("@/pages/admin/TransferGainsPage"));
 const AdminPaymentRequestsPage = lazy(() => import("@/pages/admin/AdminPaymentRequestsPage"));
@@ -283,6 +284,7 @@ export default function AppRouter() {
         <Route path="credit-history" element={<AdminCreditHistoryPage />} />
         <Route path="credit-lines" element={<AdminCreditLinesPage />} />
         <Route path="credit-lines/repay" element={<AdminCreditRepayPage />} />
+        <Route path="credit-lines/debts" element={<AdminDebtClientsPage />} />
         <Route path="transactions-audit" element={<TransactionAuditPage />} />
         <Route path="payment-requests" element={<AdminPaymentRequestsPage />} />
         <Route path="support-cases" element={<AdminSupportCasesPage />} />

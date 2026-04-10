@@ -143,6 +143,7 @@ const ADMIN_QUICK_ACTION_GROUPS = [
       { label: "Credits", to: "/dashboard/admin/loans", icon: CreditCard, description: "Demandes de pret" },
       { label: "Historique credits", to: "/dashboard/admin/credit-history", icon: BookOpen, description: "Historique des credits" },
       { label: "Lignes de credit", to: "/dashboard/admin/credit-lines", icon: BookOpen, description: "Capacites client" },
+      { label: "Dettes clients", to: "/dashboard/admin/credit-lines/debts", icon: BookOpen, description: "Vue dettes par client" },
       { label: "Remboursement credit", to: "/dashboard/admin/credit-lines/repay", icon: BookOpen, description: "Rembourser un client" },
       { label: "Microfinance", to: "/dashboard/admin/microfinance", icon: Shield, description: "Vue microfinance" },
       { label: "Produits pret", to: "/dashboard/admin/loan-products", icon: BookOpen, description: "Configuration produits" },
