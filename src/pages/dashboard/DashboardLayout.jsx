@@ -304,6 +304,36 @@ export default function DashboardLayout() {
         {profile?.full_name && (
           <p className="text-sm text-white mt-3 font-semibold">Bienvenue, {profile.full_name}</p>
         )}
+        {updateAvailable ? (
+          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950 p-2 text-[10px] text-slate-100">
+            <p className="font-semibold">Nouvelle version</p>
+            {!isSafeToReloadNow ? (
+              <p className="mt-1 text-[10px] text-amber-300">
+                Termine l&apos;operation en cours avant actualisation.
+              </p>
+            ) : null}
+            <div className="mt-2 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  dismissUpdate();
+                  reloadNow({ force: true });
+                }}
+                disabled={!isSafeToReloadNow}
+                className="rounded-md border border-slate-600 bg-white px-1.5 py-0.5 font-semibold text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Actualiser
+              </button>
+              <button
+                type="button"
+                onClick={dismissUpdate}
+                className="rounded-md px-1.5 py-0.5 text-slate-200 hover:bg-slate-800"
+              >
+                Plus tard
+              </button>
+            </div>
+          </div>
+        ) : null}
         <button
           onClick={handleLogout}
           className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white border border-white/15 hover:bg-white/20 transition"
@@ -346,36 +376,6 @@ export default function DashboardLayout() {
       </nav>
 
       <div className="px-4 py-6 border-t border-white/10">
-        {updateAvailable ? (
-          <div className="mb-3 rounded-lg border border-slate-700 bg-slate-950 p-2 text-[10px] text-slate-100">
-            <p className="font-semibold">Nouvelle version</p>
-            {!isSafeToReloadNow ? (
-              <p className="mt-1 text-[10px] text-amber-300">
-                Termine l&apos;operation en cours avant actualisation.
-              </p>
-            ) : null}
-            <div className="mt-2 flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  dismissUpdate();
-                  reloadNow({ force: true });
-                }}
-                disabled={!isSafeToReloadNow}
-                className="rounded-md border border-slate-600 bg-white px-1.5 py-0.5 font-semibold text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Actualiser
-              </button>
-              <button
-                type="button"
-                onClick={dismissUpdate}
-                className="rounded-md px-1.5 py-0.5 text-slate-200 hover:bg-slate-800"
-              >
-                Plus tard
-              </button>
-            </div>
-          </div>
-        ) : null}
         <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center gap-3 px-4 py-2 rounded-xl bg-white text-indigo-900 font-semibold shadow-md hover:shadow-lg transition"
@@ -383,6 +383,7 @@ export default function DashboardLayout() {
           <LogOut size={18} /> Deconnexion
         </button>
       </div>
+
     </div>
   );
 
