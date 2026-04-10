@@ -4,8 +4,11 @@ import AppRouter from "./AppRouter";
 import { Toaster } from "react-hot-toast";
 import { bootstrapAuth } from "@/services/authStore";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
+import useCurrencyDisplayAlias from "@/hooks/useCurrencyDisplayAlias";
 
 export default function App() {
+  useCurrencyDisplayAlias();
+
   useEffect(() => {
     const supportsNotifications =
       typeof window !== "undefined" && typeof window.Notification !== "undefined";
