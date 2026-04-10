@@ -1,145 +1,165 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "@/pages/dashboard/DashboardLayout";
-import ClientOverviewPage from "@/pages/dashboard/ClientOverviewPage";
-import WalletPage from "@/pages/dashboard/WalletPage";
-import PaymentPage from "@/pages/dashboard/PaymentPage";
-import TransferPage from "@/pages/dashboard/TransferPage";
-import TransactionsPage from "@/pages/dashboard/TransactionsPage";
-import MobileTopupPage from "@/pages/dashboard/MobileTopupPage";
-import ProfilePage from "@/pages/dashboard/ProfilePage";
-import DepositPage from "@/pages/dashboard/DepositPage";
-import WithdrawPage from "@/pages/dashboard/WithdrawPage";
-import WithdrawUSDCPage from "@/pages/dashboard/WithdrawUSDCPage";
-import CreditHistoryPage from "@/pages/dashboard/CreditHistoryPage";
-import CreditLinePage from "@/pages/dashboard/CreditLinePage";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import FinancialSituationPage from "@/pages/dashboard/FinancialSituationPage";
-
-import HomePage from "@/pages/HomePage";
-import AuthPage from "@/pages/auth/AuthPage";
-import ForgotPassword from "@/pages/auth/ForgotPassword";
-import ResetPassword from "@/pages/auth/ResetPassword";
-import ChangePasswordPage from "@/pages/dashboard/ChangePasswordPage";
-
-import AgentTransfersPage from "@/pages/dashboard/AgentTransfersPage";
-import ExternalTransferPage from "@/pages/dashboard/ExternalTransferPage";
-import FxRatesPage from "@/pages/dashboard/FxRatesPage";
-import BonusPage from "@/pages/dashboard/BonusPage";
-import AgentChatPage from "@/pages/dashboard/AgentChatPage";
-import CashAgentPage from "@/pages/dashboard/CashAgentPage";
-import CreditAgentPage from "@/pages/dashboard/CreditAgentPage";
-import KycAgentPage from "@/pages/dashboard/KycAgentPage";
-import TransferSupportAgentPage from "@/pages/dashboard/TransferSupportAgentPage";
-import WalletAgentPage from "@/pages/dashboard/WalletAgentPage";
-import WalletSupportAgentPage from "@/pages/dashboard/WalletSupportAgentPage";
-import EscrowAgentPage from "@/pages/dashboard/EscrowAgentPage";
-import P2PAgentPage from "@/pages/dashboard/P2PAgentPage";
-
-import TontineCreatePage from "@/pages/tontines/TontineCreatePage";
-import TontineListPage from "@/pages/tontines/TontineListPage";
-import TontineDetailPage from "@/pages/tontines/TontineDetailPage";
-
-import KYCPage from "@/pages/account/KYCPage";
-import WalletLedgerPage from "@/pages/wallet/WalletLedgerPage";
-import LoansPage from "@/pages/dashboard/LoansPage";
-
-import SecurityDashboard from "@/pages/admin/SecurityDashboard";
-import AdminAuditSearchPage from "@/pages/admin/AdminAuditSearchPage";
 import AdminSidebar from "@/layouts/AdminSidebar";
-import AdminUsersList from "@/pages/admin/AdminUsersList";
-import AdminUserProfilePanel from "@/pages/admin/AdminUserProfilePanel";
-import AmlEventsPage from "@/pages/admin/AmlEventsPage";
-import KYCReviewPage from "@/pages/admin/KYCReviewPage";
-import RiskMonitorPage from "@/pages/admin/RiskMonitorPage";
-import AdminWalletsPage from "@/pages/admin/AdminWalletsPage";
-import AdminClientWalletPage from "@/pages/admin/AdminClientWalletPage";
-import AdminWalletAnalysisPage from "@/pages/admin/AdminWalletAnalysisPage";
-import AdminWalletCorrectionPage from "@/pages/admin/AdminWalletCorrectionPage";
-import AdminTransfersPage from "@/pages/admin/AdminTransfersPage";
-import AdminTransferNotePage from "@/pages/admin/AdminTransferNotePage";
-import ExternalTransferApprovalsPage from "@/pages/admin/ExternalTransferApprovalsPage";
-import AdminAgentsPage from "@/pages/admin/AdminAgentsPage";
-import AdminFinancialSummaryPage from "@/pages/admin/AdminFinancialSummaryPage";
-import MobileMoneyJournalPage from "@/pages/admin/MobileMoneyJournalPage";
-import AdminTontineDashboardPage from "@/pages/admin/AdminTontineDashboardPage";
-import TontineArrearsPage from "@/pages/admin/TontineArrearsPage";
-import AdminLoansPage from "@/pages/admin/AdminLoansPage";
-import CashRequestsPage from "@/pages/admin/CashRequestsPage";
-import AdminCashDepositsPage from "@/pages/admin/AdminCashDepositsPage";
-import AdminCreditHistoryPage from "@/pages/admin/AdminCreditHistoryPage";
-import AdminCreditLinesPage from "@/pages/admin/AdminCreditLinesPage";
-import AdminCreditRepayPage from "@/pages/admin/AdminCreditRepayPage";
-import TransactionAuditPage from "@/pages/admin/TransactionAuditPage";
-import TransferGainsPage from "@/pages/admin/TransferGainsPage";
-import AdminPaymentRequestsPage from "@/pages/admin/AdminPaymentRequestsPage";
-import AdminPaymentIntentsPage from "@/pages/admin/AdminPaymentIntentsPage";
-import AdminMicroFinancePage from "@/pages/admin/AdminMicroFinancePage";
-import AdminLoanProductsPage from "@/pages/admin/AdminLoanProductsPage";
-import AdminTontineCreatePage from "@/pages/admin/AdminTontineCreatePage";
-import AdminTontineMembersPage from "@/pages/admin/AdminTontineMembersPage";
-import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
-import AdminBalanceEventsPage from "@/pages/admin/AdminBalanceEventsPage";
-import AdminLegacyTransfersPage from "@/pages/admin/AdminLegacyTransfersPage";
-import AdminUserBalanceEventsPage from "@/pages/admin/AdminUserBalanceEventsPage";
-import AdminUserLimitsPage from "@/pages/admin/AdminUserLimitsPage";
-import P2PAdminTrades from "@/pages/admin/P2PAdminTrades";
-import P2PAdminDisputes from "@/pages/admin/P2PAdminDisputes";
-import P2PAdminRisk from "@/pages/admin/P2PAdminRisk";
-import AdminGlobalDashboard from "@/pages/admin/AdminGlobalDashboard";
-import AdminAMLPage from "@/pages/admin/AdminAMLPage";
-import AdminLiquidityPage from "@/pages/admin/AdminLiquidityPage";
-import AdminArbitragePage from "@/pages/admin/AdminArbitragePage";
-import AdminRiskHeatmap from "@/pages/admin/AdminRiskHeatmap";
-import AdminKillSwitch from "@/pages/admin/AdminKillSwitch";
-import LiquidityBifPage from "@/pages/admin/LiquidityBifPage";
-import UnbalancedJournalsPage from "@/pages/admin/UnbalancedJournalsPage";
-import IdempotencyScopesPage from "@/pages/admin/IdempotencyScopesPage";
-import OpsDashboardPage from "@/pages/admin/OpsDashboardPage";
-import OnChainSimulatorPage from "@/pages/admin/OnChainSimulatorPage";
-import AdminErrorLogsPage from "@/pages/admin/AdminErrorLogsPage";
-import AdminAiFeedbackPage from "@/pages/admin/AdminAiFeedbackPage";
-import AdminAiSynonymsPage from "@/pages/admin/AdminAiSynonymsPage";
-import AdminDisputeCodesPage from "@/pages/admin/AdminDisputeCodesPage";
-import AdminOpsUrgenciesPage from "@/pages/admin/AdminOpsUrgenciesPage";
-import AdminInterfaceModePage from "@/pages/admin/AdminInterfaceModePage";
-
-import AgentOperationPage from "@/pages/agent/AgentOperationPage";
-import AgentDashboard from "@/pages/agent/AgentDashboard";
-import AgentScanPage from "@/pages/agent/AgentScanPage";
-import CashInPage from "@/pages/agent/CashInPage";
-import CashOutPage from "@/pages/agent/CashOutPage";
-import AgentHistoryPage from "@/pages/agent/AgentHistoryPage";
-import AgentAssignmentsPage from "@/pages/agent/AgentAssignmentsPage";
-import AgentConfirmPage from "@/pages/agent/AgentConfirmPage";
 import AgentSidebar from "@/layouts/AgentSidebar";
-import AgentOnboardingPage from "@/pages/agent/AgentOnboardingPage";
-import MyQrPage from "@/pages/profile/MyQrPage";
-import AgentTransferClosurePage from "@/pages/agent/AgentTransferClosurePage";
-import AgentExternalTransferPage from "@/pages/agent/AgentExternalTransferPage";
-import RoleDashboardRedirect from "@/pages/dashboard/RoleDashboardRedirect";
 import LegacyRouteRedirect from "@/components/LegacyRouteRedirect";
-import BalanceHistoryPage from "@/pages/dashboard/BalanceHistoryPage";
-import EscrowQueue from "@/pages/EscrowQueue";
-import LedgerBalances from "@/pages/LedgerBalances";
-import TAccounts from "@/pages/TAccounts";
-import EscrowAuditPage from "@/pages/EscrowAuditPage";
-import CryptoPayPage from "@/pages/dashboard/CryptoPayPage";
-import CryptoPayStatusPage from "@/pages/dashboard/CryptoPayStatusPage";
-import WebhookLogs from "@/pages/WebhookLogs";
-import AuditLog from "@/pages/AuditLog";
-import Monitoring from "@/pages/Monitoring";
-import RiskMonitoring from "@/pages/RiskMonitoring";
-import P2PMarket from "@/pages/p2p/P2PMarket";
-import CreateOffer from "@/pages/p2p/CreateOffer";
-import TradeRoom from "@/pages/p2p/TradeRoom";
-import P2PMyTrades from "@/pages/p2p/P2PMyTrades";
-import P2PMyOffers from "@/pages/p2p/P2PMyOffers";
-import AssistantsGuidePage from "@/pages/shared/AssistantsGuidePage";
+
+const ClientOverviewPage = lazy(() => import("@/pages/dashboard/ClientOverviewPage"));
+const WalletPage = lazy(() => import("@/pages/dashboard/WalletPage"));
+const PaymentPage = lazy(() => import("@/pages/dashboard/PaymentPage"));
+const SupportCasesPage = lazy(() => import("@/pages/dashboard/SupportCasesPage"));
+const TransferPage = lazy(() => import("@/pages/dashboard/TransferPage"));
+const ScheduledTransfersPage = lazy(() => import("@/pages/dashboard/ScheduledTransfersPage"));
+const SavingsGoalsPage = lazy(() => import("@/pages/dashboard/SavingsGoalsPage"));
+const BusinessAccountsPage = lazy(() => import("@/pages/dashboard/BusinessAccountsPage"));
+const MerchantApiPage = lazy(() => import("@/pages/dashboard/MerchantApiPage"));
+const PotsPage = lazy(() => import("@/pages/dashboard/PotsPage"));
+const VirtualCardsPage = lazy(() => import("@/pages/dashboard/VirtualCardsPage"));
+const TransactionsPage = lazy(() => import("@/pages/dashboard/TransactionsPage"));
+const MobileTopupPage = lazy(() => import("@/pages/dashboard/MobileTopupPage"));
+const ProfilePage = lazy(() => import("@/pages/dashboard/ProfilePage"));
+const DepositPage = lazy(() => import("@/pages/dashboard/DepositPage"));
+const WithdrawPage = lazy(() => import("@/pages/dashboard/WithdrawPage"));
+const WithdrawUSDCPage = lazy(() => import("@/pages/dashboard/WithdrawUSDCPage"));
+const CreditHistoryPage = lazy(() => import("@/pages/dashboard/CreditHistoryPage"));
+const CreditLinePage = lazy(() => import("@/pages/dashboard/CreditLinePage"));
+const FinancialSituationPage = lazy(() => import("@/pages/dashboard/FinancialSituationPage"));
+const HomePage = lazy(() => import("@/pages/HomePage"));
+const PublicPaymentRequestPage = lazy(() => import("@/pages/public/PublicPaymentRequestPage"));
+const AuthPage = lazy(() => import("@/pages/auth/AuthPage"));
+const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
+const ChangePasswordPage = lazy(() => import("@/pages/dashboard/ChangePasswordPage"));
+const AgentTransfersPage = lazy(() => import("@/pages/dashboard/AgentTransfersPage"));
+const ExternalTransferPage = lazy(() => import("@/pages/dashboard/ExternalTransferPage"));
+const FxRatesPage = lazy(() => import("@/pages/dashboard/FxRatesPage"));
+const BonusPage = lazy(() => import("@/pages/dashboard/BonusPage"));
+const AgentChatPage = lazy(() => import("@/pages/dashboard/AgentChatPage"));
+const CashAgentPage = lazy(() => import("@/pages/dashboard/CashAgentPage"));
+const CreditAgentPage = lazy(() => import("@/pages/dashboard/CreditAgentPage"));
+const KycAgentPage = lazy(() => import("@/pages/dashboard/KycAgentPage"));
+const TransferSupportAgentPage = lazy(() => import("@/pages/dashboard/TransferSupportAgentPage"));
+const WalletAgentPage = lazy(() => import("@/pages/dashboard/WalletAgentPage"));
+const WalletSupportAgentPage = lazy(() => import("@/pages/dashboard/WalletSupportAgentPage"));
+const EscrowAgentPage = lazy(() => import("@/pages/dashboard/EscrowAgentPage"));
+const P2PAgentPage = lazy(() => import("@/pages/dashboard/P2PAgentPage"));
+const TontineCreatePage = lazy(() => import("@/pages/tontines/TontineCreatePage"));
+const TontineListPage = lazy(() => import("@/pages/tontines/TontineListPage"));
+const TontineDetailPage = lazy(() => import("@/pages/tontines/TontineDetailPage"));
+const KYCPage = lazy(() => import("@/pages/account/KYCPage"));
+const WalletLedgerPage = lazy(() => import("@/pages/wallet/WalletLedgerPage"));
+const LoansPage = lazy(() => import("@/pages/dashboard/LoansPage"));
+const SecurityDashboard = lazy(() => import("@/pages/admin/SecurityDashboard"));
+const AdminAuditSearchPage = lazy(() => import("@/pages/admin/AdminAuditSearchPage"));
+const AdminUsersList = lazy(() => import("@/pages/admin/AdminUsersList"));
+const AdminUserProfilePanel = lazy(() => import("@/pages/admin/AdminUserProfilePanel"));
+const AmlEventsPage = lazy(() => import("@/pages/admin/AmlEventsPage"));
+const KYCReviewPage = lazy(() => import("@/pages/admin/KYCReviewPage"));
+const RiskMonitorPage = lazy(() => import("@/pages/admin/RiskMonitorPage"));
+const AdminWalletsPage = lazy(() => import("@/pages/admin/AdminWalletsPage"));
+const AdminClientWalletPage = lazy(() => import("@/pages/admin/AdminClientWalletPage"));
+const AdminWalletAnalysisPage = lazy(() => import("@/pages/admin/AdminWalletAnalysisPage"));
+const AdminWalletCorrectionPage = lazy(() => import("@/pages/admin/AdminWalletCorrectionPage"));
+const AdminTransfersPage = lazy(() => import("@/pages/admin/AdminTransfersPage"));
+const AdminTransferNotePage = lazy(() => import("@/pages/admin/AdminTransferNotePage"));
+const ExternalTransferApprovalsPage = lazy(() => import("@/pages/admin/ExternalTransferApprovalsPage"));
+const AdminAgentsPage = lazy(() => import("@/pages/admin/AdminAgentsPage"));
+const AdminFinancialSummaryPage = lazy(() => import("@/pages/admin/AdminFinancialSummaryPage"));
+const MobileMoneyJournalPage = lazy(() => import("@/pages/admin/MobileMoneyJournalPage"));
+const AdminTontineDashboardPage = lazy(() => import("@/pages/admin/AdminTontineDashboardPage"));
+const TontineArrearsPage = lazy(() => import("@/pages/admin/TontineArrearsPage"));
+const AdminLoansPage = lazy(() => import("@/pages/admin/AdminLoansPage"));
+const CashRequestsPage = lazy(() => import("@/pages/admin/CashRequestsPage"));
+const AdminCashDepositsPage = lazy(() => import("@/pages/admin/AdminCashDepositsPage"));
+const AdminCreditHistoryPage = lazy(() => import("@/pages/admin/AdminCreditHistoryPage"));
+const AdminCreditLinesPage = lazy(() => import("@/pages/admin/AdminCreditLinesPage"));
+const AdminCreditRepayPage = lazy(() => import("@/pages/admin/AdminCreditRepayPage"));
+const TransactionAuditPage = lazy(() => import("@/pages/admin/TransactionAuditPage"));
+const TransferGainsPage = lazy(() => import("@/pages/admin/TransferGainsPage"));
+const AdminPaymentRequestsPage = lazy(() => import("@/pages/admin/AdminPaymentRequestsPage"));
+const AdminSupportCasesPage = lazy(() => import("@/pages/admin/AdminSupportCasesPage"));
+const AdminVirtualCardsPage = lazy(() => import("@/pages/admin/AdminVirtualCardsPage"));
+const AdminAgentOfflineOpsPage = lazy(() => import("@/pages/admin/AdminAgentOfflineOpsPage"));
+const AdminPaymentIntentsPage = lazy(() => import("@/pages/admin/AdminPaymentIntentsPage"));
+const AdminMicroFinancePage = lazy(() => import("@/pages/admin/AdminMicroFinancePage"));
+const AdminLoanProductsPage = lazy(() => import("@/pages/admin/AdminLoanProductsPage"));
+const AdminTontineCreatePage = lazy(() => import("@/pages/admin/AdminTontineCreatePage"));
+const AdminTontineMembersPage = lazy(() => import("@/pages/admin/AdminTontineMembersPage"));
+const AdminSettingsPage = lazy(() => import("@/pages/admin/AdminSettingsPage"));
+const AdminBalanceEventsPage = lazy(() => import("@/pages/admin/AdminBalanceEventsPage"));
+const AdminLegacyTransfersPage = lazy(() => import("@/pages/admin/AdminLegacyTransfersPage"));
+const AdminUserBalanceEventsPage = lazy(() => import("@/pages/admin/AdminUserBalanceEventsPage"));
+const AdminUserLimitsPage = lazy(() => import("@/pages/admin/AdminUserLimitsPage"));
+const P2PAdminTrades = lazy(() => import("@/pages/admin/P2PAdminTrades"));
+const P2PAdminDisputes = lazy(() => import("@/pages/admin/P2PAdminDisputes"));
+const P2PAdminRisk = lazy(() => import("@/pages/admin/P2PAdminRisk"));
+const AdminGlobalDashboard = lazy(() => import("@/pages/admin/AdminGlobalDashboard"));
+const AdminAMLPage = lazy(() => import("@/pages/admin/AdminAMLPage"));
+const AdminLiquidityPage = lazy(() => import("@/pages/admin/AdminLiquidityPage"));
+const AdminArbitragePage = lazy(() => import("@/pages/admin/AdminArbitragePage"));
+const AdminRiskHeatmap = lazy(() => import("@/pages/admin/AdminRiskHeatmap"));
+const AdminKillSwitch = lazy(() => import("@/pages/admin/AdminKillSwitch"));
+const LiquidityBifPage = lazy(() => import("@/pages/admin/LiquidityBifPage"));
+const UnbalancedJournalsPage = lazy(() => import("@/pages/admin/UnbalancedJournalsPage"));
+const IdempotencyScopesPage = lazy(() => import("@/pages/admin/IdempotencyScopesPage"));
+const OpsDashboardPage = lazy(() => import("@/pages/admin/OpsDashboardPage"));
+const OnChainSimulatorPage = lazy(() => import("@/pages/admin/OnChainSimulatorPage"));
+const AdminErrorLogsPage = lazy(() => import("@/pages/admin/AdminErrorLogsPage"));
+const AdminAiFeedbackPage = lazy(() => import("@/pages/admin/AdminAiFeedbackPage"));
+const AdminAiSynonymsPage = lazy(() => import("@/pages/admin/AdminAiSynonymsPage"));
+const AdminDisputeCodesPage = lazy(() => import("@/pages/admin/AdminDisputeCodesPage"));
+const AdminOpsUrgenciesPage = lazy(() => import("@/pages/admin/AdminOpsUrgenciesPage"));
+const AdminInterfaceModePage = lazy(() => import("@/pages/admin/AdminInterfaceModePage"));
+const AgentOperationPage = lazy(() => import("@/pages/agent/AgentOperationPage"));
+const AgentDashboard = lazy(() => import("@/pages/agent/AgentDashboard"));
+const AgentScanPage = lazy(() => import("@/pages/agent/AgentScanPage"));
+const CashInPage = lazy(() => import("@/pages/agent/CashInPage"));
+const CashOutPage = lazy(() => import("@/pages/agent/CashOutPage"));
+const AgentHistoryPage = lazy(() => import("@/pages/agent/AgentHistoryPage"));
+const AgentAssignmentsPage = lazy(() => import("@/pages/agent/AgentAssignmentsPage"));
+const AgentConfirmPage = lazy(() => import("@/pages/agent/AgentConfirmPage"));
+const AgentOfflineOpsPage = lazy(() => import("@/pages/agent/AgentOfflineOpsPage"));
+const AgentBonusTransferPage = lazy(() => import("@/pages/agent/AgentBonusTransferPage"));
+const AgentOnboardingPage = lazy(() => import("@/pages/agent/AgentOnboardingPage"));
+const MyQrPage = lazy(() => import("@/pages/profile/MyQrPage"));
+const AgentTransferClosurePage = lazy(() => import("@/pages/agent/AgentTransferClosurePage"));
+const AgentExternalTransferPage = lazy(() => import("@/pages/agent/AgentExternalTransferPage"));
+const RoleDashboardRedirect = lazy(() => import("@/pages/dashboard/RoleDashboardRedirect"));
+const BalanceHistoryPage = lazy(() => import("@/pages/dashboard/BalanceHistoryPage"));
+const ClientInterfaceModePage = lazy(() => import("@/pages/dashboard/ClientInterfaceModePage"));
+const EscrowQueue = lazy(() => import("@/pages/EscrowQueue"));
+const LedgerBalances = lazy(() => import("@/pages/LedgerBalances"));
+const TAccounts = lazy(() => import("@/pages/TAccounts"));
+const EscrowAuditPage = lazy(() => import("@/pages/EscrowAuditPage"));
+const CryptoPayPage = lazy(() => import("@/pages/dashboard/CryptoPayPage"));
+const CryptoPayStatusPage = lazy(() => import("@/pages/dashboard/CryptoPayStatusPage"));
+const WebhookLogs = lazy(() => import("@/pages/WebhookLogs"));
+const AuditLog = lazy(() => import("@/pages/AuditLog"));
+const Monitoring = lazy(() => import("@/pages/Monitoring"));
+const RiskMonitoring = lazy(() => import("@/pages/RiskMonitoring"));
+const P2PMarket = lazy(() => import("@/pages/p2p/P2PMarket"));
+const CreateOffer = lazy(() => import("@/pages/p2p/CreateOffer"));
+const TradeRoom = lazy(() => import("@/pages/p2p/TradeRoom"));
+const P2PMyTrades = lazy(() => import("@/pages/p2p/P2PMyTrades"));
+const P2PMyOffers = lazy(() => import("@/pages/p2p/P2PMyOffers"));
+const AssistantsGuidePage = lazy(() => import("@/pages/shared/AssistantsGuidePage"));
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center px-4 py-10 text-sm text-slate-500">
+      Chargement...
+    </div>
+  );
+}
 
 export default function AppRouter() {
   return (
-    <Routes>
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/pay/request/:shareToken" element={<PublicPaymentRequestPage />} />
 
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/auth/forgot-password" element={<ForgotPassword />} />
@@ -166,7 +186,15 @@ export default function AppRouter() {
         <Route path="overview" element={<ClientOverviewPage />} />
         <Route path="wallet" element={<WalletPage />} />
         <Route path="payments" element={<PaymentPage />} />
+        <Route path="support" element={<SupportCasesPage />} />
         <Route path="transfer" element={<TransferPage />} />
+        <Route path="scheduled-transfers" element={<ScheduledTransfersPage />} />
+        <Route path="scheduled-transfers/external" element={<ScheduledTransfersPage />} />
+        <Route path="savings" element={<SavingsGoalsPage />} />
+        <Route path="business" element={<BusinessAccountsPage />} />
+        <Route path="merchant-api" element={<MerchantApiPage />} />
+        <Route path="pots" element={<PotsPage />} />
+        <Route path="cards" element={<VirtualCardsPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="mobiletopup" element={<MobileTopupPage />} />
         <Route path="deposit" element={<DepositPage />} />
@@ -180,6 +208,7 @@ export default function AppRouter() {
         <Route path="financial" element={<FinancialSituationPage />} />
         <Route path="balance-history" element={<BalanceHistoryPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="interface-mode" element={<ClientInterfaceModePage />} />
         <Route path="profile/change-password" element={<ChangePasswordPage />} />
         <Route path="agent-transfers" element={<AgentTransfersPage />} />
         <Route path="external-transfer" element={<ExternalTransferPage />} />
@@ -256,6 +285,9 @@ export default function AppRouter() {
         <Route path="credit-lines/repay" element={<AdminCreditRepayPage />} />
         <Route path="transactions-audit" element={<TransactionAuditPage />} />
         <Route path="payment-requests" element={<AdminPaymentRequestsPage />} />
+        <Route path="support-cases" element={<AdminSupportCasesPage />} />
+        <Route path="virtual-cards" element={<AdminVirtualCardsPage />} />
+        <Route path="agent-offline-ops" element={<AdminAgentOfflineOpsPage />} />
         <Route path="payment-intents" element={<AdminPaymentIntentsPage />} />
         <Route path="microfinance" element={<AdminMicroFinancePage />} />
         <Route path="loan-products" element={<AdminLoanProductsPage />} />
@@ -323,6 +355,8 @@ export default function AppRouter() {
         <Route path="history" element={<AgentHistoryPage />} />
         <Route path="assignments" element={<AgentAssignmentsPage />} />
         <Route path="assignments/:assignmentId" element={<AgentConfirmPage />} />
+        <Route path="offline" element={<AgentOfflineOpsPage />} />
+        <Route path="bonus-transfer" element={<AgentBonusTransferPage />} />
         <Route path="external-transfer" element={<AgentExternalTransferPage />} />
         <Route path="transfers/close" element={<AgentTransferClosurePage />} />
         <Route path="onboarding" element={<AgentOnboardingPage />} />
@@ -507,6 +541,7 @@ export default function AppRouter() {
       </Route>
 
       <Route path="*" element={<p>Page non trouvee</p>} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }

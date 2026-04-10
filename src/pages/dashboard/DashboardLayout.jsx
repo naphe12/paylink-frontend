@@ -23,12 +23,23 @@ import {
   ChevronRight,
   ArrowLeft,
   BookOpen,
+  Settings,
 } from "lucide-react";
 import NotificationsBell from "@/components/NotificationsBell";
 import useNotifications from "@/hooks/useNotifications";
 import ToastStream from "@/components/Toast";
 import api from "@/services/api";
 import { logout as logoutSession } from "@/services/authStore";
+import { useVersionCheck } from "@/hooks/useVersionCheck";
+import {
+  CLIENT_UI_MODES,
+  getClientUiMode,
+  getClientUiVisibleGroups,
+  getDefaultClientRouteForMode,
+  isClientPathAllowed,
+  setClientUiMode,
+  subscribeClientUiMode,
+} from "@/utils/clientUiMode";
 
 const menuGroups = [
   {
@@ -47,6 +58,17 @@ const menuGroups = [
     items: [
       { name: "Demandes paiement", path: "/dashboard/client/payments", icon: <Send size={18} /> },
       { name: "Transfert interne", path: "/dashboard/client/transfer", icon: <RefreshCcw size={18} /> },
+      { name: "Transfert programme", path: "/dashboard/client/scheduled-transfers", icon: <RefreshCcw size={18} /> },
+      {
+        name: "Transfert externe programme",
+        path: "/dashboard/client/scheduled-transfers/external",
+        icon: <Globe size={18} />,
+      },
+      { name: "Epargne", path: "/dashboard/client/savings", icon: <Wallet size={18} /> },
+      { name: "Cartes virtuelles", path: "/dashboard/client/cards", icon: <CreditCard size={18} /> },
+      { name: "Business", path: "/dashboard/client/business", icon: <Store size={18} /> },
+      { name: "API marchande", path: "/dashboard/client/merchant-api", icon: <Globe size={18} /> },
+      { name: "Cagnottes", path: "/dashboard/client/pots", icon: <Gift size={18} /> },
       { name: "Transfert externe", path: "/dashboard/client/external-transfer", icon: <Globe size={18} /> },
       { name: "Mobile Money", path: "/dashboard/client/mobiletopup", icon: <Smartphone size={18} /> },
       { name: "Depot cash", path: "/dashboard/client/deposit", icon: <ArrowDown size={18} /> },
@@ -102,76 +124,55 @@ const menuGroups = [
   {
     key: "account",
     title: "Compte",
-    items: [{ name: "Profil", path: "/dashboard/client/profile", icon: <User size={18} /> }],
+    items: [
+      { name: "Profil", path: "/dashboard/client/profile", icon: <User size={18} /> },
+      { name: "Mode interface", path: "/dashboard/client/interface-mode", icon: <Settings size={18} /> },
+    ],
   },
 ];
 
+const PATHNAME_VARIANTS = (() => {
+  const seen = new Map();
+  for (const group of menuGroups) {
+    for (const item of group.items) {
+      const pathname = String(item.path || "").split("?")[0];
+      if (!pathname) continue;
+      const prev = seen.get(pathname) || { count: 0, hasQuery: false };
+      seen.set(pathname, {
+        count: prev.count + 1,
+        hasQuery: prev.hasQuery || String(item.path || "").includes("?"),
+      });
+    }
+  }
+  const variants = new Set();
+  for (const [pathname, meta] of seen.entries()) {
+    if (meta.count > 1 && meta.hasQuery) variants.add(pathname);
+  }
+  return variants;
+})();
+
 const DEFAULT_COLLAPSED_GROUPS = {
-  wallet: false,
+  wallet: true,
   payments: true,
-  assistants: false,
+  assistants: true,
   escrowP2p: true,
   credit: true,
   community: true,
   account: true,
 };
 
-function getGroupForPath(pathname = "") {
-  if (pathname.includes("/overview")) return "wallet";
-  if (
-    pathname.startsWith("/app/p2p") ||
-    pathname.includes("/crypto-pay") ||
-    pathname.includes("/p2p/my-trades") ||
-    pathname.includes("/p2p/my-offers")
-  ) {
-    return "escrowP2p";
-  }
-  if (
-    pathname.includes("/agent-chat") ||
-    pathname.includes("/cash-agent") ||
-    pathname.includes("/credit-agent") ||
-    pathname.includes("/kyc-agent") ||
-    pathname.includes("/transfer-support-agent") ||
-    pathname.includes("/wallet-agent") ||
-    pathname.includes("/wallet-support-agent") ||
-    pathname.includes("/escrow-agent") ||
-    pathname.includes("/p2p-agent") ||
-    pathname.includes("/assistants-guide")
-  ) {
-    return "assistants";
-  }
-  if (
-    pathname.includes("/credit") ||
-    pathname.includes("/microfinance") ||
-    pathname.includes("/loans") ||
-    pathname.includes("/financial")
-  ) {
-    return "credit";
-  }
-  if (pathname.includes("/tontines") || pathname.includes("/bonus")) return "community";
-  if (pathname.includes("/profile")) return "account";
-  if (
-    pathname.includes("/payments") ||
-    pathname.includes("/transfer") ||
-    pathname.includes("/external-transfer") ||
-    pathname.includes("/mobiletopup") ||
-    pathname.includes("/deposit") ||
-    pathname.includes("/withdraw")
-  ) {
-    return "payments";
-  }
-  return "wallet";
-}
-
 export default function DashboardLayout() {
   useNotifications();
+  const { updateAvailable, reloadNow, dismissUpdate, isSafeToReloadNow } = useVersionCheck();
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [profile, setProfile] = useState(null);
   const [collapsedGroups, setCollapsedGroups] = useState(DEFAULT_COLLAPSED_GROUPS);
+  const [uiMode, setUiMode] = useState(getClientUiMode());
   const storedRole = (localStorage.getItem("role") || "client").toLowerCase();
+  const visibleGroups = new Set(getClientUiVisibleGroups(uiMode));
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -185,13 +186,13 @@ export default function DashboardLayout() {
     loadProfile();
   }, []);
 
+  useEffect(() => subscribeClientUiMode(setUiMode), []);
+
   useEffect(() => {
-    const activeGroup = getGroupForPath(location.pathname);
-    setCollapsedGroups((prev) => {
-      if (!prev[activeGroup]) return prev;
-      return { ...prev, [activeGroup]: false };
-    });
-  }, [location.pathname]);
+    if (!location.pathname.startsWith("/dashboard/client") && !location.pathname.startsWith("/app")) return;
+    if (isClientPathAllowed(location.pathname, uiMode)) return;
+    navigate(getDefaultClientRouteForMode(uiMode), { replace: true });
+  }, [location.pathname, navigate, uiMode]);
 
   const handleLogout = () => {
     logoutSession().finally(() => navigate("/"));
@@ -201,19 +202,28 @@ export default function DashboardLayout() {
     setCollapsedGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
   };
 
-  const linkClass = ({ isActive }) =>
+  const isMenuItemActive = (itemPath) => {
+    const [itemPathname, itemQuery = ""] = String(itemPath || "").split("?");
+    if (!itemPathname) return false;
+    if (location.pathname !== itemPathname) return false;
+    if (itemQuery) return location.search === `?${itemQuery}`;
+    if (PATHNAME_VARIANTS.has(itemPathname)) return !location.search;
+    return true;
+  };
+
+  const linkClass = (active) =>
     `flex items-center gap-3 px-4 py-2 rounded-xl transition ${
-      isActive
-        ? "bg-white/15 text-white shadow-lg shadow-indigo-900/40"
-        : "text-slate-200 hover:bg-white/10"
+      active ? "bg-white/15 text-white shadow-lg shadow-indigo-900/40" : "text-slate-200 hover:bg-white/10"
     }`;
 
-  const assistantLinkClass = ({ isActive }) =>
+  const assistantLinkClass = (active) =>
     `flex items-center gap-3 px-4 py-2 rounded-2xl border transition ${
-      isActive
+      active
         ? "border-cyan-200 bg-white text-indigo-950 shadow-lg shadow-cyan-900/20"
         : "border-white/10 bg-white/5 text-white hover:bg-white/12 hover:border-cyan-200/40"
     }`;
+
+  const modeTabs = Object.values(CLIENT_UI_MODES);
 
   const groupButtonClass =
     "w-full flex items-center justify-between px-2 py-2 text-[11px] uppercase tracking-[0.3em] text-white/60 hover:text-white transition";
@@ -235,6 +245,36 @@ export default function DashboardLayout() {
         {profile?.full_name && (
           <p className="text-sm text-white mt-3 font-semibold">Bienvenue, {profile.full_name}</p>
         )}
+        {updateAvailable ? (
+          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950 p-2 text-[10px] text-slate-100">
+            <p className="font-semibold">Nouvelle version</p>
+            {!isSafeToReloadNow ? (
+              <p className="mt-1 text-[10px] text-amber-300">
+                Termine l&apos;operation en cours avant actualisation.
+              </p>
+            ) : null}
+            <div className="mt-2 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  dismissUpdate();
+                  reloadNow({ force: true });
+                }}
+                disabled={!isSafeToReloadNow}
+                className="rounded-md border border-slate-600 bg-white px-1.5 py-0.5 font-semibold text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Actualiser
+              </button>
+              <button
+                type="button"
+                onClick={dismissUpdate}
+                className="rounded-md px-1.5 py-0.5 text-slate-200 hover:bg-slate-800"
+              >
+                Plus tard
+              </button>
+            </div>
+          </div>
+        ) : null}
         <button
           onClick={handleLogout}
           className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white border border-white/15 hover:bg-white/20 transition"
@@ -244,7 +284,14 @@ export default function DashboardLayout() {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
-        {menuGroups.map((group) => (
+        {menuGroups
+          .filter((group) => visibleGroups.has(group.key))
+          .map((group) => {
+            const allowedItems = (group.items || []).filter((item) =>
+              isClientPathAllowed(String(item.path || "").split("?")[0], uiMode)
+            );
+            if (!allowedItems.length) return null;
+            return (
           <div key={group.key}>
             <button className={groupButtonClass} onClick={() => toggleGroup(group.key)}>
               <span className="truncate whitespace-nowrap">{group.title}</span>
@@ -252,11 +299,11 @@ export default function DashboardLayout() {
             </button>
             {!collapsedGroups[group.key] && (
               <div className={`mt-2 ${group.key === "assistants" ? "grid gap-2" : "flex flex-col gap-2"}`}>
-                {group.items.map((item) => (
+                {allowedItems.map((item) => (
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    className={group.key === "assistants" ? assistantLinkClass : linkClass}
+                    className={group.key === "assistants" ? assistantLinkClass(isMenuItemActive(item.path)) : linkClass(isMenuItemActive(item.path))}
                     onClick={onNavigate}
                   >
                     {item.icon} {item.name}
@@ -265,7 +312,8 @@ export default function DashboardLayout() {
               </div>
             )}
           </div>
-        ))}
+            );
+          })}
       </nav>
 
       <div className="px-4 py-6 border-t border-white/10">
@@ -276,6 +324,7 @@ export default function DashboardLayout() {
           <LogOut size={18} /> Deconnexion
         </button>
       </div>
+
     </div>
   );
 
@@ -335,7 +384,29 @@ export default function DashboardLayout() {
             </button>
             <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Tableau de bord</h2>
           </div>
-          <NotificationsBell />
+          <div className="flex items-center gap-3">
+            <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+              {modeTabs.map((modeOption) => {
+                const selected = uiMode === modeOption.key;
+                return (
+                  <button
+                    key={modeOption.key}
+                    type="button"
+                    onClick={() => setClientUiMode(modeOption.key)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${
+                      selected
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-600 hover:text-slate-800"
+                    }`}
+                    aria-pressed={selected}
+                  >
+                    {modeOption.label}
+                  </button>
+                );
+              })}
+            </div>
+            <NotificationsBell />
+          </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-slate-50">
           <Outlet />

@@ -19,6 +19,7 @@ export default function AdminUserProfilePanel() {
   const [summary, setSummary] = useState(null);
   const [creditLines, setCreditLines] = useState([]);
   const [creditHistory, setCreditHistory] = useState([]);
+  const [trustDetail, setTrustDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [amlResolveNote, setAmlResolveNote] = useState("");
   const [raiseKycTier, setRaiseKycTier] = useState(true);
@@ -27,16 +28,18 @@ export default function AdminUserProfilePanel() {
 
   const loadUser = async () => {
     setLoading(true);
-    const [userData, summaryData, creditLineData, creditHistoryData] = await Promise.all([
+    const [userData, summaryData, creditLineData, creditHistoryData, trustData] = await Promise.all([
       api.getUser(user_id),
       api.getAdminFinancialSummary(user_id).catch(() => null),
       api.listAdminCreditLines({ user_id }).catch(() => []),
       api.getAdminCreditHistory({ user_id, limit: 5, offset: 0 }).catch(() => ({ items: [] })),
+      api.getUserTrustProfile(user_id).catch(() => null),
     ]);
     setUser(userData);
     setSummary(summaryData);
     setCreditLines(Array.isArray(creditLineData) ? creditLineData : []);
     setCreditHistory(Array.isArray(creditHistoryData?.items) ? creditHistoryData.items : []);
+    setTrustDetail(trustData);
     setLoading(false);
   };
 
@@ -92,6 +95,13 @@ export default function AdminUserProfilePanel() {
   const creditAvailable = Number(summary?.credit_available || 0);
   const hasDebt = walletAvailable < 0 || creditUsed > 0;
   const latestCreditLine = creditLines[0] || null;
+  const trustProfile = trustDetail?.profile || null;
+  const formatRate = (value) => {
+    if (value === undefined || value === null || value === "") return "-";
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "-";
+    return `${(numeric * 100).toFixed(1)}%`;
+  };
 
   return (
     <div className="space-y-6">
@@ -281,6 +291,83 @@ export default function AdminUserProfilePanel() {
               label={Number(user.risk_score || 0) >= 80 ? "Risque eleve" : "Risque acceptable"}
             />
           </div>
+
+          {trustProfile && (
+            <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-sm font-semibold text-emerald-900">Confiance produit</p>
+              <p className="mt-2 text-sm text-slate-700">
+                Score: <strong>{trustProfile.trust_score}/100</strong>
+              </p>
+              <p className="text-sm text-slate-700">
+                Niveau: <strong>{trustProfile.trust_level}</strong>
+              </p>
+              <p className="text-sm text-slate-700">
+                KYC tier: <strong>{trustProfile.kyc_tier ?? 0}</strong>
+              </p>
+              <p className="text-sm text-slate-700">
+                KYC verifie: <strong>{trustProfile.kyc_verified ? "Oui" : "Non"}</strong>
+              </p>
+              <p className="text-sm text-slate-700">
+                Demandes payees: <strong>{trustProfile.successful_payment_requests}</strong>
+              </p>
+              <p className="text-sm text-slate-700">
+                Taux paiement reussi: <strong>{formatRate(trustProfile.payment_request_success_rate)}</strong>
+              </p>
+              <p className="text-sm text-slate-700">
+                P2P reussi: <strong>{trustProfile.successful_p2p_trades ?? 0}</strong> / <strong>{trustProfile.total_p2p_trades ?? 0}</strong>
+              </p>
+              <p className="text-sm text-slate-700">
+                Taux litige P2P: <strong>{formatRate(trustProfile.p2p_dispute_rate)}</strong>
+              </p>
+              <p className="text-sm text-slate-700">
+                Litiges: <strong>{trustProfile.dispute_count}</strong>
+              </p>
+              <p className="text-sm text-slate-700">
+                Reputation: <strong>{trustProfile.reputation_tier || "watch"}</strong>
+              </p>
+              {trustProfile.reputation_note ? (
+                <p className="text-xs text-slate-600">{trustProfile.reputation_note}</p>
+              ) : null}
+              {trustProfile.limit_multiplier ? (
+                <p className="text-sm text-slate-700">
+                  Multiplicateur confiance: <strong>x{trustProfile.limit_multiplier}</strong>
+                </p>
+              ) : null}
+              {(trustProfile.current_daily_limit !== undefined || trustProfile.current_monthly_limit !== undefined) && (
+                <p className="text-sm text-slate-700">
+                  Limites actives: <strong>{trustProfile.current_daily_limit ?? 0}</strong> / jour ·{" "}
+                  <strong>{trustProfile.current_monthly_limit ?? 0}</strong> / mois
+                </p>
+              )}
+              {(trustProfile.recommended_daily_limit !== undefined || trustProfile.recommended_monthly_limit !== undefined) && (
+                <p className="text-sm text-slate-700">
+                  Recommandation confiance: <strong>{trustProfile.recommended_daily_limit ?? 0}</strong> / jour ·{" "}
+                  <strong>{trustProfile.recommended_monthly_limit ?? 0}</strong> / mois
+                </p>
+              )}
+              {trustProfile.limit_uplift_active ? (
+                <p className="text-sm text-emerald-700">
+                  Relèvement de plafonds actif via le score de confiance.
+                </p>
+              ) : null}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(trustProfile.badges || []).map((badge) => (
+                  <span key={badge.badge_code} className="rounded-full border border-emerald-300 bg-white px-3 py-1 text-xs font-medium text-emerald-800">
+                    {badge.name}
+                  </span>
+                ))}
+              </div>
+              <button
+                onClick={async () => {
+                  await api.recomputeUserTrustProfile(user.user_id);
+                  await loadUser();
+                }}
+                className="mt-3 w-full rounded-xl bg-emerald-700 py-2 text-white"
+              >
+                Recalculer le score de confiance
+              </button>
+            </div>
+          )}
         </div>
       </section>
 

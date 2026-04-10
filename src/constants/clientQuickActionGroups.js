@@ -16,8 +16,9 @@ import {
   User,
   Wallet,
 } from "lucide-react";
+import { getClientUiVisibleGroups, isClientPathAllowed, normalizeClientUiMode } from "@/utils/clientUiMode";
 
-export const CLIENT_QUICK_ACTION_GROUPS = [
+const CLIENT_QUICK_ACTION_GROUPS_BASE = [
   {
     key: "wallet",
     title: "Portefeuille",
@@ -39,7 +40,20 @@ export const CLIENT_QUICK_ACTION_GROUPS = [
     className: "border-emerald-200 bg-emerald-50 hover:bg-emerald-100/60",
     actions: [
       { label: "Demandes paiement", to: "/dashboard/client/payments", icon: Send, description: "Demandes entrantes et sortantes" },
+      { label: "Reclamations", to: "/dashboard/client/support", icon: MessageSquare, description: "Suivre un incident" },
       { label: "Transfert interne", to: "/dashboard/client/transfer", icon: RefreshCcw, description: "Vers un autre utilisateur" },
+      { label: "Transfert programme", to: "/dashboard/client/scheduled-transfers", icon: RefreshCcw, description: "Executions recurrentes" },
+      {
+        label: "Transfert externe programme",
+        to: "/dashboard/client/scheduled-transfers/external",
+        icon: Globe,
+        description: "Vers un partenaire (recurrent)",
+      },
+      { label: "Epargne", to: "/dashboard/client/savings", icon: Wallet, description: "Objectifs et coffre" },
+      { label: "Cartes virtuelles", to: "/dashboard/client/cards", icon: CreditCard, description: "Paiements web et plafonds" },
+      { label: "Business", to: "/dashboard/client/business", icon: Store, description: "Equipe et roles" },
+      { label: "API marchande", to: "/dashboard/client/merchant-api", icon: Globe, description: "Cles et webhooks" },
+      { label: "Cagnottes", to: "/dashboard/client/pots", icon: Gift, description: "Collectes et objectifs" },
       { label: "Transfert externe", to: "/dashboard/client/external-transfer", icon: Globe, description: "Vers un partenaire" },
       { label: "Mobile Money", to: "/dashboard/client/mobiletopup", icon: Smartphone, description: "Recharge et services" },
       { label: "Depot cash", to: "/dashboard/client/deposit", icon: ArrowDown, description: "Demande de depot" },
@@ -108,6 +122,26 @@ export const CLIENT_QUICK_ACTION_GROUPS = [
     description: "Profil et informations personnelles.",
     icon: User,
     className: "border-sky-200 bg-sky-50 hover:bg-sky-100/60",
-    actions: [{ label: "Profil", to: "/dashboard/client/profile", icon: User, description: "Parametres du compte" }],
+    actions: [
+      { label: "Profil", to: "/dashboard/client/profile", icon: User, description: "Parametres du compte" },
+      { label: "Mode interface", to: "/dashboard/client/interface-mode", icon: User, description: "Simple ou expert" },
+    ],
   },
 ];
+
+export function getClientQuickActionGroups(mode = "expert") {
+  const normalizedMode = normalizeClientUiMode(mode);
+  const visibleGroups = new Set(getClientUiVisibleGroups(normalizedMode));
+  return CLIENT_QUICK_ACTION_GROUPS_BASE
+    .filter((group) => visibleGroups.has(group.key))
+    .map((group) => ({
+      ...group,
+      actions: (group.actions || []).filter((action) =>
+        isClientPathAllowed(String(action.to || "").split("?")[0], normalizedMode)
+      ),
+    }))
+    .filter((group) => (group.actions || []).length > 0);
+}
+
+export const CLIENT_QUICK_ACTION_GROUPS = getClientQuickActionGroups("expert");
+

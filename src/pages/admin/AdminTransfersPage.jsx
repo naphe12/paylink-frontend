@@ -44,6 +44,9 @@ export default function AdminTransfersPage() {
   const [simulationResult, setSimulationResult] = useState(null);
   const [simulationError, setSimulationError] = useState("");
   const [copyingSimulation, setCopyingSimulation] = useState(false);
+  const [fundingDetail, setFundingDetail] = useState(null);
+  const [fundingLoadingRef, setFundingLoadingRef] = useState("");
+  const [fundingError, setFundingError] = useState("");
   const simulationCardRef = useRef(null);
   const location = useLocation();
 
@@ -165,6 +168,24 @@ export default function AdminTransfersPage() {
     const transferId = String(transfer?.transfer_id || "").trim();
     if (!transferId) return;
     window.open(`/print/admin/transfers/${transferId}/note`, "_blank", "noopener,noreferrer");
+  };
+
+  const handleOpenFundingDetail = async (transfer) => {
+    const ref = String(transfer?.reference_code || transfer?.transfer_id || transfer?.tx_id || "").trim();
+    if (!ref) {
+      setFundingError("Reference transfert introuvable.");
+      return;
+    }
+    setFundingError("");
+    setFundingLoadingRef(ref);
+    try {
+      const detail = await api.getAdminExternalTransferDetail(ref);
+      setFundingDetail(detail || null);
+    } catch (err) {
+      setFundingError(err?.message || "Detail financement indisponible.");
+    } finally {
+      setFundingLoadingRef("");
+    }
   };
 
   const staleTransfersCount = transfers.filter(
@@ -397,18 +418,28 @@ export default function AdminTransfersPage() {
                     {tx.created_at ? new Date(tx.created_at).toLocaleString() : "-"}
                   </td>
                   <td className="p-3">
-                    {tx.transfer_id && tx.payment_note_required ? (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenPaymentNote(tx)}
-                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        Ouvrir
-                      </button>
+                    {tx.transfer_id ? (
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenFundingDetail(tx)}
+                          disabled={fundingLoadingRef === (tx.reference_code || tx.transfer_id || tx.tx_id)}
+                          className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {fundingLoadingRef === (tx.reference_code || tx.transfer_id || tx.tx_id) ? "Chargement..." : "Voir financement"}
+                        </button>
+                        {tx.payment_note_required ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPaymentNote(tx)}
+                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                          >
+                            Note
+                          </button>
+                        ) : null}
+                      </div>
                     ) : (
-                      <span className="text-xs text-slate-400">
-                        {tx.transfer_id ? "Non requise" : "-"}
-                      </span>
+                      <span className="text-xs text-slate-400">-</span>
                     )}
                   </td>
                 </tr>
@@ -496,6 +527,67 @@ export default function AdminTransfersPage() {
           </div>
         </div>
       ) : null}
+
+      {fundingError ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {fundingError}
+        </div>
+      ) : null}
+
+      {fundingDetail ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between border-b px-5 py-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Detail financement transfert</h3>
+                <p className="text-sm text-slate-500">
+                  Reference: {fundingDetail.reference_code || fundingDetail.transfer_id || "-"}
+                </p>
+              </div>
+              <button
+                onClick={() => setFundingDetail(null)}
+                className="rounded-lg border px-3 py-2 text-sm text-slate-600"
+              >
+                Fermer
+              </button>
+            </div>
+            <div className="space-y-4 px-5 py-5 text-sm">
+              <div className="grid gap-3 md:grid-cols-2">
+                <InfoCard
+                  title="Montants"
+                  rows={[
+                    ["Montant", formatMoney(fundingDetail.amounts?.amount)],
+                    ["Montant local", formatMoney(fundingDetail.amounts?.local_amount)],
+                    ["Taux", formatMoney(fundingDetail.amounts?.rate)],
+                    ["Frais", formatMoney(fundingDetail.funding?.fee_amount ?? fundingDetail.metadata?.fee_amount)],
+                    ["Total a financer", formatMoney(fundingDetail.funding?.total_required ?? fundingDetail.metadata?.total_required)],
+                  ]}
+                />
+                <InfoCard
+                  title="Statuts"
+                  rows={[
+                    ["Transaction", fundingDetail.transaction_status || "-"],
+                    ["Transfert", fundingDetail.transfer_status || "-"],
+                    ["Cree le", fundingDetail.created_at ? new Date(fundingDetail.created_at).toLocaleString() : "-"],
+                  ]}
+                />
+              </div>
+
+              <div className="rounded-xl border p-4">
+                <h4 className="font-semibold text-slate-900">Financement</h4>
+                <div className="mt-3 grid gap-2 text-slate-700 md:grid-cols-2">
+                  <p>Debit wallet: <span className="font-medium">{formatMoney(fundingDetail.funding?.debited_amount ?? fundingDetail.metadata?.debited_amount)}</span></p>
+                  <p>Credit utilise: <span className="font-medium">{formatMoney(fundingDetail.funding?.credit_used_amount ?? fundingDetail.metadata?.credit_used_amount)}</span></p>
+                  <p>Total requis (avec frais): <span className="font-medium">{formatMoney(fundingDetail.funding?.total_required ?? fundingDetail.metadata?.total_required)}</span></p>
+                  <p>Topup requis: <span className="font-medium">{formatMoney(fundingDetail.funding?.required_credit_topup ?? fundingDetail.metadata?.required_credit_topup)}</span></p>
+                  <p>Funding pending: <span className="font-medium">{String(Boolean(fundingDetail.funding?.funding_pending ?? fundingDetail.metadata?.funding_pending))}</span></p>
+                  <p>Review reasons: <span className="font-medium">{Array.isArray(fundingDetail.flags?.review_reasons) ? fundingDetail.flags.review_reasons.join(", ") || "-" : "-"}</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -531,6 +623,21 @@ function CapacityCard({ title, data }) {
         {"credit_used" in (data || {}) ? (
           <p>Credit consomme: <span className="font-medium">{formatMoney(data?.credit_used)} {data?.credit_currency}</span></p>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+function InfoCard({ title, rows }) {
+  return (
+    <div className="rounded-xl border p-4">
+      <h4 className="font-semibold text-slate-900">{title}</h4>
+      <div className="mt-3 space-y-2 text-slate-700">
+        {rows.map(([label, value]) => (
+          <p key={label}>
+            {label}: <span className="font-medium">{value ?? "-"}</span>
+          </p>
+        ))}
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ export default function AdminUserLimitsPage() {
   const [query, setQuery] = useState("");
   const [selectedUserId, setSelectedUserId] = useSessionStorageState("admin-user-limits:selected-user-id", "");
   const [selectedUserDetail, setSelectedUserDetail] = useState(null);
+  const [trustDetail, setTrustDetail] = useState(null);
   const [selectSearch, setSelectSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -68,18 +69,24 @@ export default function AdminUserLimitsPage() {
   const loadUserDetail = async (userId) => {
     if (!userId) {
       setSelectedUserDetail(null);
+      setTrustDetail(null);
       setForm({ daily_limit: "", monthly_limit: "" });
       return;
     }
     setError("");
     try {
-      const detail = await api.getUser(userId);
+      const [detail, trust] = await Promise.all([
+        api.getUser(userId),
+        api.getUserTrustProfile(userId).catch(() => null),
+      ]);
       if (String(detail.role || "").toLowerCase() !== "client") {
         setSelectedUserDetail(null);
+        setTrustDetail(null);
         setError("Seuls les utilisateurs de type client peuvent etre modifies ici.");
         return;
       }
       setSelectedUserDetail(detail);
+      setTrustDetail(trust);
       setForm({
         daily_limit: String(detail.daily_limit ?? ""),
         monthly_limit: String(detail.monthly_limit ?? ""),
@@ -283,6 +290,49 @@ export default function AdminUserLimitsPage() {
                   />
                 </label>
               </div>
+
+              {trustDetail?.profile ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                  <p className="font-semibold">Recommandation confiance</p>
+                  <p className="mt-1">
+                    Score {trustDetail.profile.trust_score}/100 · niveau {trustDetail.profile.trust_level} · multiplicateur{" "}
+                    {trustDetail.profile.limit_multiplier ? `x${trustDetail.profile.limit_multiplier}` : "x1"}
+                  </p>
+                  <p className="mt-1">
+                    Recommande: {formatNumber(trustDetail.profile.recommended_daily_limit)} / jour ·{" "}
+                    {formatNumber(trustDetail.profile.recommended_monthly_limit)} / mois
+                  </p>
+                  {trustDetail.profile.limit_uplift_active ? (
+                    <p className="mt-1 text-emerald-700">
+                      Le relèvement de plafonds lie a la confiance est deja actif sur ce compte.
+                    </p>
+                  ) : null}
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={async () => {
+                        if (!selectedUserId) return;
+                        try {
+                          setSaving(true);
+                          setError("");
+                          setSuccess("");
+                          await api.recomputeUserTrustProfile(selectedUserId);
+                          setSuccess("Score de confiance recalcule et plafonds synchronises.");
+                          await loadUserDetail(selectedUserId);
+                        } catch (err) {
+                          setError(err?.message || "Recalcul confiance impossible.");
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      className="rounded-2xl border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Recalculer la confiance et appliquer la recommandation
+                    </button>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 <span>La limite journaliere doit rester coherente avec la limite mensuelle et le niveau KYC du client.</span>

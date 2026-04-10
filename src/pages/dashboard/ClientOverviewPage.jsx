@@ -12,7 +12,8 @@ import {
 import { CreditCard, Gift, ShieldAlert, Wallet } from "lucide-react";
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import QuickActions from "@/components/QuickActions";
-import { CLIENT_QUICK_ACTION_GROUPS } from "@/constants/clientQuickActionGroups";
+import { getClientQuickActionGroups } from "@/constants/clientQuickActionGroups";
+import { CLIENT_UI_MODES, getClientUiMode, subscribeClientUiMode } from "@/utils/clientUiMode";
 import api from "@/services/api";
 
 function formatAmount(value, currency = "EUR", maximumFractionDigits = 2) {
@@ -54,6 +55,7 @@ export default function ClientOverviewPage() {
   const [period, setPeriod] = useState("12m");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [uiMode, setUiMode] = useState(getClientUiMode());
 
   const loadOverview = async () => {
     try {
@@ -72,6 +74,8 @@ export default function ClientOverviewPage() {
   useEffect(() => {
     loadOverview();
   }, []);
+
+  useEffect(() => subscribeClientUiMode(setUiMode), []);
 
   const chartData = useMemo(() => {
     if (!overview) return [];
@@ -132,8 +136,8 @@ export default function ClientOverviewPage() {
 
       <QuickActions
         title="Acces rapides"
-        subtitle="Chaque ensemble reprend exactement les items du menu client."
-        groups={CLIENT_QUICK_ACTION_GROUPS}
+        subtitle={`Les groupes suivent le mode ${CLIENT_UI_MODES[uiMode]?.label?.toLowerCase() || "expert"} du menu client.`}
+        groups={getClientQuickActionGroups(uiMode)}
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

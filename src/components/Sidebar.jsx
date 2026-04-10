@@ -10,6 +10,7 @@ export default function Sidebar() {
     { name: "Mon Portefeuille", icon: <Wallet size={20} />, path: "/dashboard/client/wallet" },
     { name: "Demandes de paiement", icon: <Send size={20} />, path: "/dashboard/client/payments" },
     { name: "Transactions", icon: <RefreshCcw size={20} />, path: "/dashboard/client/transactions" },
+    { name: "Transfert externe programme", path: "/dashboard/client/scheduled-transfers/external", icon: <Send size={18} /> },
     { name: "Transfert externe", path: "/dashboard/client/external-transfer", icon: <Send size={18} /> },
     { name: "Bonus", path: "/dashboard/client/bonus", icon: <Gift size={18} /> },
   ];
