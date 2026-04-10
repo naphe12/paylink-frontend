@@ -1555,23 +1555,43 @@ const api = {
     ).toString();
     return this.get(`/admin/credit-lines${query ? `?${query}` : ""}`);
   },
-  async createAdminCreditLine(payload) {
-    return this.post("/admin/credit-lines", payload);
+  async createAdminCreditLine(payload, stepUpToken = null) {
+    return this.postWithHeaders(
+      "/admin/credit-lines",
+      payload,
+      stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
+    );
   },
   async getAdminCreditLineDetail(creditLineId) {
     return this.get(`/admin/credit-lines/${creditLineId}`);
   },
-  async increaseAdminCreditLine(creditLineId, amount) {
-    return this.post(`/admin/credit-lines/${creditLineId}/increase`, { amount });
+  async increaseAdminCreditLine(creditLineId, amount, stepUpToken = null) {
+    return this.postWithHeaders(
+      `/admin/credit-lines/${creditLineId}/increase`,
+      { amount },
+      stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
+    );
   },
-  async decreaseAdminCreditLine(creditLineId, amount) {
-    return this.post(`/admin/credit-lines/${creditLineId}/decrease`, { amount });
+  async decreaseAdminCreditLine(creditLineId, amount, stepUpToken = null) {
+    return this.postWithHeaders(
+      `/admin/credit-lines/${creditLineId}/decrease`,
+      { amount },
+      stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
+    );
   },
-  async previewAdminCreditLineCorrection(payload) {
-    return this.post("/admin/credit-lines/corrections/preview", payload);
+  async previewAdminCreditLineCorrection(payload, stepUpToken = null) {
+    return this.postWithHeaders(
+      "/admin/credit-lines/corrections/preview",
+      payload,
+      stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
+    );
   },
-  async applyAdminCreditLineCorrection(payload) {
-    return this.post("/admin/credit-lines/corrections/apply", payload);
+  async applyAdminCreditLineCorrection(payload, stepUpToken = null) {
+    return this.postWithHeaders(
+      "/admin/credit-lines/corrections/apply",
+      payload,
+      stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
+    );
   },
   async listAdminCreditDebtors(params = {}) {
     const query = new URLSearchParams(

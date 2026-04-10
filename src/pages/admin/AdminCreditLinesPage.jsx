@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+import AdminStepUpBadge from "@/components/admin/AdminStepUpBadge";
+import AdminStepUpDialog from "@/components/admin/AdminStepUpDialog";
+import useAdminStepUp from "@/hooks/useAdminStepUp";
 import api from "@/services/api";
 import useSessionStorageState from "@/hooks/useSessionStorageState";
 import { buildUserOptionLabel } from "@/utils/userRecentActivity";
@@ -13,6 +16,17 @@ const CORRECTION_SCENARIOS = [
 ];
 
 export default function AdminCreditLinesPage() {
+  const {
+    stepUpOpen,
+    stepUpLoading,
+    stepUpError,
+    stepUpActionLabel,
+    closeStepUp,
+    confirmStepUp,
+    runWithStepUp,
+    stepUpStatus,
+    loadStepUpStatus,
+  } = useAdminStepUp();
   const [users, setUsers] = useState([]);
   const [userSearch, setUserSearch] = useState("");
   const [lines, setLines] = useState([]);
@@ -133,6 +147,10 @@ export default function AdminCreditLinesPage() {
   }, []);
 
   useEffect(() => {
+    loadStepUpStatus();
+  }, []);
+
+  useEffect(() => {
     ensureSelectedUserLoaded(targetUserId);
   }, [targetUserId, users]);
 
@@ -200,7 +218,12 @@ export default function AdminCreditLinesPage() {
     setActionMsg("");
     setLoading(true);
     try {
-      await api.increaseAdminCreditLine(selectedId, Number(increaseAmount));
+      const result = await runWithStepUp({
+        action: "admin_write",
+        actionLabel: "Confirmer l'augmentation de ligne de credit",
+        execute: (stepUpToken) => api.increaseAdminCreditLine(selectedId, Number(increaseAmount), stepUpToken),
+      });
+      if (!result) return;
       setActionMsg("Ligne de credit augmentee.");
       setIncreaseAmount("");
       await loadLines();
@@ -219,7 +242,12 @@ export default function AdminCreditLinesPage() {
     setActionMsg("");
     setLoading(true);
     try {
-      await api.decreaseAdminCreditLine(selectedId, Number(decreaseAmount));
+      const result = await runWithStepUp({
+        action: "admin_write",
+        actionLabel: "Confirmer la diminution de ligne de credit",
+        execute: (stepUpToken) => api.decreaseAdminCreditLine(selectedId, Number(decreaseAmount), stepUpToken),
+      });
+      if (!result) return;
       setActionMsg("Ligne de credit diminuee.");
       setDecreaseAmount("");
       await loadLines();
@@ -238,11 +266,20 @@ export default function AdminCreditLinesPage() {
     setActionMsg("");
     setLoading(true);
     try {
-      const data = await api.createAdminCreditLine({
-        user_id: targetUserId,
-        amount: Number(createAmount),
-        currency_code: "EUR",
+      const data = await runWithStepUp({
+        action: "admin_write",
+        actionLabel: "Confirmer la creation de ligne de credit",
+        execute: (stepUpToken) =>
+          api.createAdminCreditLine(
+            {
+              user_id: targetUserId,
+              amount: Number(createAmount),
+              currency_code: "EUR",
+            },
+            stepUpToken
+          ),
       });
+      if (!data) return;
       setActionMsg("Ligne de credit creee.");
       setCreateAmount("");
       await loadLines();
@@ -261,7 +298,12 @@ export default function AdminCreditLinesPage() {
     setActionMsg("");
     setCorrectionLoading(true);
     try {
-      const data = await api.previewAdminCreditLineCorrection(buildCorrectionPayload());
+      const data = await runWithStepUp({
+        action: "admin_write",
+        actionLabel: "Confirmer la previsualisation de correction",
+        execute: (stepUpToken) => api.previewAdminCreditLineCorrection(buildCorrectionPayload(), stepUpToken),
+      });
+      if (!data) return;
       setCorrectionPreview(data);
     } catch (err) {
       setCorrectionPreview(null);
@@ -277,7 +319,12 @@ export default function AdminCreditLinesPage() {
     setActionMsg("");
     setCorrectionApplying(true);
     try {
-      await api.applyAdminCreditLineCorrection(buildCorrectionPayload());
+      const result = await runWithStepUp({
+        action: "admin_write",
+        actionLabel: "Confirmer l'application de correction",
+        execute: (stepUpToken) => api.applyAdminCreditLineCorrection(buildCorrectionPayload(), stepUpToken),
+      });
+      if (!result) return;
       setActionMsg("Disponible de ligne de credit corrige.");
       setCorrectionPreview(null);
       await loadLines();
@@ -291,12 +338,27 @@ export default function AdminCreditLinesPage() {
 
   return (
     <div className="space-y-6">
+      <AdminStepUpDialog
+        open={stepUpOpen}
+        loading={stepUpLoading}
+        error={stepUpError}
+        actionLabel={stepUpActionLabel}
+        onClose={closeStepUp}
+        onConfirm={confirmStepUp}
+      />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Lignes de credit</h1>
           <p className="text-sm text-slate-500">
             Augmentez ou diminuez la ligne de credit d&apos;un utilisateur.
           </p>
+          <div className="mt-3">
+            <AdminStepUpBadge
+              enabled={stepUpStatus?.enabled}
+              expiresInSeconds={stepUpStatus?.token_expires_in_seconds}
+              headerFallbackEnabled={stepUpStatus?.header_fallback_enabled}
+            />
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <input
