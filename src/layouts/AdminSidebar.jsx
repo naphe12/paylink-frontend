@@ -570,6 +570,7 @@ export default function AdminSidebar() {
             {renderNavLink("loans", CreditCard, "Credits", onNavigate)}
             {renderNavLink("credit-history", BookOpen, "Historique credits", onNavigate)}
             {renderNavLink("credit-lines", BookOpen, "Lignes de credit", onNavigate)}
+            {renderNavLink("credit-lines/debts", BookOpen, "Dettes clients", onNavigate)}
             {renderNavLink("credit-lines/repay", BookOpen, "Remboursement credit", onNavigate)}
             {renderNavLink("microfinance", Shield, "Microfinance", onNavigate)}
             {renderNavLink("loan-products", BookOpen, "Produits pret", onNavigate)}

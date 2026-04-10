@@ -1599,6 +1599,12 @@ const api = {
     ).toString();
     return this.get(`/admin/credit-lines/debtors${query ? `?${query}` : ""}`);
   },
+  async listAdminDebtBreakdown(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/credit-lines/debtors/breakdown${query ? `?${query}` : ""}`);
+  },
   async repayAdminCreditLine(creditLineId, amount) {
     return this.post(`/admin/credit-lines/${creditLineId}/repay`, { amount });
   },
