@@ -214,8 +214,7 @@ function getGroupForPath(pathname = "") {
 
 export default function DashboardLayout() {
   useNotifications();
-  const { updateAvailable, remoteVersion, localVersion, reloadNow, dismissUpdate, isSafeToReloadNow } =
-    useVersionCheck();
+  const { updateAvailable, reloadNow, dismissUpdate, isSafeToReloadNow } = useVersionCheck();
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -413,11 +412,8 @@ export default function DashboardLayout() {
             </button>
             <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Tableau de bord</h2>
             {updateAvailable ? (
-              <div className="hidden md:flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[10px] text-amber-900">
+              <div className="hidden md:flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[10px] text-amber-900">
                 <span className="font-semibold">Nouvelle version</span>
-                <span className="text-amber-700">
-                  S:{remoteVersion || "?"} | L:{localVersion || "?"}
-                </span>
                 <button
                   type="button"
                   onClick={() => {

@@ -18,7 +18,7 @@ const CRITICAL_PATH_HINTS = [
 
 function getLocalVersion() {
   const info = getFrontendReleaseInfo();
-  return String(info.releaseSha || info.version || "0.0.0").trim();
+  return String(info.version || info.releaseSha || "0.0.0").trim();
 }
 
 function getNow() {
@@ -57,7 +57,7 @@ export function useVersionCheck() {
   const checkVersion = useCallback(async () => {
     try {
       const data = await fetchBackendVersion();
-      const nextVersion = String(data?.commit_sha || data?.version || "").trim();
+      const nextVersion = String(data?.version || data?.commit_sha || "").trim();
       setLastCheckAt(getNow());
       applyRemoteVersion(nextVersion);
       if (nextVersion && nextVersion !== localVersion && typeof window !== "undefined") {
