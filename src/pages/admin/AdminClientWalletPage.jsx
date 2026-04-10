@@ -50,7 +50,8 @@ function buildWalletHistoryLinks(entry, userId, selectedWalletId) {
   return links;
 }
 
-function SummaryCard({ title, value, subvalue, icon: Icon, tone = "slate" }) {
+function SummaryCard({ title, value, subvalue, icon, tone = "slate" }) {
+  const IconComponent = icon;
   const toneClass = {
     slate: "border-slate-200 bg-white text-slate-900",
     blue: "border-blue-200 bg-blue-50 text-blue-950",
@@ -62,7 +63,7 @@ function SummaryCard({ title, value, subvalue, icon: Icon, tone = "slate" }) {
     <div className={`rounded-2xl border p-4 shadow-sm ${toneClass[tone] || toneClass.slate}`}>
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-medium">{title}</p>
-        <Icon size={18} className="opacity-70" />
+        {IconComponent ? <IconComponent size={18} className="opacity-70" /> : null}
       </div>
       <p className="mt-3 text-2xl font-bold">{value}</p>
       {subvalue ? <p className="mt-1 text-sm opacity-80">{subvalue}</p> : null}
@@ -70,9 +71,9 @@ function SummaryCard({ title, value, subvalue, icon: Icon, tone = "slate" }) {
   );
 }
 
-function computeDisplayCapacity(walletAvailable, walletCurrency, creditAvailable, creditCurrency) {
+function computeDisplayCapacity(walletAvailable, walletCurrency, creditAvailable, creditCurrency, hasActiveCreditLine) {
   const wallet = Number(walletAvailable || 0);
-  const credit = Math.max(Number(creditAvailable || 0), 0);
+  const credit = hasActiveCreditLine ? Math.max(Number(creditAvailable || 0), 0) : 0;
   const normalizedWalletCurrency = String(walletCurrency || "").toUpperCase();
   const normalizedCreditCurrency = String(creditCurrency || normalizedWalletCurrency).toUpperCase();
 
@@ -85,6 +86,12 @@ function computeDisplayCapacity(walletAvailable, walletCurrency, creditAvailable
   }
 
   return { amount: wallet + credit, currency: normalizedWalletCurrency };
+}
+
+function displayCurrency(code) {
+  const normalized = String(code || "").toUpperCase();
+  if (normalized === "EUR") return "€";
+  return normalized;
 }
 
 export default function AdminClientWalletPage() {
@@ -252,7 +259,8 @@ export default function AdminClientWalletPage() {
         summary?.wallet_available,
         summary?.wallet_currency,
         summary?.credit_available,
-        summary?.credit_currency
+        summary?.credit_currency,
+        Boolean(summary?.has_active_credit_line)
       ),
     [summary]
   );
@@ -372,8 +380,8 @@ export default function AdminClientWalletPage() {
               <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                 <SummaryCard
                   title="Solde wallet principal"
-                  value={`${Number(summary.wallet_available || 0).toLocaleString()} ${summary.wallet_currency || ""}`.trim()}
-                  subvalue={`En attente: ${Number(summary.wallet_pending || 0).toLocaleString()} ${summary.wallet_currency || ""}`.trim()}
+                  value={`${Number(summary.wallet_available || 0).toLocaleString()} ${displayCurrency(summary.wallet_currency)}`.trim()}
+                  subvalue={`En attente: ${Number(summary.wallet_pending || 0).toLocaleString()} ${displayCurrency(summary.wallet_currency)}`.trim()}
                   icon={Wallet}
                   tone="blue"
                 />
@@ -381,11 +389,13 @@ export default function AdminClientWalletPage() {
                   title="Capacite financiere"
                   value={
                     displayedCapacity.amount !== null && displayedCapacity.amount !== undefined
-                      ? `${Number(displayedCapacity.amount || 0).toLocaleString()} ${displayedCapacity.currency || ""}`.trim()
+                      ? `${Number(displayedCapacity.amount || 0).toLocaleString()} ${displayCurrency(displayedCapacity.currency)}`.trim()
                       : "Devise differente"
                   }
                   subvalue={
-                    String(summary.wallet_currency || "").toUpperCase() === "BIF"
+                    !summary.has_active_credit_line
+                      ? "Aucune ligne active: capacite = solde wallet (min 0)"
+                      : String(summary.wallet_currency || "").toUpperCase() === "BIF"
                       ? "Wallet BIF: disponible ligne uniquement"
                       : Number(summary.wallet_available || 0) < 0
                         ? "Wallet negatif: disponible ligne uniquement"
@@ -418,15 +428,15 @@ export default function AdminClientWalletPage() {
                 />
                 <SummaryCard
                   title="Ligne de credit"
-                  value={`${Number(summary.credit_available || 0).toLocaleString()} ${summary.credit_currency || summary.wallet_currency || ""}`.trim()}
-                  subvalue={`Limite: ${Number(summary.credit_limit || 0).toLocaleString()} ${summary.credit_currency || summary.wallet_currency || ""} | Utilise: ${Number(summary.credit_used || 0).toLocaleString()} ${summary.credit_currency || summary.wallet_currency || ""}`.trim()}
+                  value={`${Number(summary.credit_available || 0).toLocaleString()} ${displayCurrency(summary.credit_currency || summary.wallet_currency)}`.trim()}
+                  subvalue={`Limite: ${Number(summary.credit_limit || 0).toLocaleString()} ${displayCurrency(summary.credit_currency || summary.wallet_currency)} | Utilise: ${Number(summary.credit_used || 0).toLocaleString()} ${displayCurrency(summary.credit_currency || summary.wallet_currency)}`.trim()}
                   icon={CreditCard}
                   tone="amber"
                 />
                 <SummaryCard
                   title="Tontines"
                   value={`${Number(summary.tontines_count || 0)} participation${Number(summary.tontines_count || 0) > 1 ? "s" : ""}`}
-                  subvalue={`Bonus: ${Number(summary.bonus_balance || 0).toLocaleString()} ${summary.wallet_currency || ""}`.trim()}
+                  subvalue={`Bonus: ${Number(summary.bonus_balance || 0).toLocaleString()} ${displayCurrency(summary.wallet_currency)}`.trim()}
                   icon={Users}
                   tone="emerald"
                 />
@@ -446,11 +456,19 @@ export default function AdminClientWalletPage() {
                     <thead className="bg-slate-50 text-slate-600">
                       <tr>
                         <th className="px-4 py-3 text-left">Date</th>
-                        <th className="px-4 py-3 text-left">Type</th>
+                        <th className="px-4 py-3 text-left">T</th>
                         <th className="px-4 py-3 text-left">Source</th>
                         <th className="px-4 py-3 text-right">Montant operation</th>
-                        <th className="px-4 py-3 text-right">Wallet apres</th>
-                        <th className="px-4 py-3 text-right">Credit apres</th>
+                        <th className="px-4 py-3 text-right">
+                          <span className="inline-flex items-center justify-end" title="Wallet apres">
+                            <Wallet size={14} />
+                          </span>
+                        </th>
+                        <th className="px-4 py-3 text-right">
+                          <span className="inline-flex items-center justify-end" title="Ligne de credit apres">
+                            <CreditCard size={14} />
+                          </span>
+                        </th>
                         <th className="px-4 py-3 text-right">Capacite apres</th>
                       </tr>
                     </thead>
@@ -458,22 +476,32 @@ export default function AdminClientWalletPage() {
                       {capacityTimeline.items.map((row, index) => (
                         <tr key={`${row.event_at || index}-${row.event_type}-${index}`} className="border-t border-slate-100">
                           <td className="px-4 py-3 text-slate-800">{row.event_at ? new Date(row.event_at).toLocaleString() : "-"}</td>
-                          <td className="px-4 py-3 text-slate-700">{row.event_type === "wallet" ? "Wallet" : "Ligne de credit"}</td>
+                          <td className="px-4 py-3 text-slate-700">
+                            {row.event_type === "wallet" ? (
+                              <span className="inline-flex items-center justify-center" title="Wallet">
+                                <Wallet size={14} />
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center justify-center" title="Ligne de credit">
+                                <CreditCard size={14} />
+                              </span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-slate-600">
                             {row.description || row.source || "-"}
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums text-slate-800">
-                            {Number(row.operation_amount || 0).toLocaleString()} {row.operation_currency || ""}
+                            {Number(row.operation_amount || 0).toLocaleString()} {displayCurrency(row.operation_currency)}
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums text-slate-800">
-                            {Number(row.wallet_after || 0).toLocaleString()} {row.wallet_currency || ""}
+                            {Number(row.wallet_after || 0).toLocaleString()} {displayCurrency(row.wallet_currency)}
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums text-slate-800">
-                            {Number(row.credit_after || 0).toLocaleString()} {row.credit_currency || ""}
+                            {Number(row.credit_after || 0).toLocaleString()} {displayCurrency(row.credit_currency)}
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums font-semibold text-slate-900">
                             {row.capacity_after !== null && row.capacity_after !== undefined
-                              ? `${Number(row.capacity_after || 0).toLocaleString()} ${row.capacity_currency || ""}`.trim()
+                              ? `${Number(row.capacity_after || 0).toLocaleString()} ${displayCurrency(row.capacity_currency)}`.trim()
                               : "Devise differente"}
                           </td>
                         </tr>
@@ -587,10 +615,10 @@ export default function AdminClientWalletPage() {
                           </span>
                         </div>
                         <p className="mt-4 text-xl font-bold text-slate-900">
-                          {Number(wallet.available || 0).toLocaleString()} {wallet.currency || ""}
+                          {Number(wallet.available || 0).toLocaleString()} {displayCurrency(wallet.currency)}
                         </p>
                         <p className="mt-1 text-xs text-slate-500">
-                          En attente: {Number(wallet.pending || 0).toLocaleString()} {wallet.currency || ""}
+                          En attente: {Number(wallet.pending || 0).toLocaleString()} {displayCurrency(wallet.currency)}
                         </p>
                         <p className="mt-3 font-mono text-[11px] text-slate-400">
                           {wallet.wallet_id}
@@ -722,10 +750,10 @@ export default function AdminClientWalletPage() {
                                   }`}
                                 >
                                   {isCredit ? "+" : "-"}
-                                  {Math.abs(amountNum).toLocaleString()} {entry.currency_code || selectedWallet?.currency || ""}
+                                  {Math.abs(amountNum).toLocaleString()} {displayCurrency(entry.currency_code || selectedWallet?.currency)}
                                 </td>
                                 <td className="p-3 text-slate-700">
-                                  {Number(entry.balance_after || 0).toLocaleString()} {entry.currency_code || selectedWallet?.currency || ""}
+                                  {Number(entry.balance_after || 0).toLocaleString()} {displayCurrency(entry.currency_code || selectedWallet?.currency)}
                                 </td>
                                 <td className="p-3 text-slate-500">
                                   <div>{entry.reference || "-"}</div>
