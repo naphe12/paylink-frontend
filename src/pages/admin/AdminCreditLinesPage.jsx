@@ -218,16 +218,17 @@ export default function AdminCreditLinesPage() {
     setActionMsg("");
     setLoading(true);
     try {
-      const result = await runWithStepUp({
+      await runWithStepUp({
         action: "admin_write",
         actionLabel: "Confirmer l'augmentation de ligne de credit",
-        execute: (stepUpToken) => api.increaseAdminCreditLine(selectedId, Number(increaseAmount), stepUpToken),
+        execute: async (stepUpToken) => {
+          await api.increaseAdminCreditLine(selectedId, Number(increaseAmount), stepUpToken);
+          setActionMsg("Ligne de credit augmentee.");
+          setIncreaseAmount("");
+          await loadLines();
+          await loadDetail(selectedId);
+        },
       });
-      if (!result) return;
-      setActionMsg("Ligne de credit augmentee.");
-      setIncreaseAmount("");
-      await loadLines();
-      await loadDetail(selectedId);
     } catch (err) {
       setError(err.message || "Echec de l'augmentation");
     } finally {
@@ -242,16 +243,17 @@ export default function AdminCreditLinesPage() {
     setActionMsg("");
     setLoading(true);
     try {
-      const result = await runWithStepUp({
+      await runWithStepUp({
         action: "admin_write",
         actionLabel: "Confirmer la diminution de ligne de credit",
-        execute: (stepUpToken) => api.decreaseAdminCreditLine(selectedId, Number(decreaseAmount), stepUpToken),
+        execute: async (stepUpToken) => {
+          await api.decreaseAdminCreditLine(selectedId, Number(decreaseAmount), stepUpToken);
+          setActionMsg("Ligne de credit diminuee.");
+          setDecreaseAmount("");
+          await loadLines();
+          await loadDetail(selectedId);
+        },
       });
-      if (!result) return;
-      setActionMsg("Ligne de credit diminuee.");
-      setDecreaseAmount("");
-      await loadLines();
-      await loadDetail(selectedId);
     } catch (err) {
       setError(err.message || "Echec de la diminution");
     } finally {
@@ -266,24 +268,24 @@ export default function AdminCreditLinesPage() {
     setActionMsg("");
     setLoading(true);
     try {
-      const data = await runWithStepUp({
+      await runWithStepUp({
         action: "admin_write",
         actionLabel: "Confirmer la creation de ligne de credit",
-        execute: (stepUpToken) =>
-          api.createAdminCreditLine(
+        execute: async (stepUpToken) => {
+          const data = await api.createAdminCreditLine(
             {
               user_id: targetUserId,
               amount: Number(createAmount),
               currency_code: "EUR",
             },
             stepUpToken
-          ),
+          );
+          setActionMsg("Ligne de credit creee.");
+          setCreateAmount("");
+          await loadLines();
+          setSelectedId(data?.credit_line?.credit_line_id || "");
+        },
       });
-      if (!data) return;
-      setActionMsg("Ligne de credit creee.");
-      setCreateAmount("");
-      await loadLines();
-      setSelectedId(data?.credit_line?.credit_line_id || "");
     } catch (err) {
       setError(err.message || "Echec de creation de la ligne");
     } finally {
@@ -298,13 +300,14 @@ export default function AdminCreditLinesPage() {
     setActionMsg("");
     setCorrectionLoading(true);
     try {
-      const data = await runWithStepUp({
+      await runWithStepUp({
         action: "admin_write",
         actionLabel: "Confirmer la previsualisation de correction",
-        execute: (stepUpToken) => api.previewAdminCreditLineCorrection(buildCorrectionPayload(), stepUpToken),
+        execute: async (stepUpToken) => {
+          const data = await api.previewAdminCreditLineCorrection(buildCorrectionPayload(), stepUpToken);
+          setCorrectionPreview(data);
+        },
       });
-      if (!data) return;
-      setCorrectionPreview(data);
     } catch (err) {
       setCorrectionPreview(null);
       setError(err.message || "Echec de previsualisation de la correction.");
@@ -319,16 +322,17 @@ export default function AdminCreditLinesPage() {
     setActionMsg("");
     setCorrectionApplying(true);
     try {
-      const result = await runWithStepUp({
+      await runWithStepUp({
         action: "admin_write",
         actionLabel: "Confirmer l'application de correction",
-        execute: (stepUpToken) => api.applyAdminCreditLineCorrection(buildCorrectionPayload(), stepUpToken),
+        execute: async (stepUpToken) => {
+          await api.applyAdminCreditLineCorrection(buildCorrectionPayload(), stepUpToken);
+          setActionMsg("Disponible de ligne de credit corrige.");
+          setCorrectionPreview(null);
+          await loadLines();
+          await loadDetail(selectedId);
+        },
       });
-      if (!result) return;
-      setActionMsg("Disponible de ligne de credit corrige.");
-      setCorrectionPreview(null);
-      await loadLines();
-      await loadDetail(selectedId);
     } catch (err) {
       setError(err.message || "Echec d'application de la correction.");
     } finally {
