@@ -1233,6 +1233,9 @@ const api = {
   async simulateAdminExternalTransfer(payload = {}) {
     return this.post("/admin/transfers/simulate-external", payload);
   },
+  async getAdminExternalTransferDetail(transferRef) {
+    return this.get(`/admin/transfers/detail/${encodeURIComponent(String(transferRef || "").trim())}`);
+  },
   async getAdminTransferPaymentNoteContext(transferId) {
     return this.get(`/admin/transfers/${transferId}/payment-note-context`);
   },
