@@ -7,7 +7,7 @@ const listeners = new Set();
 let refreshPromise = null;
 let authRedirectInFlight = false;
 let state = {
-  accessToken: null,
+  accessToken: readStoredAccessToken(),
   user: readStoredUser(),
   csrfToken: readStoredCsrfToken(),
   bootstrapped: false,
@@ -82,6 +82,15 @@ function readStoredUser() {
   }
 }
 
+function readStoredAccessToken() {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem("access_token");
+  } catch {
+    return null;
+  }
+}
+
 function readStoredCsrfToken() {
   if (typeof window === "undefined") return null;
   try {
@@ -109,6 +118,17 @@ function persistMetadata(user, csrfToken) {
       window.localStorage.setItem("csrf_token", csrfToken);
     } else {
       window.localStorage.removeItem("csrf_token");
+    }
+  } catch {}
+}
+
+function persistAccessToken(accessToken) {
+  if (typeof window === "undefined") return;
+  try {
+    if (accessToken) {
+      window.sessionStorage.setItem("access_token", accessToken);
+    } else {
+      window.sessionStorage.removeItem("access_token");
     }
   } catch {}
 }
@@ -143,6 +163,7 @@ export function setSessionFromPayload(payload) {
     bootstrapped: true,
   };
   persistMetadata(state.user, state.csrfToken);
+  persistAccessToken(state.accessToken);
   emit();
   return state;
 }
@@ -155,6 +176,7 @@ export function clearSession() {
     bootstrapped: true,
   };
   persistMetadata(null, null);
+  persistAccessToken(null);
   emit();
 }
 
@@ -199,11 +221,20 @@ async function fetchAuthEndpoint(path, options = {}) {
   throw lastError || new Error(`${path} -> failed`);
 }
 
-export async function refreshAccessToken() {
+export async function refreshAccessToken(options = {}) {
   if (refreshPromise) return refreshPromise;
+  const allowStoredSessionFallback = Boolean(options?.allowStoredSessionFallback);
 
   const csrfToken = state.csrfToken || readStoredCsrfToken();
   if (!csrfToken) {
+    if (allowStoredSessionFallback && state.accessToken && state.user) {
+      state = { ...state, bootstrapped: true, csrfToken: null };
+      emit();
+      return {
+        access_token: state.accessToken,
+        user: state.user,
+      };
+    }
     clearSession();
     return null;
   }
@@ -238,7 +269,7 @@ export async function refreshAccessToken() {
 
 export async function bootstrapAuth() {
   if (state.bootstrapped) return state;
-  const payload = await refreshAccessToken();
+  const payload = await refreshAccessToken({ allowStoredSessionFallback: true });
   if (!payload) {
     state = { ...state, bootstrapped: true };
     emit();
