@@ -14,7 +14,7 @@ export const CLIENT_UI_MODES = {
   },
 };
 
-const DEFAULT_MODE = "expert";
+const DEFAULT_MODE = "simple";
 
 const EXPERT_ONLY_PATH_PREFIXES = [
   "/dashboard/client/savings",

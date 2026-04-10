@@ -36,6 +36,7 @@ import {
   getClientUiVisibleGroups,
   getDefaultClientRouteForMode,
   isClientPathAllowed,
+  setClientUiMode,
   subscribeClientUiMode,
 } from "@/utils/clientUiMode";
 
@@ -279,6 +280,8 @@ export default function DashboardLayout() {
         : "border-white/10 bg-white/5 text-white hover:bg-white/12 hover:border-cyan-200/40"
     }`;
 
+  const modeTabs = Object.values(CLIENT_UI_MODES);
+
   const groupButtonClass =
     "w-full flex items-center justify-between px-2 py-2 text-[11px] uppercase tracking-[0.3em] text-white/60 hover:text-white transition";
 
@@ -408,9 +411,26 @@ export default function DashboardLayout() {
             <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Tableau de bord</h2>
           </div>
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-              Mode {CLIENT_UI_MODES[uiMode]?.label || "Expert"}
-            </span>
+            <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+              {modeTabs.map((modeOption) => {
+                const selected = uiMode === modeOption.key;
+                return (
+                  <button
+                    key={modeOption.key}
+                    type="button"
+                    onClick={() => setClientUiMode(modeOption.key)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${
+                      selected
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-600 hover:text-slate-800"
+                    }`}
+                    aria-pressed={selected}
+                  >
+                    {modeOption.label}
+                  </button>
+                );
+              })}
+            </div>
             <NotificationsBell />
           </div>
         </header>
