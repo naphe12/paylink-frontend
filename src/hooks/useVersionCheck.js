@@ -39,7 +39,13 @@ export function useVersionCheck() {
 
   const applyRemoteVersion = useCallback(
     (nextVersion) => {
-      if (!nextVersion || nextVersion === localVersion) return;
+      if (!nextVersion) return;
+      if (nextVersion === localVersion) {
+        setRemoteVersion(nextVersion);
+        setUpdateAvailable(false);
+        setDismissedForVersion("");
+        return;
+      }
       setRemoteVersion(nextVersion);
       if (dismissedForVersion !== nextVersion) {
         setUpdateAvailable(true);

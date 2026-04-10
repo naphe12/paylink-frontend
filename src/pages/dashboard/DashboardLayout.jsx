@@ -30,6 +30,7 @@ import useNotifications from "@/hooks/useNotifications";
 import ToastStream from "@/components/Toast";
 import api from "@/services/api";
 import { logout as logoutSession } from "@/services/authStore";
+import { useVersionCheck } from "@/hooks/useVersionCheck";
 import {
   CLIENT_UI_MODES,
   getClientUiMode,
@@ -213,6 +214,8 @@ function getGroupForPath(pathname = "") {
 
 export default function DashboardLayout() {
   useNotifications();
+  const { updateAvailable, remoteVersion, localVersion, reloadNow, dismissUpdate, isSafeToReloadNow } =
+    useVersionCheck();
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -409,6 +412,32 @@ export default function DashboardLayout() {
               {sidebarVisible ? "Masquer le menu" : "Afficher le menu"}
             </button>
             <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Tableau de bord</h2>
+            {updateAvailable ? (
+              <div className="hidden md:flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[10px] text-amber-900">
+                <span className="font-semibold">Nouvelle version</span>
+                <span className="text-amber-700">
+                  S:{remoteVersion || "?"} | L:{localVersion || "?"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    dismissUpdate();
+                    reloadNow({ force: true });
+                  }}
+                  disabled={!isSafeToReloadNow}
+                  className="rounded-md border border-amber-400 bg-white px-1.5 py-0.5 font-semibold text-amber-900 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Actualiser
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissUpdate}
+                  className="rounded-md px-1.5 py-0.5 text-amber-800 hover:bg-amber-100"
+                >
+                  Plus tard
+                </button>
+              </div>
+            ) : null}
           </div>
           <div className="flex items-center gap-3">
             <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
