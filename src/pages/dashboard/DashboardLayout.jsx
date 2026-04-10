@@ -152,65 +152,14 @@ const PATHNAME_VARIANTS = (() => {
 })();
 
 const DEFAULT_COLLAPSED_GROUPS = {
-  wallet: false,
+  wallet: true,
   payments: true,
-  assistants: false,
+  assistants: true,
   escrowP2p: true,
   credit: true,
   community: true,
   account: true,
 };
-
-function getGroupForPath(pathname = "") {
-  if (pathname.includes("/overview")) return "wallet";
-  if (
-    pathname.startsWith("/app/p2p") ||
-    pathname.includes("/crypto-pay") ||
-    pathname.includes("/p2p/my-trades") ||
-    pathname.includes("/p2p/my-offers")
-  ) {
-    return "escrowP2p";
-  }
-  if (
-    pathname.includes("/agent-chat") ||
-    pathname.includes("/cash-agent") ||
-    pathname.includes("/credit-agent") ||
-    pathname.includes("/kyc-agent") ||
-    pathname.includes("/transfer-support-agent") ||
-    pathname.includes("/wallet-agent") ||
-    pathname.includes("/wallet-support-agent") ||
-    pathname.includes("/escrow-agent") ||
-    pathname.includes("/p2p-agent") ||
-    pathname.includes("/assistants-guide")
-  ) {
-    return "assistants";
-  }
-  if (
-    pathname.includes("/credit") ||
-    pathname.includes("/microfinance") ||
-    pathname.includes("/loans") ||
-    pathname.includes("/financial")
-  ) {
-    return "credit";
-  }
-  if (pathname.includes("/tontines") || pathname.includes("/bonus")) return "community";
-  if (pathname.includes("/profile") || pathname.includes("/interface-mode")) return "account";
-  if (
-    pathname.includes("/payments") ||
-    pathname.includes("/cards") ||
-    pathname.includes("/transfer") ||
-    pathname.includes("/scheduled-transfers") ||
-    pathname.includes("/merchant-api") ||
-    pathname.includes("/pots") ||
-    pathname.includes("/external-transfer") ||
-    pathname.includes("/mobiletopup") ||
-    pathname.includes("/deposit") ||
-    pathname.includes("/withdraw")
-  ) {
-    return "payments";
-  }
-  return "wallet";
-}
 
 export default function DashboardLayout() {
   useNotifications();
@@ -236,14 +185,6 @@ export default function DashboardLayout() {
     };
     loadProfile();
   }, []);
-
-  useEffect(() => {
-    const activeGroup = getGroupForPath(location.pathname);
-    setCollapsedGroups((prev) => {
-      if (!prev[activeGroup]) return prev;
-      return { ...prev, [activeGroup]: false };
-    });
-  }, [location.pathname]);
 
   useEffect(() => subscribeClientUiMode(setUiMode), []);
 
