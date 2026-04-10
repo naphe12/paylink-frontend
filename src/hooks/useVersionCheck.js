@@ -6,6 +6,7 @@ const VERSION_CHECK_INTERVAL_MS = 30000;
 const RELOAD_DEBOUNCE_MS = 60000;
 const UPDATE_BROADCAST_KEY = "paylink:update-version";
 const RELOAD_GUARD_KEY = "paylink:last-version-reload-at";
+const DISMISSED_VERSION_KEY = "paylink:dismissed-update-version";
 
 const CRITICAL_PATH_HINTS = [
   "/payment",
@@ -25,6 +26,15 @@ function getNow() {
   return Date.now();
 }
 
+function getDismissedVersion() {
+  if (typeof window === "undefined") return "";
+  try {
+    return String(window.sessionStorage.getItem(DISMISSED_VERSION_KEY) || "").trim();
+  } catch {
+    return "";
+  }
+}
+
 function isSafePath(pathname) {
   const path = String(pathname || "").toLowerCase();
   return !CRITICAL_PATH_HINTS.some((hint) => path.includes(hint));
@@ -35,7 +45,7 @@ export function useVersionCheck() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [remoteVersion, setRemoteVersion] = useState("");
   const [lastCheckAt, setLastCheckAt] = useState(null);
-  const [dismissedForVersion, setDismissedForVersion] = useState("");
+  const [dismissedForVersion, setDismissedForVersion] = useState(getDismissedVersion);
 
   const applyRemoteVersion = useCallback(
     (nextVersion) => {
@@ -44,11 +54,20 @@ export function useVersionCheck() {
         setRemoteVersion(nextVersion);
         setUpdateAvailable(false);
         setDismissedForVersion("");
+        if (typeof window !== "undefined") {
+          try {
+            window.sessionStorage.removeItem(DISMISSED_VERSION_KEY);
+          } catch (error) {
+            console.debug("Dismissed update version cleanup skipped", error);
+          }
+        }
         return;
       }
       setRemoteVersion(nextVersion);
       if (dismissedForVersion !== nextVersion) {
         setUpdateAvailable(true);
+      } else {
+        setUpdateAvailable(false);
       }
     },
     [dismissedForVersion, localVersion]
@@ -96,6 +115,13 @@ export function useVersionCheck() {
     if (!remoteVersion) return;
     setDismissedForVersion(remoteVersion);
     setUpdateAvailable(false);
+    if (typeof window !== "undefined") {
+      try {
+        window.sessionStorage.setItem(DISMISSED_VERSION_KEY, remoteVersion);
+      } catch (error) {
+        console.debug("Dismissed update version storage skipped", error);
+      }
+    }
   }, [remoteVersion]);
 
   useEffect(() => {

@@ -346,6 +346,36 @@ export default function DashboardLayout() {
       </nav>
 
       <div className="px-4 py-6 border-t border-white/10">
+        {updateAvailable ? (
+          <div className="mb-3 rounded-lg border border-slate-700 bg-slate-950 p-2 text-[10px] text-slate-100">
+            <p className="font-semibold">Nouvelle version</p>
+            {!isSafeToReloadNow ? (
+              <p className="mt-1 text-[10px] text-amber-300">
+                Termine l&apos;operation en cours avant actualisation.
+              </p>
+            ) : null}
+            <div className="mt-2 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  dismissUpdate();
+                  reloadNow({ force: true });
+                }}
+                disabled={!isSafeToReloadNow}
+                className="rounded-md border border-slate-600 bg-white px-1.5 py-0.5 font-semibold text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Actualiser
+              </button>
+              <button
+                type="button"
+                onClick={dismissUpdate}
+                className="rounded-md px-1.5 py-0.5 text-slate-200 hover:bg-slate-800"
+              >
+                Plus tard
+              </button>
+            </div>
+          </div>
+        ) : null}
         <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center gap-3 px-4 py-2 rounded-xl bg-white text-indigo-900 font-semibold shadow-md hover:shadow-lg transition"
@@ -411,29 +441,6 @@ export default function DashboardLayout() {
               {sidebarVisible ? "Masquer le menu" : "Afficher le menu"}
             </button>
             <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Tableau de bord</h2>
-            {updateAvailable ? (
-              <div className="hidden md:flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[10px] text-amber-900">
-                <span className="font-semibold">Nouvelle version</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    dismissUpdate();
-                    reloadNow({ force: true });
-                  }}
-                  disabled={!isSafeToReloadNow}
-                  className="rounded-md border border-amber-400 bg-white px-1.5 py-0.5 font-semibold text-amber-900 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Actualiser
-                </button>
-                <button
-                  type="button"
-                  onClick={dismissUpdate}
-                  className="rounded-md px-1.5 py-0.5 text-amber-800 hover:bg-amber-100"
-                >
-                  Plus tard
-                </button>
-              </div>
-            ) : null}
           </div>
           <div className="flex items-center gap-3">
             <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
