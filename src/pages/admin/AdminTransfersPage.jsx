@@ -559,6 +559,8 @@ export default function AdminTransfersPage() {
                     ["Montant", formatMoney(fundingDetail.amounts?.amount)],
                     ["Montant local", formatMoney(fundingDetail.amounts?.local_amount)],
                     ["Taux", formatMoney(fundingDetail.amounts?.rate)],
+                    ["Frais", formatMoney(fundingDetail.funding?.fee_amount ?? fundingDetail.metadata?.fee_amount)],
+                    ["Total a financer", formatMoney(fundingDetail.funding?.total_required ?? fundingDetail.metadata?.total_required)],
                   ]}
                 />
                 <InfoCard
@@ -574,11 +576,11 @@ export default function AdminTransfersPage() {
               <div className="rounded-xl border p-4">
                 <h4 className="font-semibold text-slate-900">Financement</h4>
                 <div className="mt-3 grid gap-2 text-slate-700 md:grid-cols-2">
-                  <p>Debit wallet: <span className="font-medium">{formatMoney(fundingDetail.metadata?.debited_amount)}</span></p>
-                  <p>Credit utilise: <span className="font-medium">{formatMoney(fundingDetail.metadata?.credit_used_amount)}</span></p>
-                  <p>Total requis: <span className="font-medium">{formatMoney(fundingDetail.metadata?.total_required)}</span></p>
-                  <p>Topup requis: <span className="font-medium">{formatMoney(fundingDetail.metadata?.required_credit_topup)}</span></p>
-                  <p>Funding pending: <span className="font-medium">{String(Boolean(fundingDetail.metadata?.funding_pending))}</span></p>
+                  <p>Debit wallet: <span className="font-medium">{formatMoney(fundingDetail.funding?.debited_amount ?? fundingDetail.metadata?.debited_amount)}</span></p>
+                  <p>Credit utilise: <span className="font-medium">{formatMoney(fundingDetail.funding?.credit_used_amount ?? fundingDetail.metadata?.credit_used_amount)}</span></p>
+                  <p>Total requis (avec frais): <span className="font-medium">{formatMoney(fundingDetail.funding?.total_required ?? fundingDetail.metadata?.total_required)}</span></p>
+                  <p>Topup requis: <span className="font-medium">{formatMoney(fundingDetail.funding?.required_credit_topup ?? fundingDetail.metadata?.required_credit_topup)}</span></p>
+                  <p>Funding pending: <span className="font-medium">{String(Boolean(fundingDetail.funding?.funding_pending ?? fundingDetail.metadata?.funding_pending))}</span></p>
                   <p>Review reasons: <span className="font-medium">{Array.isArray(fundingDetail.flags?.review_reasons) ? fundingDetail.flags.review_reasons.join(", ") || "-" : "-"}</span></p>
                 </div>
               </div>
