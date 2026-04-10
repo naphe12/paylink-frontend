@@ -70,11 +70,19 @@ export function useVersionCheck() {
     }
   }, [applyRemoteVersion, localVersion]);
 
-  const reloadNow = useCallback(() => {
+  const reloadNow = useCallback((options = {}) => {
+    const force = Boolean(options?.force);
     if (typeof window === "undefined") return;
     const lastReloadAt = Number(window.sessionStorage.getItem(RELOAD_GUARD_KEY) || 0);
-    if (getNow() - lastReloadAt < RELOAD_DEBOUNCE_MS) return;
+    if (!force && getNow() - lastReloadAt < RELOAD_DEBOUNCE_MS) return;
     window.sessionStorage.setItem(RELOAD_GUARD_KEY, String(getNow()));
+    if (force) {
+      // Force a real navigation so browser/proxy cache cannot keep stale assets.
+      const url = new URL(window.location.href);
+      url.searchParams.set("_v", String(getNow()));
+      window.location.replace(url.toString());
+      return;
+    }
     window.location.reload();
   }, []);
 
