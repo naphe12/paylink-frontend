@@ -302,7 +302,23 @@ export default function ExternalTransferPage() {
         used_monthly: Number(data?.used_monthly || 0),
       });
     } catch (err) {
-      setLoadError((current) => current || err?.message || "Impossible de charger les limites wallet.");
+      try {
+        const profile = await api.get("/auth/me");
+        setWalletLimits({
+          daily_limit: Number(profile?.daily_limit || 0),
+          used_daily: Number(profile?.used_daily || 0),
+          monthly_limit: Number(profile?.monthly_limit || 0),
+          used_monthly: Number(profile?.used_monthly || 0),
+        });
+      } catch {
+        // Do not block the page if limits endpoint is unavailable in a given deployment.
+        setWalletLimits({
+          daily_limit: 0,
+          used_daily: 0,
+          monthly_limit: 0,
+          used_monthly: 0,
+        });
+      }
     }
   };
 
