@@ -1230,8 +1230,12 @@ const api = {
     const query = search.toString();
     return this.get(`/admin/transfers/gains${query ? `?${query}` : ""}`);
   },
-  async simulateAdminExternalTransfer(payload = {}) {
-    return this.post("/admin/transfers/simulate-external", payload);
+  async simulateAdminExternalTransfer(payload = {}, stepUpToken = null) {
+    return this.postWithHeaders(
+      "/admin/transfers/simulate-external",
+      payload,
+      stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
+    );
   },
   async getAdminExternalTransferDetail(transferRef) {
     return this.get(`/admin/transfers/detail/${encodeURIComponent(String(transferRef || "").trim())}`);
