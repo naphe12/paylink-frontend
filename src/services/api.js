@@ -1237,6 +1237,9 @@ const api = {
       stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
     );
   },
+  async simulateClientExternalTransfer(payload = {}) {
+    return this.post("/wallet/transfer/external/simulate", payload);
+  },
   async getAdminExternalTransferDetail(transferRef) {
     return this.get(`/admin/transfers/detail/${encodeURIComponent(String(transferRef || "").trim())}`);
   },
