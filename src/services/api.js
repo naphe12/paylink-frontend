@@ -933,6 +933,9 @@ const api = {
   async getFinancialSummary() {
     return this.get("/wallet/financial-summary");
   },
+  async getWalletLimits() {
+    return this.get("/wallet/limits");
+  },
   async getFinancialInsights() {
     return this.get("/financial-insights/me");
   },

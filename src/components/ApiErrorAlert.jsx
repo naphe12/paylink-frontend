@@ -23,6 +23,10 @@ export default function ApiErrorAlert({
   const isNetworkOrHtmlError =
     String(message).includes("impossible de joindre l'API") ||
     String(message).includes("reponse HTML recue");
+  const statusMatch = String(message).match(/->\s*(\d{3})/);
+  const statusCode = statusMatch ? Number(statusMatch[1]) : null;
+  const isBusiness4xx = Number.isFinite(statusCode) && statusCode >= 400 && statusCode < 500 && !isNetworkOrHtmlError;
+  const title = isBusiness4xx ? "Operation refusee" : "Une erreur est survenue";
 
   const copyRequestId = async () => {
     if (!requestId || !canCopy) return;
@@ -89,12 +93,14 @@ export default function ApiErrorAlert({
 
   return (
     <div className={`rounded-lg border border-red-200 bg-red-50 p-3 text-sm ${className}`}>
-      <p className="font-medium text-red-700">Une erreur est survenue</p>
+      <p className="font-medium text-red-700">{title}</p>
       <p className="mt-1 whitespace-pre-wrap text-red-700">{message}</p>
-      <div className="mt-2 space-y-1 text-xs text-red-700">
-        <p>API configuree: {apiUrl || "(vide)"}</p>
-        {fallbackApiUrl && <p>API fallback: {fallbackApiUrl}</p>}
-      </div>
+      {!isBusiness4xx && (
+        <div className="mt-2 space-y-1 text-xs text-red-700">
+          <p>API configuree: {apiUrl || "(vide)"}</p>
+          {fallbackApiUrl && <p>API fallback: {fallbackApiUrl}</p>}
+        </div>
+      )}
       <div className="mt-2 flex items-center gap-3">
         {onRetry && (
           <button
