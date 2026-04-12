@@ -91,6 +91,13 @@ function formatSimulationMoney(value) {
   });
 }
 
+function formatLimitAmount(value) {
+  return Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 export default function ExternalTransferPage() {
   const [countries, setCountries] = useState([]);
   const [recentTransfers, setRecentTransfers] = useState([]);
@@ -123,6 +130,18 @@ export default function ExternalTransferPage() {
   const [simulationLoading, setSimulationLoading] = useState(false);
   const [simulationResult, setSimulationResult] = useState(null);
   const [simulationError, setSimulationError] = useState("");
+  const [walletLimits, setWalletLimits] = useState({
+    daily_limit: 0,
+    used_daily: 0,
+    monthly_limit: 0,
+    used_monthly: 0,
+  });
+  const [trustProfile, setTrustProfile] = useState({
+    kyc_tier: null,
+    kyc_verified: null,
+    recommended_daily_limit: null,
+    recommended_monthly_limit: null,
+  });
   const isBifWallet = sourceCurrency === "BIF";
   const sameFundingCurrency = sourceCurrency === creditCurrency;
   const hasNegativeWallet = availableBalance < 0;
@@ -151,6 +170,24 @@ export default function ExternalTransferPage() {
       ? parseDecimalInput(form.local_amount)
       : parseDecimalInput(form.amount)) > 0;
   const totalDebitSourceAmount = effectiveSourceAmount + feesAmountSource;
+  const dailyRemaining = Math.max(
+    Number(walletLimits.daily_limit || 0) - Number(walletLimits.used_daily || 0),
+    0
+  );
+  const monthlyRemaining = Math.max(
+    Number(walletLimits.monthly_limit || 0) - Number(walletLimits.used_monthly || 0),
+    0
+  );
+  const requiredDailyIncrease = Math.max(effectiveSourceAmount - dailyRemaining, 0);
+  const requiredMonthlyIncrease = Math.max(effectiveSourceAmount - monthlyRemaining, 0);
+  const suggestedDailyIncrease = Math.max(
+    Number(trustProfile.recommended_daily_limit || 0) - Number(walletLimits.daily_limit || 0),
+    0
+  );
+  const suggestedMonthlyIncrease = Math.max(
+    Number(trustProfile.recommended_monthly_limit || 0) - Number(walletLimits.monthly_limit || 0),
+    0
+  );
 
   useEffect(() => {
     if (rate === 0) {
@@ -255,6 +292,35 @@ export default function ExternalTransferPage() {
     }
   };
 
+  const loadWalletLimits = async () => {
+    try {
+      const data = await api.getWalletLimits();
+      setWalletLimits({
+        daily_limit: Number(data?.daily_limit || 0),
+        used_daily: Number(data?.used_daily || 0),
+        monthly_limit: Number(data?.monthly_limit || 0),
+        used_monthly: Number(data?.used_monthly || 0),
+      });
+    } catch (err) {
+      setLoadError((current) => current || err?.message || "Impossible de charger les limites wallet.");
+    }
+  };
+
+  const loadTrustProfile = async () => {
+    try {
+      const data = await api.getMyTrustProfile();
+      const profile = data?.profile || {};
+      setTrustProfile({
+        kyc_tier: profile?.kyc_tier ?? null,
+        kyc_verified: typeof profile?.kyc_verified === "boolean" ? profile.kyc_verified : null,
+        recommended_daily_limit: Number(profile?.recommended_daily_limit || 0),
+        recommended_monthly_limit: Number(profile?.recommended_monthly_limit || 0),
+      });
+    } catch (err) {
+      setLoadError((current) => current || err?.message || "Impossible de charger le profil KYC.");
+    }
+  };
+
   const loadCountries = async () => {
     try {
       setLoadError("");
@@ -288,11 +354,21 @@ export default function ExternalTransferPage() {
     loadCountries();
     loadBeneficiaries();
     loadFinancialCapacity();
+    loadWalletLimits();
+    loadTrustProfile();
     loadRecentTransfers();
   }, []);
 
   const retryLoad = async () => {
-    await Promise.allSettled([loadCountries(), loadRate(), loadBeneficiaries(), loadFinancialCapacity(), loadRecentTransfers()]);
+    await Promise.allSettled([
+      loadCountries(),
+      loadRate(),
+      loadBeneficiaries(),
+      loadFinancialCapacity(),
+      loadWalletLimits(),
+      loadTrustProfile(),
+      loadRecentTransfers(),
+    ]);
   };
 
   const handleChange = (e) => {
@@ -392,9 +468,24 @@ export default function ExternalTransferPage() {
       });
       setSelectedBeneficiary("");
       await loadFinancialCapacity();
+      await loadWalletLimits();
+      await loadTrustProfile();
       await loadRecentTransfers();
     } catch (err) {
-      setError(err?.message || "Erreur lors de l'envoi du transfert.");
+      const rawMessage = String(err?.message || "");
+      if (rawMessage.toLowerCase().includes("limite journaliere atteinte")) {
+        setError(
+          `Limite journaliere atteinte. Reste aujourd'hui: ${formatLimitAmount(dailyRemaining)} ${sourceCurrency}. ` +
+          `Pour ce montant, prevoir au moins +${formatLimitAmount(requiredDailyIncrease)} ${sourceCurrency} de plafond journalier.`
+        );
+      } else if (rawMessage.toLowerCase().includes("limite mensuelle atteinte")) {
+        setError(
+          `Limite mensuelle atteinte. Reste ce mois: ${formatLimitAmount(monthlyRemaining)} ${sourceCurrency}. ` +
+          `Pour ce montant, prevoir au moins +${formatLimitAmount(requiredMonthlyIncrease)} ${sourceCurrency} de plafond mensuel.`
+        );
+      } else {
+        setError(err?.message || "Erreur lors de l'envoi du transfert.");
+      }
     } finally {
       setLoading(false);
     }
@@ -463,6 +554,82 @@ export default function ExternalTransferPage() {
               {sourceCurrency} necessaires: <span className="font-semibold">{totalDebitSourceAmount.toFixed(2)} {sourceCurrency}</span>
             </p>
           ) : null}
+        </div>
+      </div>
+
+      <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="font-semibold">Limites KYC actuelles</p>
+            <p className="text-xs text-amber-800">
+              Niveau KYC: <span className="font-semibold">{trustProfile.kyc_tier ?? "-"}</span> | Statut:{" "}
+              <span className="font-semibold">
+                {trustProfile.kyc_verified == null ? "-" : trustProfile.kyc_verified ? "verifie" : "non verifie"}
+              </span>
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Link
+              to="/dashboard/client/account/kyc"
+              className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-amber-900 hover:bg-amber-100"
+            >
+              Ouvrir KYC
+            </Link>
+            <Link
+              to="/dashboard/client/kyc-agent"
+              className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-amber-900 hover:bg-amber-100"
+            >
+              Assistant KYC
+            </Link>
+          </div>
+        </div>
+        <div className="mt-3 grid gap-2 md:grid-cols-2">
+          <div className="rounded-lg border border-amber-200 bg-white px-3 py-2">
+            <p>
+              Journalier:{" "}
+              <span className="font-semibold">
+                {formatLimitAmount(walletLimits.used_daily)} / {formatLimitAmount(walletLimits.daily_limit)} {sourceCurrency}
+              </span>
+            </p>
+            <p>
+              Reste aujourd'hui: <span className="font-semibold">{formatLimitAmount(dailyRemaining)} {sourceCurrency}</span>
+            </p>
+            {requiredDailyIncrease > 0 ? (
+              <p>
+                Augmentation min pour ce montant:{" "}
+                <span className="font-semibold">+{formatLimitAmount(requiredDailyIncrease)} {sourceCurrency}</span>
+              </p>
+            ) : null}
+            {suggestedDailyIncrease > 0 ? (
+              <p>
+                Suggestion profil trust:{" "}
+                <span className="font-semibold">+{formatLimitAmount(suggestedDailyIncrease)} {sourceCurrency}</span>
+              </p>
+            ) : null}
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-white px-3 py-2">
+            <p>
+              Mensuel:{" "}
+              <span className="font-semibold">
+                {formatLimitAmount(walletLimits.used_monthly)} / {formatLimitAmount(walletLimits.monthly_limit)} {sourceCurrency}
+              </span>
+            </p>
+            <p>
+              Reste ce mois: <span className="font-semibold">{formatLimitAmount(monthlyRemaining)} {sourceCurrency}</span>
+            </p>
+            {requiredMonthlyIncrease > 0 ? (
+              <p>
+                Augmentation min pour ce montant:{" "}
+                <span className="font-semibold">+{formatLimitAmount(requiredMonthlyIncrease)} {sourceCurrency}</span>
+              </p>
+            ) : null}
+            {suggestedMonthlyIncrease > 0 ? (
+              <p>
+                Suggestion profil trust:{" "}
+                <span className="font-semibold">+{formatLimitAmount(suggestedMonthlyIncrease)} {sourceCurrency}</span>
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
 
