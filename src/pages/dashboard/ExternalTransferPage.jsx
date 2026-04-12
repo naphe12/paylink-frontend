@@ -84,6 +84,13 @@ function getTransferStatusBadgeClass(status) {
   return "bg-white text-slate-700 border border-slate-300";
 }
 
+function formatSimulationMoney(value) {
+  return Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 export default function ExternalTransferPage() {
   const [countries, setCountries] = useState([]);
   const [recentTransfers, setRecentTransfers] = useState([]);
@@ -112,12 +119,19 @@ export default function ExternalTransferPage() {
   const [selectedBeneficiary, setSelectedBeneficiary] = useState("");
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [submitIdempotencyKey, setSubmitIdempotencyKey] = useState("");
+  const [simulationAmount, setSimulationAmount] = useState("");
+  const [simulationLoading, setSimulationLoading] = useState(false);
+  const [simulationResult, setSimulationResult] = useState(null);
+  const [simulationError, setSimulationError] = useState("");
   const isBifWallet = sourceCurrency === "BIF";
   const sameFundingCurrency = sourceCurrency === creditCurrency;
+  const hasNegativeWallet = availableBalance < 0;
   const totalAvailable = isBifWallet
     ? creditAvailable
     : sameFundingCurrency
-      ? availableBalance + creditAvailable
+      ? hasNegativeWallet
+        ? creditAvailable
+        : availableBalance + creditAvailable
       : availableBalance;
   const destinationOptions = buildDestinationOptions(countries, form.country_destination);
 
@@ -386,6 +400,28 @@ export default function ExternalTransferPage() {
     }
   };
 
+  const handleSimulation = async () => {
+    setSimulationError("");
+    const parsedAmount = parseDecimalInput(simulationAmount);
+    if (!(parsedAmount > 0)) {
+      setSimulationError("Saisis un montant valide pour la simulation.");
+      return;
+    }
+    setSimulationLoading(true);
+    try {
+      const data = await api.simulateClientExternalTransfer({
+        amount: Number(parsedAmount.toFixed(2)),
+        currency: sourceCurrency,
+      });
+      setSimulationResult(data || null);
+    } catch (err) {
+      setSimulationResult(null);
+      setSimulationError(err?.message || "Simulation impossible.");
+    } finally {
+      setSimulationLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
       <h2 className="text-2xl font-bold text-[#0b3b64] mb-6 flex items-center gap-2">
@@ -402,7 +438,9 @@ export default function ExternalTransferPage() {
             {isBifWallet
               ? `(${creditAvailable.toFixed(2)} ${creditCurrency} ligne de credit disponible, wallet BIF non utilise)`
               : sameFundingCurrency
-                ? `(${availableBalance.toFixed(2)} ${sourceCurrency} solde + ${creditAvailable.toFixed(2)} ${creditCurrency} credit disponible)`
+                ? hasNegativeWallet
+                  ? `(Wallet negatif: capacite limitee a la ligne de credit disponible ${creditAvailable.toFixed(2)} ${creditCurrency})`
+                  : `(${availableBalance.toFixed(2)} ${sourceCurrency} solde + ${creditAvailable.toFixed(2)} ${creditCurrency} credit disponible)`
                 : `(${availableBalance.toFixed(2)} ${sourceCurrency} solde disponible; ligne de credit: ${creditAvailable.toFixed(2)} ${creditCurrency})`}
           </p>
           <p className="text-[13px] text-blue-700 mt-1">
@@ -625,6 +663,86 @@ export default function ExternalTransferPage() {
           {loading ? "Envoi en cours..." : "Envoyer le transfert"}
         </button>
       </form>
+
+      <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">Simulation transfert externe</h3>
+            <p className="text-sm text-slate-500">Verifie la capacite et le montant estimatif recu avant envoi.</p>
+          </div>
+          <div className="grid w-full gap-3 md:max-w-xl md:grid-cols-[1fr_auto_auto]">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={simulationAmount}
+              onChange={(e) => setSimulationAmount(normalizeDecimalInput(e.target.value))}
+              placeholder={`Montant (${sourceCurrency})`}
+              className="w-full rounded-lg border px-3 py-2 text-sm"
+            />
+            <input
+              type="text"
+              value={sourceCurrency}
+              readOnly
+              className="w-24 rounded-lg border bg-slate-50 px-3 py-2 text-sm uppercase text-slate-600"
+            />
+            <button
+              type="button"
+              onClick={handleSimulation}
+              disabled={simulationLoading}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {simulationLoading ? "Simulation..." : "Simuler"}
+            </button>
+          </div>
+        </div>
+
+        {simulationError ? (
+          <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {simulationError}
+          </p>
+        ) : null}
+
+        {simulationResult ? (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className={`rounded-xl border px-4 py-3 text-sm ${simulationResult.possible ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`}>
+              <p className="font-semibold">
+                {simulationResult.possible ? "Transfert possible" : "Transfert non possible"}
+              </p>
+              {Array.isArray(simulationResult.reasons) && simulationResult.reasons.length > 0 ? (
+                <ul className="mt-2 space-y-1">
+                  {simulationResult.reasons.map((reason, idx) => (
+                    <li key={`${reason}-${idx}`}>- {reason}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              <p>
+                Total a couvrir:{" "}
+                <span className="font-semibold">
+                  {formatSimulationMoney(simulationResult.amounts?.total_required)} {simulationResult.before?.wallet_currency}
+                </span>
+              </p>
+              <p>
+                Capacite actuelle:{" "}
+                <span className="font-semibold">
+                  {formatSimulationMoney(simulationResult.before?.financial_capacity)} {simulationResult.before?.wallet_currency}
+                </span>
+              </p>
+              <p>
+                Montant recu estime:{" "}
+                <span className="font-semibold">
+                  {formatSimulationMoney(simulationResult.amounts?.local_amount)} {simulationResult.rule?.destination_currency}
+                </span>
+              </p>
+              <p>
+                Taux FX applique: <span className="font-semibold">{formatSimulationMoney(simulationResult.amounts?.fx_rate)}</span>
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </section>
 
       <section className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
         <div className="flex items-center justify-between gap-3">
