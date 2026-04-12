@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import api from "@/services/api";
+import AdminStepUpDialog from "@/components/admin/AdminStepUpDialog";
+import useAdminStepUp from "@/hooks/useAdminStepUp";
 import useSessionStorageState from "@/hooks/useSessionStorageState";
 
 const statusBadge = (status) => {
@@ -30,6 +32,15 @@ function getAgeHours(value) {
 }
 
 export default function AdminTransfersPage() {
+  const {
+    stepUpOpen,
+    stepUpLoading,
+    stepUpError,
+    stepUpActionLabel,
+    closeStepUp,
+    confirmStepUp,
+    runWithStepUp,
+  } = useAdminStepUp();
   const [transfers, setTransfers] = useState([]);
   const [summary, setSummary] = useState(null);
   const [status, setStatus] = useState("");
@@ -119,11 +130,17 @@ export default function AdminTransfersPage() {
     }
     setSimulationLoading(true);
     try {
-      const data = await api.simulateAdminExternalTransfer({
+      const payload = {
         user_id: selectedUserId,
         amount: Number(simulationAmount),
         currency: simulationCurrency.trim().toUpperCase(),
+      };
+      const data = await runWithStepUp({
+        action: "admin_write",
+        actionLabel: "Confirmer la simulation de transfert externe",
+        execute: (stepUpToken) => api.simulateAdminExternalTransfer(payload, stepUpToken),
       });
+      if (!data) return;
       setSimulationResult(data || null);
     } catch (err) {
       setSimulationError(err?.message || "Simulation impossible.");
@@ -197,6 +214,14 @@ export default function AdminTransfersPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <AdminStepUpDialog
+        open={stepUpOpen}
+        loading={stepUpLoading}
+        error={stepUpError}
+        actionLabel={stepUpActionLabel}
+        onClose={closeStepUp}
+        onConfirm={confirmStepUp}
+      />
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900">
