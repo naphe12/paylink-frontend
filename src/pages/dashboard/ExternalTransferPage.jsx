@@ -136,12 +136,11 @@ export default function ExternalTransferPage() {
     monthly_limit: 0,
     used_monthly: 0,
   });
-  const [trustProfile, setTrustProfile] = useState({
+  const [kycProfile, setKycProfile] = useState({
     kyc_tier: null,
     kyc_verified: null,
-    recommended_daily_limit: null,
-    recommended_monthly_limit: null,
   });
+  const [limitsInsights, setLimitsInsights] = useState(null);
   const isBifWallet = sourceCurrency === "BIF";
   const sameFundingCurrency = sourceCurrency === creditCurrency;
   const hasNegativeWallet = availableBalance < 0;
@@ -170,22 +169,26 @@ export default function ExternalTransferPage() {
       ? parseDecimalInput(form.local_amount)
       : parseDecimalInput(form.amount)) > 0;
   const totalDebitSourceAmount = effectiveSourceAmount + feesAmountSource;
+  const displayDailyLimit = Number(limitsInsights?.limits?.current_daily_limit ?? walletLimits.daily_limit ?? 0);
+  const displayMonthlyLimit = Number(limitsInsights?.limits?.current_monthly_limit ?? walletLimits.monthly_limit ?? 0);
+  const displayUsedDaily = Number(limitsInsights?.limits?.used_daily ?? walletLimits.used_daily ?? 0);
+  const displayUsedMonthly = Number(limitsInsights?.limits?.used_monthly ?? walletLimits.used_monthly ?? 0);
   const dailyRemaining = Math.max(
-    Number(walletLimits.daily_limit || 0) - Number(walletLimits.used_daily || 0),
+    Number((displayDailyLimit - displayUsedDaily) || 0),
     0
   );
   const monthlyRemaining = Math.max(
-    Number(walletLimits.monthly_limit || 0) - Number(walletLimits.used_monthly || 0),
+    Number((displayMonthlyLimit - displayUsedMonthly) || 0),
     0
   );
   const requiredDailyIncrease = Math.max(effectiveSourceAmount - dailyRemaining, 0);
   const requiredMonthlyIncrease = Math.max(effectiveSourceAmount - monthlyRemaining, 0);
   const suggestedDailyIncrease = Math.max(
-    Number(trustProfile.recommended_daily_limit || 0) - Number(walletLimits.daily_limit || 0),
+    Number(limitsInsights?.limits?.recommended_daily_limit || 0) - displayDailyLimit,
     0
   );
   const suggestedMonthlyIncrease = Math.max(
-    Number(trustProfile.recommended_monthly_limit || 0) - Number(walletLimits.monthly_limit || 0),
+    Number(limitsInsights?.limits?.recommended_monthly_limit || 0) - displayMonthlyLimit,
     0
   );
 
@@ -322,18 +325,25 @@ export default function ExternalTransferPage() {
     }
   };
 
-  const loadTrustProfile = async () => {
+  const loadKycProfile = async () => {
     try {
-      const data = await api.getMyTrustProfile();
-      const profile = data?.profile || {};
-      setTrustProfile({
+      const profile = await api.get("/auth/me");
+      const status = String(profile?.kyc_status || "").toLowerCase();
+      setKycProfile({
         kyc_tier: profile?.kyc_tier ?? null,
-        kyc_verified: typeof profile?.kyc_verified === "boolean" ? profile.kyc_verified : null,
-        recommended_daily_limit: Number(profile?.recommended_daily_limit || 0),
-        recommended_monthly_limit: Number(profile?.recommended_monthly_limit || 0),
+        kyc_verified: status ? status === "verified" : null,
       });
     } catch (err) {
       setLoadError((current) => current || err?.message || "Impossible de charger le profil KYC.");
+    }
+  };
+
+  const loadLimitsInsights = async () => {
+    try {
+      const data = await api.getMyExternalTransferLimitsInsights();
+      setLimitsInsights(data || null);
+    } catch (err) {
+      setLoadError((current) => current || err?.message || "Impossible de charger l'analyse des limites externes.");
     }
   };
 
@@ -371,7 +381,8 @@ export default function ExternalTransferPage() {
     loadBeneficiaries();
     loadFinancialCapacity();
     loadWalletLimits();
-    loadTrustProfile();
+    loadKycProfile();
+    loadLimitsInsights();
     loadRecentTransfers();
   }, []);
 
@@ -382,7 +393,8 @@ export default function ExternalTransferPage() {
       loadBeneficiaries(),
       loadFinancialCapacity(),
       loadWalletLimits(),
-      loadTrustProfile(),
+      loadKycProfile(),
+      loadLimitsInsights(),
       loadRecentTransfers(),
     ]);
   };
@@ -485,7 +497,8 @@ export default function ExternalTransferPage() {
       setSelectedBeneficiary("");
       await loadFinancialCapacity();
       await loadWalletLimits();
-      await loadTrustProfile();
+      await loadKycProfile();
+      await loadLimitsInsights();
       await loadRecentTransfers();
     } catch (err) {
       const rawMessage = String(err?.message || "");
@@ -584,11 +597,11 @@ export default function ExternalTransferPage() {
       <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="font-semibold">Limites KYC actuelles</p>
+            <p className="font-semibold">Limites transfert externe actuelles</p>
             <p className="text-xs text-amber-800">
-              Niveau KYC: <span className="font-semibold">{trustProfile.kyc_tier ?? "-"}</span> | Statut:{" "}
+              Niveau KYC: <span className="font-semibold">{kycProfile.kyc_tier ?? "-"}</span> | Statut:{" "}
               <span className="font-semibold">
-                {trustProfile.kyc_verified == null ? "-" : trustProfile.kyc_verified ? "verifie" : "non verifie"}
+                {kycProfile.kyc_verified == null ? "-" : kycProfile.kyc_verified ? "verifie" : "non verifie"}
               </span>
             </p>
           </div>
@@ -612,7 +625,7 @@ export default function ExternalTransferPage() {
             <p>
               Journalier:{" "}
               <span className="font-semibold">
-                {formatLimitAmount(walletLimits.used_daily)} / {formatLimitAmount(walletLimits.daily_limit)} {sourceCurrency}
+                {formatLimitAmount(displayUsedDaily)} / {formatLimitAmount(displayDailyLimit)} {sourceCurrency}
               </span>
             </p>
             <p>
@@ -625,8 +638,8 @@ export default function ExternalTransferPage() {
               </p>
             ) : null}
             {suggestedDailyIncrease > 0 ? (
-              <p>
-                Suggestion profil trust:{" "}
+              <p className="text-xs text-amber-800">
+                Suggestion historique externe (basee sur tes transferts):{" "}
                 <span className="font-semibold">+{formatLimitAmount(suggestedDailyIncrease)} {sourceCurrency}</span>
               </p>
             ) : null}
@@ -635,7 +648,7 @@ export default function ExternalTransferPage() {
             <p>
               Mensuel:{" "}
               <span className="font-semibold">
-                {formatLimitAmount(walletLimits.used_monthly)} / {formatLimitAmount(walletLimits.monthly_limit)} {sourceCurrency}
+                {formatLimitAmount(displayUsedMonthly)} / {formatLimitAmount(displayMonthlyLimit)} {sourceCurrency}
               </span>
             </p>
             <p>
@@ -649,12 +662,19 @@ export default function ExternalTransferPage() {
             ) : null}
             {suggestedMonthlyIncrease > 0 ? (
               <p>
-                Suggestion profil trust:{" "}
+                Suggestion historique externe:{" "}
                 <span className="font-semibold">+{formatLimitAmount(suggestedMonthlyIncrease)} {sourceCurrency}</span>
               </p>
             ) : null}
           </div>
         </div>
+        {limitsInsights?.policy_mode === "dynamic" &&
+        (Number(limitsInsights?.limits?.effective_daily_limit || 0) > displayDailyLimit ||
+          Number(limitsInsights?.limits?.effective_monthly_limit || 0) > displayMonthlyLimit) ? (
+          <p className="mt-2 text-xs text-amber-800">
+            Note: les plafonds ci-dessus sont ceux en base (`users`). En mode `dynamic`, un plafond effectif plus eleve peut s'appliquer au controle.
+          </p>
+        ) : null}
       </div>
 
       {isBifDestination ? (
