@@ -284,6 +284,12 @@ export default function AdminUserLimitsPage() {
                     90j: p50 {formatNumber(externalTransferLimits.history?.p50_90d)} · p90 {formatNumber(externalTransferLimits.history?.p90_90d)} · max {formatNumber(externalTransferLimits.history?.max_90d)}
                   </p>
                   <p className="mt-1">
+                    Tout historique: {formatNumber(externalTransferLimits.history?.count_all)} transferts, total {formatNumber(externalTransferLimits.history?.total_all)}
+                  </p>
+                  <p className="mt-1">
+                    Tout historique (distribution): p50 {formatNumber(externalTransferLimits.history?.p50_all)} · p90 {formatNumber(externalTransferLimits.history?.p90_all)} · max {formatNumber(externalTransferLimits.history?.max_all)}
+                  </p>
+                  <p className="mt-1">
                     Recommande: {formatNumber(externalTransferLimits.recommendation?.recommended_daily_limit)} / jour · {formatNumber(externalTransferLimits.recommendation?.recommended_monthly_limit)} / mois
                   </p>
                   <p className="mt-1">
