@@ -385,6 +385,14 @@ export default function AdminUserLimitsPage() {
                       <p>calc_count_all: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.calculation_inputs?.count_all)}</span></p>
                       <p>recommended_daily_limit: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.recommended_daily_limit)}</span></p>
                       <p>recommended_monthly_limit: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.recommended_monthly_limit)}</span></p>
+                      <p className="mt-2 font-semibold text-slate-900">Valeurs table users</p>
+                      <p>users.daily_limit: <span className="font-semibold">{formatNumber(externalTransferLimits.users_table_values?.daily_limit)}</span></p>
+                      <p>users.monthly_limit: <span className="font-semibold">{formatNumber(externalTransferLimits.users_table_values?.monthly_limit)}</span></p>
+                      <p>users.used_daily: <span className="font-semibold">{formatNumber(externalTransferLimits.users_table_values?.used_daily)}</span></p>
+                      <p>users.used_monthly: <span className="font-semibold">{formatNumber(externalTransferLimits.users_table_values?.used_monthly)}</span></p>
+                      <p>users.last_reset: <span className="font-semibold">{externalTransferLimits.users_table_values?.last_reset || "-"}</span></p>
+                      <p>users.kyc_status/tier: <span className="font-semibold">{externalTransferLimits.users_table_values?.kyc_status || "-"} / {formatNumber(externalTransferLimits.users_table_values?.kyc_tier)}</span></p>
+                      <p>users.risk_score: <span className="font-semibold">{formatNumber(externalTransferLimits.users_table_values?.risk_score)}</span></p>
                     </div>
                   </details>
                 </div>
