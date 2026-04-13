@@ -94,6 +94,7 @@ const AdminBalanceEventsPage = lazy(() => import("@/pages/admin/AdminBalanceEven
 const AdminLegacyTransfersPage = lazy(() => import("@/pages/admin/AdminLegacyTransfersPage"));
 const AdminUserBalanceEventsPage = lazy(() => import("@/pages/admin/AdminUserBalanceEventsPage"));
 const AdminUserLimitsPage = lazy(() => import("@/pages/admin/AdminUserLimitsPage"));
+const AdminUsersBonusBalancesPage = lazy(() => import("@/pages/admin/AdminUsersBonusBalancesPage"));
 const P2PAdminTrades = lazy(() => import("@/pages/admin/P2PAdminTrades"));
 const P2PAdminDisputes = lazy(() => import("@/pages/admin/P2PAdminDisputes"));
 const P2PAdminRisk = lazy(() => import("@/pages/admin/P2PAdminRisk"));
@@ -256,6 +257,7 @@ export default function AppRouter() {
         <Route path="ops/liquidity-bif" element={<LiquidityBifPage />} />
         <Route path="users" element={<AdminUsersList />} />
         <Route path="users/limits" element={<AdminUserLimitsPage />} />
+        <Route path="users/bonus-balances" element={<AdminUsersBonusBalancesPage />} />
         <Route path="users/:user_id" element={<AdminUserProfilePanel />} />
         <Route path="agents" element={<AdminAgentsPage />} />
         <Route path="notifications" element={<Navigate to="../security" replace />} />
