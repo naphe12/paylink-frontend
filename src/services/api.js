@@ -1556,6 +1556,15 @@ const api = {
     ).toString();
     return this.get(`/admin/users/bonus-balances${query ? `?${query}` : ""}`);
   },
+  async getAdminUserBonusBalance(userId) {
+    return this.get(`/admin/users/${userId}/bonus-balance`);
+  },
+  async previewAdminBonusCorrection(payload = {}) {
+    return this.post("/admin/users/bonus-corrections/preview", payload);
+  },
+  async applyAdminBonusCorrection(payload = {}) {
+    return this.post("/admin/users/bonus-corrections/apply", payload);
+  },
   async getAdminTontineMembers(tontineId) {
     return this.get(`/admin/tontines/${tontineId}/members`);
   },
