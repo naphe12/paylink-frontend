@@ -1243,6 +1243,9 @@ const api = {
   async simulateClientExternalTransfer(payload = {}) {
     return this.post("/wallet/transfer/external/simulate", payload);
   },
+  async getMyExternalTransferLimitsInsights() {
+    return this.get("/wallet/transfer/external/limits-insights");
+  },
   async getAdminExternalTransferDetail(transferRef) {
     return this.get(`/admin/transfers/detail/${encodeURIComponent(String(transferRef || "").trim())}`);
   },
@@ -1543,6 +1546,9 @@ const api = {
   },
   async updateAdminUserLimits(userId, payload = {}) {
     return this.patch(`/admin/users/${userId}/limits`, payload);
+  },
+  async getAdminExternalTransferLimitsRecommendation(userId) {
+    return this.get(`/admin/users/${userId}/external-transfer-limits/recommendation`);
   },
   async getAdminTontineMembers(tontineId) {
     return this.get(`/admin/tontines/${tontineId}/members`);

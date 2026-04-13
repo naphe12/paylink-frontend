@@ -55,6 +55,7 @@ const CLIENT_QUICK_ACTION_GROUPS_BASE = [
       { label: "API marchande", to: "/dashboard/client/merchant-api", icon: Globe, description: "Cles et webhooks" },
       { label: "Cagnottes", to: "/dashboard/client/pots", icon: Gift, description: "Collectes et objectifs" },
       { label: "Transfert externe", to: "/dashboard/client/external-transfer", icon: Globe, description: "Vers un partenaire" },
+      { label: "Pourquoi bloque", to: "/dashboard/client/external-transfer-limits", icon: Shield, description: "Blocages et limites conseillees" },
       { label: "Mobile Money", to: "/dashboard/client/mobiletopup", icon: Smartphone, description: "Recharge et services" },
       { label: "Depot cash", to: "/dashboard/client/deposit", icon: ArrowDown, description: "Demande de depot" },
       { label: "Retrait cash", to: "/dashboard/client/withdraw/bif", icon: ArrowUp, description: "Retrait BIF" },

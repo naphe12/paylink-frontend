@@ -34,6 +34,7 @@ const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
 const ChangePasswordPage = lazy(() => import("@/pages/dashboard/ChangePasswordPage"));
 const AgentTransfersPage = lazy(() => import("@/pages/dashboard/AgentTransfersPage"));
 const ExternalTransferPage = lazy(() => import("@/pages/dashboard/ExternalTransferPage"));
+const ExternalTransferLimitsPage = lazy(() => import("@/pages/dashboard/ExternalTransferLimitsPage"));
 const FxRatesPage = lazy(() => import("@/pages/dashboard/FxRatesPage"));
 const BonusPage = lazy(() => import("@/pages/dashboard/BonusPage"));
 const AgentChatPage = lazy(() => import("@/pages/dashboard/AgentChatPage"));
@@ -213,6 +214,7 @@ export default function AppRouter() {
         <Route path="profile/change-password" element={<ChangePasswordPage />} />
         <Route path="agent-transfers" element={<AgentTransfersPage />} />
         <Route path="external-transfer" element={<ExternalTransferPage />} />
+        <Route path="external-transfer-limits" element={<ExternalTransferLimitsPage />} />
         <Route path="fx-rates" element={<FxRatesPage />} />
         <Route path="bonus" element={<BonusPage />} />
         <Route path="agent-chat" element={<AgentChatPage />} />

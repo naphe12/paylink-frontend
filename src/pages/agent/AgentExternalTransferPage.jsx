@@ -432,6 +432,15 @@ export default function AgentExternalTransferPage() {
         country_destination: prev.country_destination || getDefaultDestinationCountry(countries),
       }));
     } catch (err) {
+      const rawMessage = String(err?.message || "");
+      const normalizedMessage = rawMessage.toLowerCase();
+      if (
+        normalizedMessage.includes("requete dupliquee en cours de traitement")
+        || normalizedMessage.includes("idempotency-key deja utilisee")
+      ) {
+        // Let the next attempt use a new idempotency key instead of reusing a blocked one.
+        setSubmitIdempotencyKey("");
+      }
       setSubmitError(err?.message || "Erreur lors de l'envoi du transfert.");
     } finally {
       setLoading(false);
