@@ -303,6 +303,22 @@ export default function AdminUserLimitsPage() {
                       Appliquer la recommandation
                     </button>
                   </div>
+                  <details className="mt-4 rounded-xl border border-sky-300 bg-white/80 p-3">
+                    <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.14em] text-sky-800">
+                      Debug calcul historique
+                    </summary>
+                    <div className="mt-2 grid gap-1 text-xs text-slate-700">
+                      <p>policy_mode: <span className="font-semibold">{externalTransferLimits.policy_mode || "-"}</span></p>
+                      <p>scope: <span className="font-semibold">{externalTransferLimits.recommendation?.scope || "-"}</span></p>
+                      <p>count_30d: <span className="font-semibold">{formatNumber(externalTransferLimits.history?.count_30d)}</span></p>
+                      <p>count_90d: <span className="font-semibold">{formatNumber(externalTransferLimits.history?.count_90d)}</span></p>
+                      <p>count_all: <span className="font-semibold">{formatNumber(externalTransferLimits.history?.count_all)}</span></p>
+                      <p>p90_all: <span className="font-semibold">{formatNumber(externalTransferLimits.history?.p90_all)}</span></p>
+                      <p>recommended_per_tx: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.recommended_per_tx)}</span></p>
+                      <p>recommended_daily_limit: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.recommended_daily_limit)}</span></p>
+                      <p>recommended_monthly_limit: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.recommended_monthly_limit)}</span></p>
+                    </div>
+                  </details>
                 </div>
               ) : null}
 
