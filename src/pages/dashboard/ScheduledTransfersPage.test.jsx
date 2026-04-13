@@ -16,6 +16,9 @@ vi.mock("@/services/api", () => ({
     pauseScheduledTransfer: vi.fn(),
     resumeScheduledTransfer: vi.fn(),
     cancelScheduledTransfer: vi.fn(),
+    getCountries: vi.fn(),
+    getFinancialSummary: vi.fn(),
+    getExchangeRate: vi.fn(),
   },
 }));
 
@@ -74,6 +77,12 @@ describe("ScheduledTransfersPage", () => {
     api.pauseScheduledTransfer.mockReset();
     api.resumeScheduledTransfer.mockReset();
     api.cancelScheduledTransfer.mockReset();
+    api.getCountries.mockReset();
+    api.getFinancialSummary.mockReset();
+    api.getExchangeRate.mockReset();
+    api.getCountries.mockResolvedValue([]);
+    api.getFinancialSummary.mockResolvedValue({ wallet_currency: "EUR" });
+    api.getExchangeRate.mockResolvedValue({ rate: 0, fees_percent: 0 });
   });
 
   it("creates and executes a scheduled transfer", async () => {
@@ -321,6 +330,50 @@ describe("ScheduledTransfersPage", () => {
     expect(await screen.findByText(/Jean Ndayishimiye/i)).toBeInTheDocument();
     expect(await screen.findByText(/Lumicash \| Burundi/i)).toBeInTheDocument();
     expect(await screen.findByText(/Externe \| monthly \| statut: active/i)).toBeInTheDocument();
+  });
+
+  it("creates an external scheduled transfer from beneficiary received amount", async () => {
+    api.getCountries.mockResolvedValue([
+      { name: "Burundi", currency_code: "BIF" },
+      { name: "France", currency_code: "EUR" },
+    ]);
+    api.getFinancialSummary.mockResolvedValue({ wallet_currency: "EUR" });
+    api.getExchangeRate.mockResolvedValue({ rate: 3000, fees_percent: 6.25 });
+    api.listScheduledTransfers.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    api.createScheduledTransfer.mockResolvedValue({});
+
+    renderPageAt("/dashboard/client/scheduled-transfers/external");
+
+    fireEvent.change(screen.getByLabelText(/Nom beneficiaire externe/i), {
+      target: { value: "Alice Recipient" },
+    });
+    fireEvent.change(screen.getByLabelText(/Telephone beneficiaire externe/i), {
+      target: { value: "+25761230000" },
+    });
+    fireEvent.change(screen.getByLabelText(/Pays de destination externe/i), {
+      target: { value: "Burundi" },
+    });
+    fireEvent.click(await screen.findByText(/Montant a recevoir \(BIF\)/i));
+    fireEvent.change(screen.getByLabelText(/Montant a recevoir programme/i), {
+      target: { value: "150000" },
+    });
+    fireEvent.change(screen.getByLabelText(/Premiere execution/i), {
+      target: { value: "2026-04-08T08:00" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Programmer le transfert/i }));
+
+    await waitFor(() => {
+      expect(api.createScheduledTransfer).toHaveBeenCalled();
+    });
+    const payload = api.createScheduledTransfer.mock.calls[0][0];
+    expect(payload.transfer_type).toBe("external");
+    expect(payload.amount).toBe(50);
+    expect(payload.external_transfer).toMatchObject({
+      recipient_name: "Alice Recipient",
+      recipient_phone: "+25761230000",
+      country_destination: "Burundi",
+    });
   });
 
   it("preselects external transfer type from the menu querystring", async () => {

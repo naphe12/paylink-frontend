@@ -19,12 +19,28 @@ const INITIAL_FORM = {
   country_destination: "",
   partner_name: PARTNERS[0],
   amount: "",
+  local_amount: "",
   frequency: "weekly",
   next_run_at: "",
   note: "",
   remaining_runs: "",
   max_consecutive_failures: "3",
 };
+
+function normalizeSourceCurrency(value) {
+  const raw = String(value || "EUR").trim().toUpperCase();
+  if (raw === "CFA") return "XOF";
+  if (raw === "FCFA") return "XAF";
+  return raw;
+}
+
+function getCountryName(country) {
+  return String(country?.name || country?.caption || "").trim();
+}
+
+function getCountryCurrency(country) {
+  return String(country?.currency_code || country?.currency || "EUR").toUpperCase();
+}
 
 function getTransferTypeFromLocation(pathname = "", search = "") {
   if (String(pathname).endsWith("/scheduled-transfers/external")) return "external";
@@ -107,6 +123,11 @@ export default function ScheduledTransfersPage() {
   const [editingScheduleId, setEditingScheduleId] = useState(null);
   const [diagnostics, setDiagnostics] = useState({});
   const [diagnosticLoading, setDiagnosticLoading] = useState({});
+  const [amountMode, setAmountMode] = useState("send_eur");
+  const [countries, setCountries] = useState([]);
+  const [sourceCurrency, setSourceCurrency] = useState("EUR");
+  const [rate, setRate] = useState(0);
+  const [feesPercent, setFeesPercent] = useState(0);
   const [editForm, setEditForm] = useState({
     amount: "",
     frequency: "weekly",
@@ -118,6 +139,21 @@ export default function ScheduledTransfersPage() {
 
   const dueCount = items.filter((item) => item.is_due).length;
   const isExternalTransfer = form.transfer_type === "external";
+  const destinationCountry = countries.find(
+    (country) => getCountryName(country).toLowerCase() === String(form.country_destination || "").trim().toLowerCase()
+  );
+  const destinationCurrency = getCountryCurrency(destinationCountry);
+  const isBifDestination = destinationCurrency === "BIF";
+  const sourceAmountForExternal =
+    amountMode === "receive_local" && isBifDestination
+      ? rate > 0 && Number(form.local_amount || 0) > 0
+        ? Number(form.local_amount) / rate
+        : 0
+      : Number(form.amount || 0);
+  const recipientAmountPreview =
+    amountMode === "receive_local" && isBifDestination
+      ? Number(form.local_amount || 0)
+      : Number(form.amount || 0) * Number(rate || 0);
   const statusSummary = useMemo(() => {
     const counts = {
       active: 0,
@@ -145,9 +181,72 @@ export default function ScheduledTransfersPage() {
     }
   };
 
+  const loadCountries = async () => {
+    if (typeof api.getCountries !== "function") return;
+    try {
+      const list = await api.getCountries();
+      const normalized = Array.isArray(list) ? list : [];
+      setCountries(normalized);
+      setForm((prev) => {
+        if (prev.country_destination || prev.transfer_type !== "external") return prev;
+        const burundi = normalized.find((country) => getCountryName(country).toLowerCase() === "burundi");
+        return {
+          ...prev,
+          country_destination: getCountryName(burundi || normalized[0] || ""),
+        };
+      });
+    } catch {}
+  };
+
+  const loadFinancialContext = async () => {
+    if (typeof api.getFinancialSummary !== "function") return;
+    try {
+      const data = await api.getFinancialSummary();
+      setSourceCurrency(normalizeSourceCurrency(String(data?.wallet_currency || "EUR")));
+    } catch {}
+  };
+
+  const loadRate = async () => {
+    if (!isExternalTransfer) return;
+    const destination = destinationCurrency || "EUR";
+    const source = normalizeSourceCurrency(sourceCurrency);
+    if (!destination) {
+      setRate(0);
+      setFeesPercent(0);
+      return;
+    }
+    if (source === destination) {
+      setRate(1);
+      setFeesPercent(0);
+      return;
+    }
+    if (typeof api.getExchangeRate !== "function") return;
+    try {
+      const res = await api.getExchangeRate(source, destination);
+      setRate(Number(res?.rate || 0));
+      setFeesPercent(Number(res?.fees_percent || 0));
+    } catch {
+      setRate(0);
+      setFeesPercent(0);
+    }
+  };
+
   useEffect(() => {
     loadItems();
+    loadCountries();
+    loadFinancialContext();
   }, []);
+
+  useEffect(() => {
+    if (!isBifDestination && amountMode !== "send_eur") {
+      setAmountMode("send_eur");
+      setForm((prev) => ({ ...prev, local_amount: "" }));
+    }
+  }, [isBifDestination, amountMode]);
+
+  useEffect(() => {
+    loadRate();
+  }, [isExternalTransfer, destinationCurrency, sourceCurrency]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -177,6 +276,8 @@ export default function ScheduledTransfersPage() {
     setForm((prev) => ({
       ...prev,
       transfer_type: nextType,
+      amount: "",
+      local_amount: "",
       receiver_identifier: "",
       recipient_name: "",
       recipient_phone: "",
@@ -187,7 +288,11 @@ export default function ScheduledTransfersPage() {
   };
 
   const handleCreate = async () => {
-    if (!form.amount || !form.next_run_at) {
+    const effectiveAmount =
+      isExternalTransfer && amountMode === "receive_local" && isBifDestination
+        ? sourceAmountForExternal
+        : Number(form.amount || 0);
+    if (!(effectiveAmount > 0) || !form.next_run_at) {
       setError("Completer le montant et la premiere execution.");
       return;
     }
@@ -206,7 +311,7 @@ export default function ScheduledTransfersPage() {
     try {
       const payload = {
         transfer_type: form.transfer_type,
-        amount: Number(form.amount),
+        amount: Number(effectiveAmount.toFixed(2)),
         frequency: form.frequency,
         next_run_at: new Date(form.next_run_at).toISOString(),
         note: form.note || null,
@@ -231,6 +336,7 @@ export default function ScheduledTransfersPage() {
       await api.createScheduledTransfer(payload);
       setSuccess(isExternalTransfer ? "Transfert externe programme cree." : "Transfert programme cree.");
       resetForm();
+      setAmountMode("send_eur");
       await loadItems();
     } catch (err) {
       setError(err?.message || "Impossible de creer le transfert programme.");
@@ -474,18 +580,33 @@ export default function ScheduledTransfersPage() {
         ) : null}
 
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <Field label="Montant">
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              aria-label="Montant programme"
-              placeholder="Montant"
-              value={form.amount}
-              onChange={(e) => setForm((prev) => ({ ...prev, amount: e.target.value }))}
-              className={baseInputClassName()}
-            />
-          </Field>
+          {(!isExternalTransfer || amountMode === "send_eur" || !isBifDestination) ? (
+            <Field label="Montant">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                aria-label="Montant programme"
+                placeholder="Montant"
+                value={form.amount}
+                onChange={(e) => setForm((prev) => ({ ...prev, amount: e.target.value }))}
+                className={baseInputClassName()}
+              />
+            </Field>
+          ) : (
+            <Field label="Montant a recevoir (BIF)">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                aria-label="Montant a recevoir programme"
+                placeholder="Montant recu par beneficiaire"
+                value={form.local_amount}
+                onChange={(e) => setForm((prev) => ({ ...prev, local_amount: e.target.value }))}
+                className={baseInputClassName()}
+              />
+            </Field>
+          )}
 
           <Field label="Frequence">
             <select
@@ -563,6 +684,30 @@ export default function ScheduledTransfersPage() {
         ) : (
           <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-amber-700">Beneficiaire externe</p>
+            {isBifDestination ? (
+              <div className="mb-3 grid gap-2 md:grid-cols-2">
+                <label className={`rounded-lg border px-3 py-2 text-sm ${amountMode === "send_eur" ? "border-cyan-400 bg-cyan-50" : "border-slate-200 bg-white"}`}>
+                  <input
+                    type="radio"
+                    name="scheduled_external_amount_mode"
+                    className="mr-2"
+                    checked={amountMode === "send_eur"}
+                    onChange={() => setAmountMode("send_eur")}
+                  />
+                  Montant a envoyer ({sourceCurrency})
+                </label>
+                <label className={`rounded-lg border px-3 py-2 text-sm ${amountMode === "receive_local" ? "border-cyan-400 bg-cyan-50" : "border-slate-200 bg-white"}`}>
+                  <input
+                    type="radio"
+                    name="scheduled_external_amount_mode"
+                    className="mr-2"
+                    checked={amountMode === "receive_local"}
+                    onChange={() => setAmountMode("receive_local")}
+                  />
+                  Montant a recevoir (BIF)
+                </label>
+              </div>
+            ) : null}
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <Field label="Nom beneficiaire">
                 <input
@@ -587,14 +732,34 @@ export default function ScheduledTransfersPage() {
               </Field>
 
               <Field label="Pays destination">
-                <input
-                  type="text"
-                  aria-label="Pays de destination externe"
-                  placeholder="Burundi"
-                  value={form.country_destination}
-                  onChange={(e) => setForm((prev) => ({ ...prev, country_destination: e.target.value }))}
-                  className={baseInputClassName()}
-                />
+                {countries.length > 0 ? (
+                  <select
+                    aria-label="Pays de destination externe"
+                    value={form.country_destination}
+                    onChange={(e) => setForm((prev) => ({ ...prev, country_destination: e.target.value }))}
+                    className={baseInputClassName()}
+                  >
+                    <option value="">-- Selectionner --</option>
+                    {countries.map((country) => {
+                      const name = getCountryName(country);
+                      if (!name) return null;
+                      return (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      );
+                    })}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    aria-label="Pays de destination externe"
+                    placeholder="Burundi"
+                    value={form.country_destination}
+                    onChange={(e) => setForm((prev) => ({ ...prev, country_destination: e.target.value }))}
+                    className={baseInputClassName()}
+                  />
+                )}
               </Field>
 
               <Field label="Partenaire">
@@ -623,6 +788,17 @@ export default function ScheduledTransfersPage() {
                 />
               </Field>
             </div>
+            <p className="mt-3 text-xs text-amber-800">
+              Taux: <span className="font-semibold">{rate > 0 ? rate : "-"}</span> | Frais:{" "}
+              <span className="font-semibold">{feesPercent || 0}%</span> | Montant recu estime:{" "}
+              <span className="font-semibold">{Number(recipientAmountPreview || 0).toFixed(2)} {destinationCurrency || "-"}</span>
+              {amountMode === "receive_local" && isBifDestination ? (
+                <>
+                  {" "} | Montant a programmer en {sourceCurrency}:{" "}
+                  <span className="font-semibold">{Number(sourceAmountForExternal || 0).toFixed(2)} {sourceCurrency}</span>
+                </>
+              ) : null}
+            </p>
           </div>
         )}
 

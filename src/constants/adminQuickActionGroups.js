@@ -9,6 +9,7 @@ import {
   CreditCard,
   Droplets,
   FileSearch,
+  Gift,
   GitPullRequest,
   HandCoins,
   LifeBuoy,
@@ -38,6 +39,7 @@ const ADMIN_QUICK_ACTION_GROUPS = [
     actions: [
       { label: "Utilisateurs", to: "/dashboard/admin/users", icon: Users, description: "Base client" },
       { label: "Limites clients", to: "/dashboard/admin/users/limits", icon: SlidersHorizontal, description: "Adapter les plafonds" },
+      { label: "Bonus utilisateurs", to: "/dashboard/admin/users/bonus-balances", icon: Gift, description: "Soldes bonus par client" },
       { label: "Gestion agents", to: "/dashboard/admin/agents", icon: Briefcase, description: "Comptes agents" },
       { label: "Dashboard", to: "/dashboard/admin/overview", icon: LayoutDashboard, description: "Dashboard principal" },
       { label: "Dashboard Lite", to: "/dashboard/admin/overview-lite", icon: LayoutDashboard, description: "Vue simplifiee" },

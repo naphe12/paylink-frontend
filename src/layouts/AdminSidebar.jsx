@@ -33,6 +33,7 @@ import {
   Wifi,
   ChevronDown,
   ChevronRight,
+  Gift,
 } from "lucide-react";
 import { getAccessToken, logout as logoutSession, redirectToAuth } from "@/services/authStore";
 import QuickActions from "@/components/QuickActions";
@@ -428,6 +429,7 @@ export default function AdminSidebar() {
           <div className="space-y-2">
             {renderNavLink("users", Users, "Utilisateurs", onNavigate)}
             {renderNavLink("users/limits", SlidersHorizontal, "Limites clients", onNavigate)}
+            {renderNavLink("users/bonus-balances", Gift, "Bonus utilisateurs", onNavigate)}
             {renderNavLink("agents", Briefcase, "Gestion agents", onNavigate)}
             {renderNavLink("/dashboard/admin/overview", LayoutDashboard, "Dashboard", onNavigate)}
             {renderNavLink("/dashboard/admin/overview-lite", LayoutDashboard, "Dashboard Lite", onNavigate)}

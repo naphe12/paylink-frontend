@@ -1550,6 +1550,12 @@ const api = {
   async getAdminExternalTransferLimitsRecommendation(userId) {
     return this.get(`/admin/users/${userId}/external-transfer-limits/recommendation`);
   },
+  async getAdminUsersBonusBalances(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+    return this.get(`/admin/users/bonus-balances${query ? `?${query}` : ""}`);
+  },
   async getAdminTontineMembers(tontineId) {
     return this.get(`/admin/tontines/${tontineId}/members`);
   },
