@@ -19,6 +19,7 @@ export default function AdminUserLimitsPage() {
   const [selectedUserId, setSelectedUserId] = useSessionStorageState("admin-user-limits:selected-user-id", "");
   const [selectedUserDetail, setSelectedUserDetail] = useState(null);
   const [externalTransferLimits, setExternalTransferLimits] = useState(null);
+  const [externalTransferLimitsError, setExternalTransferLimitsError] = useState("");
   const [selectSearch, setSelectSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -70,6 +71,7 @@ export default function AdminUserLimitsPage() {
     if (!userId) {
       setSelectedUserDetail(null);
       setExternalTransferLimits(null);
+      setExternalTransferLimitsError("");
       setForm({ daily_limit: "", monthly_limit: "" });
       return;
     }
@@ -82,7 +84,13 @@ export default function AdminUserLimitsPage() {
         setError("Seuls les utilisateurs de type client peuvent etre modifies ici.");
         return;
       }
-      const extLimits = await api.getAdminExternalTransferLimitsRecommendation(userId).catch(() => null);
+      let extLimits = null;
+      try {
+        extLimits = await api.getAdminExternalTransferLimitsRecommendation(userId);
+        setExternalTransferLimitsError("");
+      } catch (extErr) {
+        setExternalTransferLimitsError(extErr?.message || "Endpoint de recommandation indisponible.");
+      }
       setSelectedUserDetail(detail);
       setExternalTransferLimits(extLimits);
       setForm({
@@ -319,6 +327,19 @@ export default function AdminUserLimitsPage() {
                       <p>recommended_monthly_limit: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.recommended_monthly_limit)}</span></p>
                     </div>
                   </details>
+                </div>
+              ) : null}
+
+              {!externalTransferLimits ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  <p className="font-semibold">Debug calcul historique</p>
+                  <p className="mt-1">Aucune donnee de recommandation historique recue.</p>
+                  <p className="mt-1">
+                    Cause:{" "}
+                    <span className="font-semibold">
+                      {externalTransferLimitsError || "chargement non effectue / utilisateur non selectionne"}
+                    </span>
+                  </p>
                 </div>
               ) : null}
 
