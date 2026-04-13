@@ -160,6 +160,33 @@ export default function ExternalTransferLimitsPage() {
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">Monitoring historique</h2>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-slate-500">30 jours</p>
+                <p className="mt-2 text-sm text-slate-700">
+                  {formatNumber(insights.history?.count_30d)} transferts · total {formatNumber(insights.history?.total_30d)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-slate-500">90 jours</p>
+                <p className="mt-2 text-sm text-slate-700">
+                  p50 {formatNumber(insights.history?.p50_90d)} · p90 {formatNumber(insights.history?.p90_90d)} · max {formatNumber(insights.history?.max_90d)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Tout historique</p>
+                <p className="mt-2 text-sm text-slate-700">
+                  {formatNumber(insights.history?.count_all)} transferts · total {formatNumber(insights.history?.total_all)}
+                </p>
+                <p className="mt-1 text-sm text-slate-700">
+                  p50 {formatNumber(insights.history?.p50_all)} · p90 {formatNumber(insights.history?.p90_all)} · max {formatNumber(insights.history?.max_all)}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Que faire maintenant ?</h2>
             <div className="mt-3 space-y-2 text-sm text-slate-700">
               {(insights.next_steps || []).map((step, idx) => (
