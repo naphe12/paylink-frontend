@@ -430,6 +430,7 @@ export default function AdminSidebar() {
             {renderNavLink("users", Users, "Utilisateurs", onNavigate)}
             {renderNavLink("users/limits", SlidersHorizontal, "Limites clients", onNavigate)}
             {renderNavLink("users/bonus-balances", Gift, "Bonus utilisateurs", onNavigate)}
+            {renderNavLink("users/bonus-corrections", Gift, "Correction bonus", onNavigate)}
             {renderNavLink("agents", Briefcase, "Gestion agents", onNavigate)}
             {renderNavLink("/dashboard/admin/overview", LayoutDashboard, "Dashboard", onNavigate)}
             {renderNavLink("/dashboard/admin/overview-lite", LayoutDashboard, "Dashboard Lite", onNavigate)}
