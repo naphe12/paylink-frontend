@@ -489,12 +489,20 @@ export default function ExternalTransferPage() {
       await loadRecentTransfers();
     } catch (err) {
       const rawMessage = String(err?.message || "");
-      if (rawMessage.toLowerCase().includes("limite journaliere atteinte")) {
+      const normalizedMessage = rawMessage.toLowerCase();
+      if (
+        normalizedMessage.includes("requete dupliquee en cours de traitement")
+        || normalizedMessage.includes("idempotency-key deja utilisee")
+      ) {
+        // Force a fresh key on next submit to avoid being stuck on a stale in-progress key.
+        setSubmitIdempotencyKey("");
+      }
+      if (normalizedMessage.includes("limite journaliere atteinte")) {
         setError(
           `Limite journaliere atteinte. Reste aujourd'hui: ${formatLimitAmount(dailyRemaining)} ${sourceCurrency}. ` +
           `Pour ce montant, prevoir au moins +${formatLimitAmount(requiredDailyIncrease)} ${sourceCurrency} de plafond journalier.`
         );
-      } else if (rawMessage.toLowerCase().includes("limite mensuelle atteinte")) {
+      } else if (normalizedMessage.includes("limite mensuelle atteinte")) {
         setError(
           `Limite mensuelle atteinte. Reste ce mois: ${formatLimitAmount(monthlyRemaining)} ${sourceCurrency}. ` +
           `Pour ce montant, prevoir au moins +${formatLimitAmount(requiredMonthlyIncrease)} ${sourceCurrency} de plafond mensuel.`
@@ -897,6 +905,14 @@ export default function ExternalTransferPage() {
                     <li key={`${reason}-${idx}`}>- {reason}</li>
                   ))}
                 </ul>
+              ) : null}
+              {!simulationResult.possible ? (
+                <Link
+                  to="/dashboard/client/external-transfer-limits"
+                  className="mt-3 inline-flex items-center rounded-lg border border-red-300 bg-white px-3 py-2 font-medium text-red-800 hover:bg-red-100/60"
+                >
+                  Comprendre le blocage
+                </Link>
               ) : null}
             </div>
 

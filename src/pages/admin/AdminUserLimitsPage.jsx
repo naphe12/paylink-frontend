@@ -19,6 +19,7 @@ export default function AdminUserLimitsPage() {
   const [selectedUserId, setSelectedUserId] = useSessionStorageState("admin-user-limits:selected-user-id", "");
   const [selectedUserDetail, setSelectedUserDetail] = useState(null);
   const [trustDetail, setTrustDetail] = useState(null);
+  const [externalTransferLimits, setExternalTransferLimits] = useState(null);
   const [selectSearch, setSelectSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -70,6 +71,7 @@ export default function AdminUserLimitsPage() {
     if (!userId) {
       setSelectedUserDetail(null);
       setTrustDetail(null);
+      setExternalTransferLimits(null);
       setForm({ daily_limit: "", monthly_limit: "" });
       return;
     }
@@ -82,11 +84,14 @@ export default function AdminUserLimitsPage() {
       if (String(detail.role || "").toLowerCase() !== "client") {
         setSelectedUserDetail(null);
         setTrustDetail(null);
+        setExternalTransferLimits(null);
         setError("Seuls les utilisateurs de type client peuvent etre modifies ici.");
         return;
       }
+      const extLimits = await api.getAdminExternalTransferLimitsRecommendation(userId).catch(() => null);
       setSelectedUserDetail(detail);
       setTrustDetail(trust);
+      setExternalTransferLimits(extLimits);
       setForm({
         daily_limit: String(detail.daily_limit ?? ""),
         monthly_limit: String(detail.monthly_limit ?? ""),
@@ -265,6 +270,42 @@ export default function AdminUserLimitsPage() {
                   <p className="mt-2 text-2xl font-semibold text-slate-900">{formatNumber(selectedUserDetail?.risk_score ?? selectedUser.risk_score)}</p>
                 </div>
               </div>
+
+              {externalTransferLimits ? (
+                <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+                  <p className="font-semibold">Analyse historique transfert externe</p>
+                  <p className="mt-1">
+                    Politique active: <span className="font-semibold">{externalTransferLimits.policy_mode || "-"}</span>
+                  </p>
+                  <p className="mt-1">
+                    30j: {formatNumber(externalTransferLimits.history?.count_30d)} transferts, total {formatNumber(externalTransferLimits.history?.total_30d)}
+                  </p>
+                  <p className="mt-1">
+                    90j: p50 {formatNumber(externalTransferLimits.history?.p50_90d)} · p90 {formatNumber(externalTransferLimits.history?.p90_90d)} · max {formatNumber(externalTransferLimits.history?.max_90d)}
+                  </p>
+                  <p className="mt-1">
+                    Recommande: {formatNumber(externalTransferLimits.recommendation?.recommended_daily_limit)} / jour · {formatNumber(externalTransferLimits.recommendation?.recommended_monthly_limit)} / mois
+                  </p>
+                  <p className="mt-1">
+                    Confiance: {externalTransferLimits.recommendation?.confidence || "-"} ({formatNumber(externalTransferLimits.recommendation?.confidence_score)}/100)
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="rounded-2xl border border-sky-300 bg-white px-4 py-2 text-sm font-medium text-sky-800 hover:bg-sky-100"
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          daily_limit: String(externalTransferLimits.recommendation?.recommended_daily_limit || prev.daily_limit),
+                          monthly_limit: String(externalTransferLimits.recommendation?.recommended_monthly_limit || prev.monthly_limit),
+                        }))
+                      }
+                    >
+                      Appliquer la recommandation
+                    </button>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="grid gap-5 md:grid-cols-2">
                 <label className="grid gap-2">
