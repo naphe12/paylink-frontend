@@ -157,6 +157,10 @@ export default function ExternalTransferLimitsPage() {
                 {insights.limits?.recommendation_confidence || "-"} ({formatNumber(insights.limits?.recommendation_confidence_score)}/100)
               </span>
             </p>
+            <p className="mt-1 text-sm text-slate-700">
+              Moyenne historique (total / nombre transferts):{" "}
+              <span className="font-semibold">{formatNumber(insights.limits?.recommendation_calculation_inputs?.avg_per_transfer || insights.history?.avg_all)}</span>
+            </p>
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

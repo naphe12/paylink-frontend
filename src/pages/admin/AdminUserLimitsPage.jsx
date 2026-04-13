@@ -343,6 +343,12 @@ export default function AdminUserLimitsPage() {
                     <p className="text-sm">
                       Confiance: <span className="font-bold">{externalTransferLimits.recommendation?.confidence || "-"}</span> ({formatNumber(externalTransferLimits.recommendation?.confidence_score)}/100)
                     </p>
+                    <p className="text-sm">
+                      Moyenne (total / nb):{" "}
+                      <span className="font-bold">
+                        {formatNumber(externalTransferLimits.recommendation?.calculation_inputs?.avg_per_transfer)}
+                      </span>
+                    </p>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
@@ -374,6 +380,9 @@ export default function AdminUserLimitsPage() {
                       <p>count_all: <span className="font-semibold">{formatNumber(externalTransferLimits.history?.count_all)}</span></p>
                       <p>p90_all: <span className="font-semibold">{formatNumber(externalTransferLimits.history?.p90_all)}</span></p>
                       <p>recommended_per_tx: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.recommended_per_tx)}</span></p>
+                      <p>avg_per_transfer: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.calculation_inputs?.avg_per_transfer)}</span></p>
+                      <p>calc_total_all: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.calculation_inputs?.total_all)}</span></p>
+                      <p>calc_count_all: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.calculation_inputs?.count_all)}</span></p>
                       <p>recommended_daily_limit: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.recommended_daily_limit)}</span></p>
                       <p>recommended_monthly_limit: <span className="font-semibold">{formatNumber(externalTransferLimits.recommendation?.recommended_monthly_limit)}</span></p>
                     </div>
