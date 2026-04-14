@@ -60,7 +60,7 @@ export default function ScanPage() {
 
           <div className="flex items-center gap-2 text-green-600 text-lg font-medium">
             <Wallet size={22} />
-            Solde : <strong>{client.wallet.available} BIF</strong>
+            Solde : <strong>{client.wallet.available} {String(client?.wallet?.currency_code || client?.currency_code || "BIF").toUpperCase()}</strong>
           </div>
 
           <div className="grid grid-cols-2 gap-3 pt-2">

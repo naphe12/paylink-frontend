@@ -137,10 +137,10 @@ export default function AdminAgentsPage() {
                     {(agent.commission_rate * 100).toFixed(2)} %
                   </td>
                   <td className="p-3">
-                    {agent.balance.toLocaleString()} BIF
+                    {agent.balance.toLocaleString()} {String(agent.currency_code || "BIF").toUpperCase()}
                   </td>
                   <td className="p-3">
-                    {agent.total_commission.toLocaleString()} BIF
+                    {agent.total_commission.toLocaleString()} {String(agent.currency_code || "BIF").toUpperCase()}
                   </td>
                   <td className="p-3">
                     <span
@@ -264,14 +264,14 @@ export default function AdminAgentsPage() {
                         <span className="font-medium">
                           <DirectionBadge value={tx.direction} />
                         </span>
-                        <span>{tx.amount.toLocaleString()} BIF</span>
+                        <span>{tx.amount.toLocaleString()} {String(tx.currency_code || history.currency_code || selected?.currency_code || "BIF").toUpperCase()}</span>
                       </div>
                       <div className="text-xs text-slate-500 flex justify-between">
                         <span>{tx.client_name || "Client"}</span>
                         <span>{new Date(tx.created_at).toLocaleString()}</span>
                       </div>
                       <div className="text-xs text-emerald-600">
-                        Commission: {tx.commission.toLocaleString()} BIF
+                        Commission: {tx.commission.toLocaleString()} {String(tx.currency_code || history.currency_code || selected?.currency_code || "BIF").toUpperCase()}
                       </div>
                     </div>
                   ))}
@@ -295,7 +295,7 @@ export default function AdminAgentsPage() {
                         </div>
                       </div>
                       <div className="text-emerald-600 font-semibold">
-                        {c.amount.toLocaleString()} BIF
+                        {c.amount.toLocaleString()} {String(c.currency_code || history.currency_code || selected?.currency_code || "BIF").toUpperCase()}
                       </div>
                     </div>
                   ))}

@@ -58,6 +58,7 @@ export default function AgentOperationPage() {
   };
 
   if (!client) return <p>Chargement…</p>;
+  const walletCurrency = String(client?.wallet?.currency_code || client?.currency_code || "BIF").toUpperCase();
 
   return (
     <div className="max-w-md mx-auto p-6 space-y-6">
@@ -83,14 +84,14 @@ export default function AgentOperationPage() {
         <div className="mt-2 p-3 bg-gray-50 rounded-lg flex items-center gap-2">
           <Wallet size={18} /> Solde :
           <span className="font-bold text-green-600">
-            {client.wallet.available} BIF
+            {client.wallet.available} {walletCurrency}
           </span>
         </div>
       </div>
 
       {/* Montant */}
       <div className="space-y-2">
-        <label className="text-sm text-gray-600">Montant (BIF)</label>
+        <label className="text-sm text-gray-600">Montant ({walletCurrency})</label>
         <input
           type="number"
           className="input w-full"
@@ -124,7 +125,7 @@ export default function AgentOperationPage() {
 
       {/* Commission */}
       <div className="p-4 bg-purple-50 rounded-xl border text-purple-700">
-        Commission : <b>{commission.toFixed(0)} BIF</b>
+        Commission : <b>{commission.toFixed(0)} {walletCurrency}</b>
       </div>
 
       {/* Valider */}
