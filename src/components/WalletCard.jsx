@@ -63,6 +63,8 @@ export default function WalletCard({ wallet: walletProp = null, onRefresh }) {
   const currencySymbol =
     currencySymbols[displayCurrency] || currencySymbols[currency] || displayCurrency || currency;
   const bonus = Number(wallet.bonus_balance || 0);
+  const bonusCurrency =
+    String(wallet.bonus_currency_code || "BIF").trim().toUpperCase() || "BIF";
   let level = 1;
   if (bonus > 60000) level = 3;
   else if (bonus > 20000) level = 2;
@@ -85,7 +87,7 @@ export default function WalletCard({ wallet: walletProp = null, onRefresh }) {
       <div className="bg-blue-50 border border-blue-200 rounded-xl py-3 px-3 sm:px-4 mb-4">
         <p className="text-sm text-gray-600">Solde Bonus</p>
         <p className="text-xl font-bold text-blue-700">
-          {bonus.toLocaleString()} BIF
+          {bonus.toLocaleString()} {bonusCurrency}
         </p>
         <p className="text-sm text-yellow-600 flex justify-center items-center gap-1 mt-1">
           <Star size={16} className="text-yellow-500" /> Niveau {level} {stars}

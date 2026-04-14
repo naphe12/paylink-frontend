@@ -104,25 +104,26 @@ export default function AgentDashboard() {
 
   const metrics = useMemo(() => {
     if (!dashboard?.metrics) return [];
+    const currency = String(dashboard?.currency_code || "BIF").toUpperCase();
     return [
       {
         label: "Solde agent",
-        value: `${dashboard.balance?.toLocaleString() ?? 0} BIF`,
+        value: `${dashboard.balance?.toLocaleString() ?? 0} ${currency}`,
         icon: Wallet,
       },
       {
         label: "Cash-in (aujourd'hui)",
-        value: `${dashboard.metrics.cashin_today?.toLocaleString() ?? 0} BIF`,
+        value: `${dashboard.metrics.cashin_today?.toLocaleString() ?? 0} ${currency}`,
         icon: ArrowDownCircle,
       },
       {
         label: "Cash-out (aujourd'hui)",
-        value: `${dashboard.metrics.cashout_today?.toLocaleString() ?? 0} BIF`,
+        value: `${dashboard.metrics.cashout_today?.toLocaleString() ?? 0} ${currency}`,
         icon: ArrowUpCircle,
       },
       {
         label: "Commission cumulée",
-        value: `${dashboard.metrics.total_commission?.toLocaleString() ?? 0} BIF`,
+        value: `${dashboard.metrics.total_commission?.toLocaleString() ?? 0} ${currency}`,
         icon: Activity,
       },
     ];
@@ -284,10 +285,10 @@ export default function AgentDashboard() {
                       <tr key={tx.transaction_id} className="border-t">
                         <td className="p-3"><DirectionBadge value={tx.direction} /></td>
                         <td className="p-3 font-semibold text-slate-900">
-                          {tx.amount.toLocaleString()} BIF
+                          {tx.amount.toLocaleString()} {String(tx.currency_code || dashboard?.currency_code || "BIF").toUpperCase()}
                         </td>
                         <td className="p-3 text-emerald-600">
-                          {tx.commission.toLocaleString()} BIF
+                          {tx.commission.toLocaleString()} {String(tx.currency_code || dashboard?.currency_code || "BIF").toUpperCase()}
                         </td>
                         <td className="p-3 text-xs text-slate-500">
                           {new Date(tx.created_at).toLocaleString()}

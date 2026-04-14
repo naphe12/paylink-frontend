@@ -10,6 +10,7 @@ export default function AgentStatsCard() {
   }, []);
 
   if (!data) return <p className="p-4">Chargement...</p>;
+  const currency = String(data?.currency_code || "BIF").toUpperCase();
 
   return (
     <div className="bg-white p-5 rounded-xl shadow-sm border space-y-4">
@@ -21,14 +22,14 @@ export default function AgentStatsCard() {
         <div className="p-3 border rounded-lg text-center">
           <p className="text-xs text-gray-500">Solde Agent</p>
           <p className="text-2xl font-bold text-green-600">
-            {data.balance.toLocaleString()} BIF
+            {data.balance.toLocaleString()} {currency}
           </p>
         </div>
 
         <div className="p-3 border rounded-lg text-center">
           <p className="text-xs text-gray-500">Commissions totales</p>
           <p className="text-2xl font-bold text-purple-600">
-            {data.total_commissions.toLocaleString()} BIF
+            {data.total_commissions.toLocaleString()} {currency}
           </p>
         </div>
       </div>
@@ -41,7 +42,7 @@ export default function AgentStatsCard() {
         {data.recent.map((r, i) => (
           <li key={i} className="flex justify-between border-b pb-1">
             <span>{r.type}</span>
-            <span className="font-medium">{r.amount} BIF</span>
+            <span className="font-medium">{r.amount} {String(r.currency_code || currency).toUpperCase()}</span>
           </li>
         ))}
       </ul>

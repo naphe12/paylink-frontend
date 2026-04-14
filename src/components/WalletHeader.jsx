@@ -30,6 +30,16 @@ export default function WalletHeader({ onTopUp }) {
   }
 
   const { available, bonus_balance, kyc_status, risk_score, status } = wallet;
+  const walletCurrency =
+    String(
+      wallet?.display_currency_code ||
+      wallet?.currency_code ||
+      wallet?.wallet_currency ||
+      "EUR"
+    )
+      .trim()
+      .toUpperCase() || "EUR";
+  const bonusCurrency = String(wallet?.bonus_currency_code || "BIF").trim().toUpperCase() || "BIF";
 
   const isFrozen = status === "frozen";
 
@@ -40,7 +50,7 @@ export default function WalletHeader({ onTopUp }) {
         <div>
           <p className="text-gray-600 text-sm">Solde Disponible</p>
           <p className="text-3xl font-bold text-green-600">
-            {Number(available).toLocaleString()} BIF
+            {Number(available).toLocaleString()} {walletCurrency}
           </p>
         </div>
 
@@ -60,7 +70,7 @@ export default function WalletHeader({ onTopUp }) {
 
       {/* Bonus */}
       <div className="mt-2 text-sm text-purple-700 font-medium">
-        Bonus : {Number(bonus_balance).toLocaleString()} BIF 🎁
+        Bonus : {Number(bonus_balance).toLocaleString()} {bonusCurrency} 🎁
       </div>
 
       {/* Bloc d'alertes */}
