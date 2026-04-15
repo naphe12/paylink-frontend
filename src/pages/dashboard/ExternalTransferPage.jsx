@@ -876,31 +876,31 @@ export default function ExternalTransferPage() {
       </form>
 
       <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
           <div>
             <h3 className="text-lg font-semibold text-slate-900">Simulation transfert externe</h3>
             <p className="text-sm text-slate-500">Verifie la capacite et le montant estimatif recu avant envoi.</p>
           </div>
-          <div className="grid w-full gap-3 md:max-w-2xl md:grid-cols-[minmax(320px,1fr)_auto_auto]">
+          <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-stretch">
             <input
               type="text"
               inputMode="decimal"
               value={simulationAmount}
               onChange={(e) => setSimulationAmount(normalizeDecimalInput(e.target.value))}
               placeholder={`Montant (${sourceCurrency})`}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-base font-medium text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
+              className="w-full min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
             />
             <input
               type="text"
               value={sourceCurrency}
               readOnly
-              className="w-28 rounded-xl border border-slate-300 bg-slate-50 px-3 py-3 text-sm uppercase text-slate-600"
+              className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm uppercase text-slate-600 md:w-28"
             />
             <button
               type="button"
               onClick={handleSimulation}
               disabled={simulationLoading}
-              className="rounded-xl bg-slate-900 px-5 py-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="shrink-0 rounded-xl bg-slate-900 px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               {simulationLoading ? "Simulation..." : "Simuler"}
             </button>
