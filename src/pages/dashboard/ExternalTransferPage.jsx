@@ -75,6 +75,12 @@ function getTransferStatusBadgeClass(status) {
   if (["succeeded", "completed"].includes(normalized)) {
     return "bg-emerald-100 text-emerald-800 border border-emerald-200";
   }
+  if (normalized === "partially_repaid") {
+    return "bg-amber-100 text-amber-800 border border-amber-200";
+  }
+  if (normalized === "repaid") {
+    return "bg-teal-100 text-teal-800 border border-teal-200";
+  }
   if (normalized === "failed") {
     return "bg-rose-100 text-rose-800 border border-rose-200";
   }
@@ -82,6 +88,34 @@ function getTransferStatusBadgeClass(status) {
     return "bg-slate-200 text-slate-700 border border-slate-300";
   }
   return "bg-white text-slate-700 border border-slate-300";
+}
+
+function getRepaymentBadgeClass(status) {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "fully_repaid" || normalized === "repaid") {
+    return "bg-teal-100 text-teal-800 border border-teal-200";
+  }
+  if (normalized === "partially_repaid") {
+    return "bg-amber-100 text-amber-800 border border-amber-200";
+  }
+  if (normalized === "not_repaid") {
+    return "bg-slate-100 text-slate-700 border border-slate-300";
+  }
+  return "bg-white text-slate-700 border border-slate-300";
+}
+
+function formatTransferMoney(value) {
+  return Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString();
 }
 
 function formatSimulationMoney(value) {
@@ -982,22 +1016,28 @@ export default function ExternalTransferPage() {
           <p className="mt-4 text-sm italic text-slate-500">Aucune demande recente.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="text-slate-500">
-                <tr>
-                  <th className="py-2 pr-4">Reference</th>
-                  <th className="py-2 pr-4">Beneficiaire</th>
-                  <th className="py-2 pr-4">Destination</th>
-                  <th className="py-2 pr-4">Montant</th>
-                  <th className="py-2 pr-4">Statut</th>
-                  <th className="py-2 pr-0 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 text-slate-700">
-                {recentTransfers.map((transfer) => {
-                  const reference = transfer.reference_code || transfer.transfer_id;
-                  return (
-                    <tr key={transfer.transfer_id}>
+	            <table className="w-full min-w-[980px] text-left text-sm">
+	              <thead className="text-slate-500">
+	                <tr>
+	                  <th className="py-2 pr-4">Reference</th>
+	                  <th className="py-2 pr-4">Beneficiaire</th>
+	                  <th className="py-2 pr-4">Destination</th>
+	                  <th className="py-2 pr-4">Montant</th>
+	                  <th className="py-2 pr-4">Statut</th>
+	                  <th className="py-2 pr-4">Remboursement dette</th>
+	                  <th className="py-2 pr-4">Date remboursement</th>
+	                  <th className="py-2 pr-0 text-right">Action</th>
+	                </tr>
+	              </thead>
+	              <tbody className="divide-y divide-slate-200 text-slate-700">
+	                {recentTransfers.map((transfer) => {
+	                  const reference = transfer.reference_code || transfer.transfer_id;
+	                  const creditUsedAmount = Number(transfer.credit_used_amount || 0);
+	                  const creditRepaidAmount = Number(transfer.credit_repaid_amount || 0);
+	                  const creditOutstandingAmount = Number(transfer.credit_outstanding_amount || 0);
+	                  const repaymentStatus = String(transfer.credit_repayment_status || "").toLowerCase();
+	                  return (
+	                    <tr key={transfer.transfer_id}>
                       <td className="py-3 pr-4 font-mono text-xs">{reference}</td>
                       <td className="py-3 pr-4">
                         <div>{transfer.recipient_name}</div>
@@ -1006,20 +1046,44 @@ export default function ExternalTransferPage() {
                       <td className="py-3 pr-4">
                         {transfer.country_destination} / {transfer.partner_name}
                       </td>
-                      <td className="py-3 pr-4 font-medium">
-                        {transfer.amount} {transfer.currency}
-                      </td>
+	                      <td className="py-3 pr-4 font-medium">
+	                        {transfer.amount} {transfer.currency}
+	                      </td>
                       <td className="py-3 pr-4">
                         <span
                           className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getTransferStatusBadgeClass(
                             transfer.status
                           )}`}
                         >
-                          {transfer.status}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-0 text-right">
-                        <Link
+	                          {transfer.status}
+	                        </span>
+	                      </td>
+	                      <td className="py-3 pr-4">
+	                        {creditUsedAmount > 0 ? (
+	                          <div className="space-y-1">
+	                            <span
+	                              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ${getRepaymentBadgeClass(
+	                                repaymentStatus
+	                              )}`}
+	                            >
+	                              {repaymentStatus || "not_repaid"}
+	                            </span>
+	                            <div className="text-xs text-slate-600">
+	                              Rembourse: {formatTransferMoney(creditRepaidAmount)} / {formatTransferMoney(creditUsedAmount)} {transfer.currency}
+	                            </div>
+	                            <div className="text-xs text-slate-600">
+	                              Reste: {formatTransferMoney(creditOutstandingAmount)} {transfer.currency}
+	                            </div>
+	                          </div>
+	                        ) : (
+	                          <span className="text-xs text-slate-500">Aucune dette liee</span>
+	                        )}
+	                      </td>
+	                      <td className="py-3 pr-4 text-xs text-slate-600">
+	                        {formatDateTime(transfer.credit_repayment_updated_at)}
+	                      </td>
+	                      <td className="py-3 pr-0 text-right">
+	                        <Link
                           to={`/dashboard/client/transfer-support-agent?reference=${encodeURIComponent(reference)}`}
                           className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-100"
                         >
