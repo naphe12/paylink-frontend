@@ -881,26 +881,26 @@ export default function ExternalTransferPage() {
             <h3 className="text-lg font-semibold text-slate-900">Simulation transfert externe</h3>
             <p className="text-sm text-slate-500">Verifie la capacite et le montant estimatif recu avant envoi.</p>
           </div>
-          <div className="grid w-full gap-3 md:max-w-xl md:grid-cols-[1fr_auto_auto]">
+          <div className="grid w-full gap-3 md:max-w-2xl md:grid-cols-[minmax(320px,1fr)_auto_auto]">
             <input
               type="text"
               inputMode="decimal"
               value={simulationAmount}
               onChange={(e) => setSimulationAmount(normalizeDecimalInput(e.target.value))}
               placeholder={`Montant (${sourceCurrency})`}
-              className="w-full rounded-lg border px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-base font-medium text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
             />
             <input
               type="text"
               value={sourceCurrency}
               readOnly
-              className="w-24 rounded-lg border bg-slate-50 px-3 py-2 text-sm uppercase text-slate-600"
+              className="w-28 rounded-xl border border-slate-300 bg-slate-50 px-3 py-3 text-sm uppercase text-slate-600"
             />
             <button
               type="button"
               onClick={handleSimulation}
               disabled={simulationLoading}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl bg-slate-900 px-5 py-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               {simulationLoading ? "Simulation..." : "Simuler"}
             </button>
