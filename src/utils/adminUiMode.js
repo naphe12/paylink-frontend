@@ -28,6 +28,7 @@ const ADMIN_UI_ALLOWED_PREFIXES = {
     "/dashboard/admin/client-wallets",
     "/dashboard/admin/wallet-corrections",
     "/dashboard/admin/wallet-analysis",
+    "/dashboard/admin/client-intent",
     "/dashboard/admin/transfers",
     "/dashboard/admin/transfer-approvals",
     "/dashboard/admin/transfer-gains",
@@ -54,6 +55,7 @@ const ADMIN_UI_ALLOWED_PREFIXES = {
     "/dashboard/admin/client-wallets",
     "/dashboard/admin/wallet-corrections",
     "/dashboard/admin/wallet-analysis",
+    "/dashboard/admin/client-intent",
     "/dashboard/admin/mobilemoney",
     "/dashboard/admin/transfers",
     "/dashboard/admin/financial-summary",
@@ -111,7 +113,9 @@ export function setAdminUiMode(mode) {
   try {
     window.localStorage.setItem(ADMIN_UI_MODE_KEY, normalized);
     window.dispatchEvent(new CustomEvent(ADMIN_UI_MODE_CHANGED_EVENT, { detail: normalized }));
-  } catch {}
+  } catch {
+    // ignore storage/event errors
+  }
   return normalized;
 }
 

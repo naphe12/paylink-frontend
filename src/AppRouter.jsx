@@ -62,6 +62,7 @@ const RiskMonitorPage = lazy(() => import("@/pages/admin/RiskMonitorPage"));
 const AdminWalletsPage = lazy(() => import("@/pages/admin/AdminWalletsPage"));
 const AdminClientWalletPage = lazy(() => import("@/pages/admin/AdminClientWalletPage"));
 const AdminWalletAnalysisPage = lazy(() => import("@/pages/admin/AdminWalletAnalysisPage"));
+const AdminClientIntentForecastPage = lazy(() => import("@/pages/admin/AdminClientIntentForecastPage"));
 const AdminWalletCorrectionPage = lazy(() => import("@/pages/admin/AdminWalletCorrectionPage"));
 const AdminTransfersPage = lazy(() => import("@/pages/admin/AdminTransfersPage"));
 const AdminTransferNotePage = lazy(() => import("@/pages/admin/AdminTransferNotePage"));
@@ -270,6 +271,7 @@ export default function AppRouter() {
         <Route path="client-wallets" element={<AdminClientWalletPage />} />
         <Route path="wallet-corrections" element={<AdminWalletCorrectionPage />} />
         <Route path="wallet-analysis" element={<AdminWalletAnalysisPage />} />
+        <Route path="client-intent" element={<AdminClientIntentForecastPage />} />
         <Route path="mobilemoney" element={<MobileMoneyJournalPage />} />
         <Route path="transfers" element={<AdminTransfersPage />} />
         <Route path="transfers/:transferId/note" element={<AdminTransferNotePage />} />
