@@ -726,46 +726,87 @@ export default function ExternalTransferPage() {
       </div>
 
       {confirmationNote ? (
-        <section className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
-          <h3 className="text-lg font-semibold text-emerald-900">Note de paiement</h3>
-          <p className="mt-1 text-emerald-800">
-            Votre transfert est enregistre. La note de paiement a ete envoyee par email.
-          </p>
-          {success ? <p className="mt-2 font-semibold">{success}</p> : null}
-          <div className="mt-3 grid gap-2 rounded-xl border border-emerald-200 bg-white p-3 md:grid-cols-2">
-            <p>Reference: <span className="font-semibold">{confirmationNote.reference || "-"}</span></p>
-            <p>Partenaire: <span className="font-semibold">{confirmationNote.partner_name || "-"}</span></p>
-            <p>Beneficiaire: <span className="font-semibold">{confirmationNote.recipient_name || "-"}</span></p>
-            <p>Telephone: <span className="font-semibold">{confirmationNote.recipient_phone || "-"}</span></p>
-            <p>Pays destination: <span className="font-semibold">{confirmationNote.country_destination || "-"}</span></p>
-            <p>Montant envoye: <span className="font-semibold">{confirmationNote.amount} {sourceCurrency}</span></p>
-            <p>Frais: <span className="font-semibold">{confirmationNote.fee_amount} {sourceCurrency}</span></p>
-            <p>Total a payer: <span className="font-semibold">{confirmationNote.total_amount} {sourceCurrency}</span></p>
-            <p className="md:col-span-2">
-              Montant recu estime: <span className="font-semibold">{confirmationNote.recipient_amount} {destinationCurrency}</span>
+        <section className="mb-6 overflow-hidden rounded-2xl border border-emerald-200 bg-white text-sm text-slate-800 shadow-sm">
+          <div className="border-b border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 px-5 py-4">
+            <p className="inline-flex rounded-full border border-emerald-300 bg-white px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-800">
+              Demande enregistree
             </p>
+            <h3 className="mt-2 text-lg font-semibold text-slate-900">Note de paiement</h3>
+            <p className="mt-1 text-slate-600">
+              Le transfert a ete soumis avec succes. La note de paiement a ete envoyee par email.
+            </p>
+            {success ? <p className="mt-2 font-medium text-emerald-800">{success}</p> : null}
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {createdTransferReference ? (
-              <Link
-                to={`/dashboard/client/transfer-support-agent?reference=${encodeURIComponent(createdTransferReference)}`}
-                className="inline-flex items-center rounded-lg border border-emerald-300 bg-white px-3 py-2 font-medium text-emerald-800 hover:bg-emerald-100/60"
+
+          <div className="space-y-4 p-5">
+            <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-2">
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Reference</p>
+                <p className="font-mono font-semibold text-slate-900">{confirmationNote.reference || "-"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Partenaire</p>
+                <p className="font-semibold text-slate-900">{confirmationNote.partner_name || "-"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Beneficiaire</p>
+                <p className="font-semibold text-slate-900">{confirmationNote.recipient_name || "-"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Telephone</p>
+                <p className="font-semibold text-slate-900">{confirmationNote.recipient_phone || "-"}</p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Pays de destination</p>
+                <p className="font-semibold text-slate-900">{confirmationNote.country_destination || "-"}</p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 md:grid-cols-2">
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-emerald-700">Montant envoye</p>
+                <p className="text-base font-semibold text-emerald-900">{confirmationNote.amount} {sourceCurrency}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-emerald-700">Frais</p>
+                <p className="text-base font-semibold text-emerald-900">{confirmationNote.fee_amount} {sourceCurrency}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-emerald-700">Total a payer</p>
+                <p className="text-base font-semibold text-emerald-900">{confirmationNote.total_amount} {sourceCurrency}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-emerald-700">Montant recu estime</p>
+                <p className="text-base font-semibold text-emerald-900">{confirmationNote.recipient_amount} {destinationCurrency}</p>
+              </div>
+            </div>
+
+            <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+              Conservez la reference ci-dessus pour le suivi de votre dossier.
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              {createdTransferReference ? (
+                <Link
+                  to={`/dashboard/client/transfer-support-agent?reference=${encodeURIComponent(createdTransferReference)}`}
+                  className="inline-flex items-center rounded-lg border border-emerald-300 bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700"
+                >
+                  Suivre cette demande
+                </Link>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmationNote(null);
+                  setSuccess(null);
+                  setError("");
+                  setCreatedTransferReference("");
+                }}
+                className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 font-medium text-slate-800 hover:bg-slate-100"
               >
-                Suivre cette demande
-              </Link>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => {
-                setConfirmationNote(null);
-                setSuccess(null);
-                setError("");
-                setCreatedTransferReference("");
-              }}
-              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 font-medium text-slate-800 hover:bg-slate-100"
-            >
-              Nouveau transfert
-            </button>
+                Nouveau transfert
+              </button>
+            </div>
           </div>
         </section>
       ) : (
