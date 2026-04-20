@@ -155,6 +155,7 @@ export default function ExternalTransferPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
   const [createdTransferReference, setCreatedTransferReference] = useState("");
+  const [confirmationNote, setConfirmationNote] = useState(null);
   const [error, setError] = useState("");
   const [loadError, setLoadError] = useState("");
   const [selectedBeneficiary, setSelectedBeneficiary] = useState("");
@@ -468,6 +469,7 @@ export default function ExternalTransferPage() {
     setError("");
     setSuccess(null);
     setCreatedTransferReference("");
+    setConfirmationNote(null);
 
     const requestedAmount = effectiveSourceAmount;
     const normalizedPhone = normalizeRecipientPhone(form.recipient_phone);
@@ -511,12 +513,24 @@ export default function ExternalTransferPage() {
         idemKey,
         "external-transfer"
       );
+      const createdReference = String(response?.reference_code || response?.transfer_id || "");
       setSuccess("Transfert soumis avec succes.");
-      setCreatedTransferReference(String(response?.reference_code || response?.transfer_id || ""));
-      if (response?.reference_code || response?.transfer_id) {
+      setCreatedTransferReference(createdReference);
+      setConfirmationNote({
+        reference: createdReference,
+        recipient_name: form.recipient_name,
+        recipient_phone: normalizedPhone,
+        country_destination: form.country_destination,
+        partner_name: form.partner_name,
+        amount: requestedAmount.toFixed(2),
+        fee_amount: feesAmountSource.toFixed(2),
+        total_amount: (requestedAmount + feesAmountSource).toFixed(2),
+        recipient_amount: recipientAmount.toFixed(2),
+      });
+      if (createdReference) {
         window.localStorage.setItem(
           "paylink_last_transfer_reference",
-          String(response?.reference_code || response?.transfer_id || "")
+          createdReference
         );
       }
       setSubmitIdempotencyKey("");
@@ -711,42 +725,87 @@ export default function ExternalTransferPage() {
         ) : null}
       </div>
 
-      {isBifDestination ? (
-        <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <label className="block text-sm font-semibold mb-2">Mode de saisie du montant</label>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <label className={`rounded-lg border px-3 py-3 text-sm ${amountMode === "send_eur" ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}`}>
-              <input
-                type="radio"
-                name="amount_mode"
-                className="mr-2"
-                checked={amountMode === "send_eur"}
-                onChange={() => setAmountMode("send_eur")}
-              />
-              Montant a envoyer en {sourceCurrency}
-            </label>
-            <label className={`rounded-lg border px-3 py-3 text-sm ${amountMode === "receive_local" ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}`}>
-              <input
-                type="radio"
-                name="amount_mode"
-                className="mr-2"
-                checked={amountMode === "receive_local"}
-                onChange={() => setAmountMode("receive_local")}
-              />
-              Montant a recevoir en BIF
-            </label>
+      {confirmationNote ? (
+        <section className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
+          <h3 className="text-lg font-semibold text-emerald-900">Note de paiement</h3>
+          <p className="mt-1 text-emerald-800">
+            Votre transfert est enregistre. La note de paiement a ete envoyee par email.
+          </p>
+          {success ? <p className="mt-2 font-semibold">{success}</p> : null}
+          <div className="mt-3 grid gap-2 rounded-xl border border-emerald-200 bg-white p-3 md:grid-cols-2">
+            <p>Reference: <span className="font-semibold">{confirmationNote.reference || "-"}</span></p>
+            <p>Partenaire: <span className="font-semibold">{confirmationNote.partner_name || "-"}</span></p>
+            <p>Beneficiaire: <span className="font-semibold">{confirmationNote.recipient_name || "-"}</span></p>
+            <p>Telephone: <span className="font-semibold">{confirmationNote.recipient_phone || "-"}</span></p>
+            <p>Pays destination: <span className="font-semibold">{confirmationNote.country_destination || "-"}</span></p>
+            <p>Montant envoye: <span className="font-semibold">{confirmationNote.amount} {sourceCurrency}</span></p>
+            <p>Frais: <span className="font-semibold">{confirmationNote.fee_amount} {sourceCurrency}</span></p>
+            <p>Total a payer: <span className="font-semibold">{confirmationNote.total_amount} {sourceCurrency}</span></p>
+            <p className="md:col-span-2">
+              Montant recu estime: <span className="font-semibold">{confirmationNote.recipient_amount} {destinationCurrency}</span>
+            </p>
           </div>
-        </div>
-      ) : null}
+          <div className="mt-3 flex flex-wrap gap-2">
+            {createdTransferReference ? (
+              <Link
+                to={`/dashboard/client/transfer-support-agent?reference=${encodeURIComponent(createdTransferReference)}`}
+                className="inline-flex items-center rounded-lg border border-emerald-300 bg-white px-3 py-2 font-medium text-emerald-800 hover:bg-emerald-100/60"
+              >
+                Suivre cette demande
+              </Link>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmationNote(null);
+                setSuccess(null);
+                setError("");
+                setCreatedTransferReference("");
+              }}
+              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 font-medium text-slate-800 hover:bg-slate-100"
+            >
+              Nouveau transfert
+            </button>
+          </div>
+        </section>
+      ) : (
+        <>
+          {isBifDestination ? (
+            <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <label className="block text-sm font-semibold mb-2">Mode de saisie du montant</label>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label className={`rounded-lg border px-3 py-3 text-sm ${amountMode === "send_eur" ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}`}>
+                  <input
+                    type="radio"
+                    name="amount_mode"
+                    className="mr-2"
+                    checked={amountMode === "send_eur"}
+                    onChange={() => setAmountMode("send_eur")}
+                  />
+                  Montant a envoyer en {sourceCurrency}
+                </label>
+                <label className={`rounded-lg border px-3 py-3 text-sm ${amountMode === "receive_local" ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}`}>
+                  <input
+                    type="radio"
+                    name="amount_mode"
+                    className="mr-2"
+                    checked={amountMode === "receive_local"}
+                    onChange={() => setAmountMode("receive_local")}
+                  />
+                  Montant a recevoir en BIF
+                </label>
+              </div>
+            </div>
+          ) : null}
 
-      <ApiErrorAlert
-        message={loadError}
-        onRetry={retryLoad}
-        retryLabel="Recharger les donnees"
-        className="mb-4"
-      />
+          <ApiErrorAlert
+            message={loadError}
+            onRetry={retryLoad}
+            retryLabel="Recharger les donnees"
+            className="mb-4"
+          />
 
-      <form onSubmit={handleSubmit} className="space-y-5 text-gray-800">
+          <form onSubmit={handleSubmit} className="space-y-5 text-gray-800">
         <div>
           <label className="block text-sm font-semibold mb-1">Beneficiaire enregistre</label>
           <select
@@ -907,7 +966,9 @@ export default function ExternalTransferPage() {
         >
           {loading ? "Envoi en cours..." : "Envoyer le transfert"}
         </button>
-      </form>
+          </form>
+        </>
+      )}
 
       <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5">
         <div>
