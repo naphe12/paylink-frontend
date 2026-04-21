@@ -208,6 +208,15 @@ export default function ExternalTransferPage() {
         : availableBalance + creditAvailable
       : availableBalance;
   const destinationOptions = buildDestinationOptions(countries, form.country_destination);
+  const partnerOptionsBase = partners.length > 0 ? partners : FALLBACK_PARTNERS;
+  const partnerOptions = Array.from(
+    new Set(
+      [
+        ...partnerOptionsBase,
+        String(form.partner_name || "").trim(),
+      ].filter(Boolean)
+    )
+  );
 
   const getDestinationCurrency = (countryName) =>
     destinationOptions.find((option) => option.value === countryName)?.currency || "EUR";
@@ -970,7 +979,7 @@ export default function ExternalTransferPage() {
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
             >
-              {partners.map((opt) => (
+              {partnerOptions.map((opt) => (
                 <option key={opt} value={opt}>
                   {opt}
                 </option>
