@@ -6,7 +6,7 @@ import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api, { fetchPublicApi } from "@/services/api";
 import { normalizeDecimalInput, parseDecimalInput } from "@/utils/decimalInput";
 
-const PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
+const FALLBACK_PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
 
 function normalizeRecipientPhone(value) {
   return String(value || "").replace(/[^\d+]/g, "");
@@ -132,7 +132,18 @@ function formatLimitAmount(value) {
   });
 }
 
+function roundUpToCents(value) {
+  const amount = Number(value || 0);
+  if (!(amount > 0)) return 0;
+  return Math.ceil(amount * 100) / 100;
+}
+
+function getDefaultPartnerName(partners = []) {
+  return String(partners?.[0] || FALLBACK_PARTNERS[0] || "").trim();
+}
+
 export default function ExternalTransferPage() {
+  const [partners, setPartners] = useState(FALLBACK_PARTNERS);
   const [countries, setCountries] = useState([]);
   const [recentTransfers, setRecentTransfers] = useState([]);
   const [sourceCurrency, setSourceCurrency] = useState("EUR");
@@ -141,7 +152,7 @@ export default function ExternalTransferPage() {
     recipient_name: "",
     recipient_phone: "",
     country_destination: "",
-    partner_name: PARTNERS[0],
+    partner_name: getDefaultPartnerName(FALLBACK_PARTNERS),
     amount: "",
     local_amount: "",
   });
@@ -193,11 +204,14 @@ export default function ExternalTransferPage() {
 
   const destinationCurrency = getDestinationCurrency(form.country_destination);
   const isBifDestination = destinationCurrency === "BIF";
+  const desiredLocalAmount = parseDecimalInput(form.local_amount);
+  const computedSourceAmountFromLocal =
+    amountMode === "receive_local" && isBifDestination && rate > 0 && desiredLocalAmount > 0
+      ? roundUpToCents(desiredLocalAmount / rate)
+      : 0;
   const effectiveSourceAmount =
     amountMode === "receive_local" && isBifDestination
-      ? rate > 0 && form.local_amount
-        ? parseDecimalInput(form.local_amount) / rate
-        : 0
+      ? computedSourceAmountFromLocal
       : parseDecimalInput(form.amount);
   const hasEnteredAmount =
     (amountMode === "receive_local" && isBifDestination
@@ -235,7 +249,7 @@ export default function ExternalTransferPage() {
     }
     const sourceAmount =
       amountMode === "receive_local" && isBifDestination
-        ? parseDecimalInput(form.local_amount) / rate
+        ? computedSourceAmountFromLocal
         : parseDecimalInput(form.amount);
     if (!sourceAmount || Number.isNaN(sourceAmount)) {
       setRecipientAmount(0);
@@ -246,10 +260,10 @@ export default function ExternalTransferPage() {
     setFeesAmountSource(fee);
     setRecipientAmount(
       amountMode === "receive_local" && isBifDestination
-        ? parseDecimalInput(form.local_amount)
+        ? sourceAmount * rate
         : sourceAmount * rate
     );
-  }, [form.amount, form.local_amount, rate, feesPercent, amountMode, isBifDestination]);
+  }, [form.amount, form.local_amount, rate, feesPercent, amountMode, isBifDestination, computedSourceAmountFromLocal]);
 
   useEffect(() => {
     if (!isBifDestination && amountMode !== "send_eur") {
@@ -306,6 +320,27 @@ export default function ExternalTransferPage() {
       setBeneficiaries(Array.isArray(data) ? data : []);
     } catch (err) {
       setLoadError(err?.message || "Impossible de charger les beneficiaires.");
+    }
+  };
+
+  const loadPartners = async () => {
+    try {
+      setLoadError("");
+      const data = await api.get("/wallet/transfer/external/partners");
+      const names = Array.isArray(data)
+        ? data
+            .map((item) => String(item?.partner_name || item?.name || "").trim())
+            .filter(Boolean)
+        : [];
+      const nextPartners = names.length > 0 ? names : FALLBACK_PARTNERS;
+      setPartners(nextPartners);
+      setForm((prev) => {
+        if (nextPartners.includes(prev.partner_name)) return prev;
+        return { ...prev, partner_name: getDefaultPartnerName(nextPartners) };
+      });
+    } catch (err) {
+      setPartners(FALLBACK_PARTNERS);
+      setLoadError((current) => current || err?.message || "Impossible de charger les partenaires.");
     }
   };
 
@@ -413,6 +448,7 @@ export default function ExternalTransferPage() {
 
   useEffect(() => {
     loadCountries();
+    loadPartners();
     loadBeneficiaries();
     loadFinancialCapacity();
     loadWalletLimits();
@@ -424,6 +460,7 @@ export default function ExternalTransferPage() {
   const retryLoad = async () => {
     await Promise.allSettled([
       loadCountries(),
+      loadPartners(),
       loadRate(),
       loadBeneficiaries(),
       loadFinancialCapacity(),
@@ -538,7 +575,7 @@ export default function ExternalTransferPage() {
         recipient_name: "",
         recipient_phone: "",
         country_destination: getDefaultDestinationCountry(countries),
-        partner_name: PARTNERS[0],
+        partner_name: getDefaultPartnerName(partners),
         amount: "",
         local_amount: "",
       });
@@ -918,7 +955,7 @@ export default function ExternalTransferPage() {
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
             >
-              {PARTNERS.map((opt) => (
+              {partners.map((opt) => (
                 <option key={opt} value={opt}>
                   {opt}
                 </option>
@@ -941,7 +978,8 @@ export default function ExternalTransferPage() {
               placeholder="150000"
             />
             <p className="text-xs text-slate-500 mt-1">
-              Le beneficiaire recevra {parseDecimalInput(form.local_amount).toFixed(2)} BIF et il faudra {totalDebitSourceAmount.toFixed(2)} {sourceCurrency} au total, frais inclus.
+              Pour garantir au moins {desiredLocalAmount.toFixed(2)} BIF, le debit sera calcule avec arrondi superieur:{" "}
+              {totalDebitSourceAmount.toFixed(2)} {sourceCurrency} (frais inclus). Estimation recu: {recipientAmount.toFixed(2)} BIF.
             </p>
           </div>
         ) : (
