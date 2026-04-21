@@ -132,10 +132,20 @@ function formatLimitAmount(value) {
   });
 }
 
-function roundUpToCents(value) {
+function formatCurrencyAmount(value, currency) {
+  const isBif = String(currency || "").toUpperCase() === "BIF";
+  return Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: isBif ? 0 : 2,
+    maximumFractionDigits: isBif ? 0 : 2,
+  });
+}
+
+function roundUpToPrecision(value, precision = 2) {
   const amount = Number(value || 0);
   if (!(amount > 0)) return 0;
-  return Math.ceil(amount * 100) / 100;
+  const safePrecision = Math.max(0, Math.min(Number(precision || 0), 8));
+  const factor = 10 ** safePrecision;
+  return Math.ceil(amount * factor) / factor;
 }
 
 function getDefaultPartnerName(partners = []) {
@@ -207,7 +217,7 @@ export default function ExternalTransferPage() {
   const desiredLocalAmount = parseDecimalInput(form.local_amount);
   const computedSourceAmountFromLocal =
     amountMode === "receive_local" && isBifDestination && rate > 0 && desiredLocalAmount > 0
-      ? roundUpToCents(desiredLocalAmount / rate)
+      ? roundUpToPrecision(desiredLocalAmount / rate, 6)
       : 0;
   const effectiveSourceAmount =
     amountMode === "receive_local" && isBifDestination
@@ -260,7 +270,7 @@ export default function ExternalTransferPage() {
     setFeesAmountSource(fee);
     setRecipientAmount(
       amountMode === "receive_local" && isBifDestination
-        ? sourceAmount * rate
+        ? Math.floor(sourceAmount * rate)
         : sourceAmount * rate
     );
   }, [form.amount, form.local_amount, rate, feesPercent, amountMode, isBifDestination, computedSourceAmountFromLocal]);
@@ -479,6 +489,8 @@ export default function ExternalTransferPage() {
       [name]:
         name === "recipient_phone"
           ? normalizeRecipientPhone(value)
+          : name === "local_amount" && amountMode === "receive_local" && isBifDestination
+            ? String(value || "").replace(/[^\d]/g, "")
           : name === "amount" || name === "local_amount"
             ? normalizeDecimalInput(value)
             : value,
@@ -545,7 +557,10 @@ export default function ExternalTransferPage() {
           country_destination: form.country_destination,
           recipient_name: form.recipient_name,
           recipient_phone: normalizedPhone,
-          amount: requestedAmount.toFixed(2),
+          amount:
+            amountMode === "receive_local" && isBifDestination
+              ? requestedAmount.toFixed(6)
+              : requestedAmount.toFixed(2),
         },
         idemKey,
         "external-transfer"
@@ -562,7 +577,7 @@ export default function ExternalTransferPage() {
         amount: requestedAmount.toFixed(2),
         fee_amount: feesAmountSource.toFixed(2),
         total_amount: (requestedAmount + feesAmountSource).toFixed(2),
-        recipient_amount: recipientAmount.toFixed(2),
+        recipient_amount: formatCurrencyAmount(recipientAmount, destinationCurrency),
       });
       if (createdReference) {
         window.localStorage.setItem(
@@ -667,7 +682,7 @@ export default function ExternalTransferPage() {
           </p>
           {hasEnteredAmount ? (
             <p className="text-[13px] text-blue-700">
-              Montant recu estime: <span className="font-semibold">{recipientAmount.toFixed(2)} </span>
+              Montant recu estime: <span className="font-semibold">{formatCurrencyAmount(recipientAmount, destinationCurrency)} </span>
               {destinationCurrency}
             </p>
           ) : null}
@@ -978,8 +993,8 @@ export default function ExternalTransferPage() {
               placeholder="150000"
             />
             <p className="text-xs text-slate-500 mt-1">
-              Pour garantir au moins {desiredLocalAmount.toFixed(2)} BIF, le debit sera calcule avec arrondi superieur:{" "}
-              {totalDebitSourceAmount.toFixed(2)} {sourceCurrency} (frais inclus). Estimation recu: {recipientAmount.toFixed(2)} BIF.
+              Pour garantir au moins {desiredLocalAmount.toFixed(0)} BIF, le debit sera calcule avec arrondi superieur:{" "}
+              {totalDebitSourceAmount.toFixed(2)} {sourceCurrency} (frais inclus). Estimation recu: {formatCurrencyAmount(recipientAmount, "BIF")} BIF.
             </p>
           </div>
         ) : (
@@ -1010,8 +1025,8 @@ export default function ExternalTransferPage() {
           </div>
           <div className="flex justify-between">
             <span>Montant recu estime</span>
-            <span className="font-semibold">
-              {recipientAmount.toFixed(2)} {destinationCurrency}
+              <span className="font-semibold">
+              {formatCurrencyAmount(recipientAmount, destinationCurrency)} {destinationCurrency}
             </span>
           </div>
           {isBifDestination ? (
