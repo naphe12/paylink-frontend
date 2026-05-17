@@ -13,6 +13,7 @@ export default function AdminSettingsPage() {
     coefficient: "",
     smsTransfert_fees: "",
     currency: "EUR",
+    manual_external_transfer: false,
   });
   const [fxOrigin, setFxOrigin] = useState("EUR");
   const [fxCurrency, setFxCurrency] = useState("BIF");
@@ -36,6 +37,7 @@ export default function AdminSettingsPage() {
           coefficient: gen.coefficient ?? "",
           smsTransfert_fees: gen.smsTransfert_fees ?? "",
           currency: gen.currency ?? "EUR",
+          manual_external_transfer: Boolean(gen.manual_external_transfer),
         }));
       }
       setFxList(fx);
@@ -115,6 +117,11 @@ export default function AdminSettingsPage() {
             <Input label="Coefficient" value={settings.coefficient} onChange={(v) => setSettings((s) => ({ ...s, coefficient: v }))} />
             <Input label="SMS Transfert fees" value={settings.smsTransfert_fees} onChange={(v) => setSettings((s) => ({ ...s, smsTransfert_fees: v }))} />
             <Input label="Devise" value={settings.currency} onChange={(v) => setSettings((s) => ({ ...s, currency: v }))} />
+            <ToggleInput
+              label="Transfert externe manuel"
+              checked={Boolean(settings.manual_external_transfer)}
+              onChange={(checked) => setSettings((s) => ({ ...s, manual_external_transfer: checked }))}
+            />
           </div>
         )}
         <div className="mt-4">
@@ -181,6 +188,19 @@ export default function AdminSettingsPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function ToggleInput({ label, checked, onChange }) {
+  return (
+    <label className="flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm text-slate-700">
+      <span>{label}</span>
+      <input
+        type="checkbox"
+        checked={Boolean(checked)}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+    </label>
   );
 }
 

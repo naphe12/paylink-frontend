@@ -113,6 +113,9 @@ export default function AgentExternalTransferPage() {
   const [submitIdempotencyKey, setSubmitIdempotencyKey] = useState("");
 
   const destinationOptions = buildDestinationOptions(countries, form.country_destination);
+  const partnerOptions = Array.from(
+    new Set([...(PARTNERS || []), String(form.partner_name || "").trim()].filter(Boolean))
+  );
   const filteredUsers = useMemo(() => {
     const query = userSelectSearch.trim().toLowerCase();
     if (!query) return users;
@@ -605,7 +608,7 @@ export default function AgentExternalTransferPage() {
                       disabled={!isManualBeneficiary}
                       className={`w-full px-3 py-2 border rounded-md text-base ${isManualBeneficiary ? "focus:ring-2 focus:ring-blue-400 focus:outline-none" : "bg-gray-50"}`}
                     >
-                      {PARTNERS.map((partner) => (
+                      {partnerOptions.map((partner) => (
                         <option key={partner} value={partner}>
                           {partner}
                         </option>

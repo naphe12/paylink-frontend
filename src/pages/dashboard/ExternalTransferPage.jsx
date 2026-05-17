@@ -6,7 +6,7 @@ import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api, { fetchPublicApi } from "@/services/api";
 import { normalizeDecimalInput, parseDecimalInput } from "@/utils/decimalInput";
 
-const PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
+const FALLBACK_PARTNERS = ["Lumicash", "Ecocash", "eNoti"];
 
 function normalizeRecipientPhone(value) {
   return String(value || "").replace(/[^\d+]/g, "");
@@ -132,7 +132,28 @@ function formatLimitAmount(value) {
   });
 }
 
+function formatCurrencyAmount(value, currency) {
+  const isBif = String(currency || "").toUpperCase() === "BIF";
+  return Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: isBif ? 0 : 2,
+    maximumFractionDigits: isBif ? 0 : 2,
+  });
+}
+
+function roundUpToPrecision(value, precision = 2) {
+  const amount = Number(value || 0);
+  if (!(amount > 0)) return 0;
+  const safePrecision = Math.max(0, Math.min(Number(precision || 0), 8));
+  const factor = 10 ** safePrecision;
+  return Math.ceil(amount * factor) / factor;
+}
+
+function getDefaultPartnerName(partners = []) {
+  return String(partners?.[0] || FALLBACK_PARTNERS[0] || "").trim();
+}
+
 export default function ExternalTransferPage() {
+  const [partners, setPartners] = useState(FALLBACK_PARTNERS);
   const [countries, setCountries] = useState([]);
   const [recentTransfers, setRecentTransfers] = useState([]);
   const [sourceCurrency, setSourceCurrency] = useState("EUR");
@@ -141,7 +162,7 @@ export default function ExternalTransferPage() {
     recipient_name: "",
     recipient_phone: "",
     country_destination: "",
-    partner_name: PARTNERS[0],
+    partner_name: getDefaultPartnerName(FALLBACK_PARTNERS),
     amount: "",
     local_amount: "",
   });
@@ -149,6 +170,8 @@ export default function ExternalTransferPage() {
   const [rate, setRate] = useState(0);
   const [feesPercent, setFeesPercent] = useState(0);
   const [feesAmountSource, setFeesAmountSource] = useState(0);
+  const [useBonusBalance, setUseBonusBalance] = useState(false);
+  const [bonusBalance, setBonusBalance] = useState(0);
   const [recipientAmount, setRecipientAmount] = useState(0);
   const [availableBalance, setAvailableBalance] = useState(0);
   const [creditAvailable, setCreditAvailable] = useState(0);
@@ -187,23 +210,37 @@ export default function ExternalTransferPage() {
         : availableBalance + creditAvailable
       : availableBalance;
   const destinationOptions = buildDestinationOptions(countries, form.country_destination);
+  const partnerOptionsBase = partners.length > 0 ? partners : FALLBACK_PARTNERS;
+  const partnerOptions = Array.from(
+    new Set(
+      [
+        ...partnerOptionsBase,
+        String(form.partner_name || "").trim(),
+      ].filter(Boolean)
+    )
+  );
 
   const getDestinationCurrency = (countryName) =>
     destinationOptions.find((option) => option.value === countryName)?.currency || "EUR";
 
   const destinationCurrency = getDestinationCurrency(form.country_destination);
   const isBifDestination = destinationCurrency === "BIF";
+  const desiredLocalAmount = parseDecimalInput(form.local_amount);
+  const computedSourceAmountFromLocal =
+    amountMode === "receive_local" && isBifDestination && rate > 0 && desiredLocalAmount > 0
+      ? roundUpToPrecision(desiredLocalAmount / rate, 6)
+      : 0;
   const effectiveSourceAmount =
     amountMode === "receive_local" && isBifDestination
-      ? rate > 0 && form.local_amount
-        ? parseDecimalInput(form.local_amount) / rate
-        : 0
+      ? computedSourceAmountFromLocal
       : parseDecimalInput(form.amount);
   const hasEnteredAmount =
     (amountMode === "receive_local" && isBifDestination
       ? parseDecimalInput(form.local_amount)
       : parseDecimalInput(form.amount)) > 0;
-  const totalDebitSourceAmount = effectiveSourceAmount + feesAmountSource;
+  const effectiveFeesPercent = useBonusBalance ? 0 : feesPercent;
+  const effectiveFeesAmount = useBonusBalance ? 0 : feesAmountSource;
+  const totalDebitSourceAmount = effectiveSourceAmount + effectiveFeesAmount;
   const displayDailyLimit = Number(limitsInsights?.limits?.current_daily_limit ?? walletLimits.daily_limit ?? 0);
   const displayMonthlyLimit = Number(limitsInsights?.limits?.current_monthly_limit ?? walletLimits.monthly_limit ?? 0);
   const displayUsedDaily = Number(limitsInsights?.limits?.used_daily ?? walletLimits.used_daily ?? 0);
@@ -235,7 +272,7 @@ export default function ExternalTransferPage() {
     }
     const sourceAmount =
       amountMode === "receive_local" && isBifDestination
-        ? parseDecimalInput(form.local_amount) / rate
+        ? computedSourceAmountFromLocal
         : parseDecimalInput(form.amount);
     if (!sourceAmount || Number.isNaN(sourceAmount)) {
       setRecipientAmount(0);
@@ -246,10 +283,10 @@ export default function ExternalTransferPage() {
     setFeesAmountSource(fee);
     setRecipientAmount(
       amountMode === "receive_local" && isBifDestination
-        ? parseDecimalInput(form.local_amount)
+        ? Math.floor(sourceAmount * rate)
         : sourceAmount * rate
     );
-  }, [form.amount, form.local_amount, rate, feesPercent, amountMode, isBifDestination]);
+  }, [form.amount, form.local_amount, rate, feesPercent, amountMode, isBifDestination, computedSourceAmountFromLocal]);
 
   useEffect(() => {
     if (!isBifDestination && amountMode !== "send_eur") {
@@ -309,6 +346,27 @@ export default function ExternalTransferPage() {
     }
   };
 
+  const loadPartners = async () => {
+    try {
+      setLoadError("");
+      const data = await api.get("/wallet/transfer/external/partners");
+      const names = Array.isArray(data)
+        ? data
+            .map((item) => String(item?.partner_name || item?.name || "").trim())
+            .filter(Boolean)
+        : [];
+      const nextPartners = names.length > 0 ? names : FALLBACK_PARTNERS;
+      setPartners(nextPartners);
+      setForm((prev) => {
+        if (nextPartners.includes(prev.partner_name)) return prev;
+        return { ...prev, partner_name: getDefaultPartnerName(nextPartners) };
+      });
+    } catch (err) {
+      setPartners(FALLBACK_PARTNERS);
+      setLoadError((current) => current || err?.message || "Impossible de charger les partenaires.");
+    }
+  };
+
   const loadRecentTransfers = async () => {
     try {
       const data = await api.get("/wallet/transfer/external/mine?limit=8");
@@ -327,6 +385,15 @@ export default function ExternalTransferPage() {
       setCreditCurrency(normalizeSourceCurrency(String(data?.credit_currency || data?.wallet_currency || "EUR")));
     } catch (err) {
       setLoadError(err?.message || "Impossible de charger la capacite de transfert.");
+    }
+  };
+
+  const loadBonusBalance = async () => {
+    try {
+      const data = await api.getBonusBalance();
+      setBonusBalance(Number(data?.bonus_balance || 0));
+    } catch {
+      setBonusBalance(0);
     }
   };
 
@@ -413,8 +480,10 @@ export default function ExternalTransferPage() {
 
   useEffect(() => {
     loadCountries();
+    loadPartners();
     loadBeneficiaries();
     loadFinancialCapacity();
+    loadBonusBalance();
     loadWalletLimits();
     loadKycProfile();
     loadLimitsInsights();
@@ -424,9 +493,11 @@ export default function ExternalTransferPage() {
   const retryLoad = async () => {
     await Promise.allSettled([
       loadCountries(),
+      loadPartners(),
       loadRate(),
       loadBeneficiaries(),
       loadFinancialCapacity(),
+      loadBonusBalance(),
       loadWalletLimits(),
       loadKycProfile(),
       loadLimitsInsights(),
@@ -442,6 +513,8 @@ export default function ExternalTransferPage() {
       [name]:
         name === "recipient_phone"
           ? normalizeRecipientPhone(value)
+          : name === "local_amount" && amountMode === "receive_local" && isBifDestination
+            ? String(value || "").replace(/[^\d]/g, "")
           : name === "amount" || name === "local_amount"
             ? normalizeDecimalInput(value)
             : value,
@@ -486,13 +559,17 @@ export default function ExternalTransferPage() {
       return;
     }
 
-    if (requestedAmount + feesAmountSource > totalAvailable) {
+    const totalRequired = requestedAmount + effectiveFeesAmount;
+    const availableFunding = useBonusBalance ? bonusBalance : totalAvailable;
+    if (totalRequired > availableFunding) {
       setError(
-        isBifWallet
-          ? "Montant superieur a votre capacite disponible (ligne de credit disponible uniquement pour wallet BIF)."
-          : sameFundingCurrency
-            ? "Montant superieur a votre capacite disponible (wallet + credit disponible)."
-            : "Montant superieur a votre capacite disponible dans la devise du wallet."
+        useBonusBalance
+          ? "Montant superieur a votre solde bonus disponible."
+          : isBifWallet
+            ? "Montant superieur a votre capacite disponible (ligne de credit disponible uniquement pour wallet BIF)."
+            : sameFundingCurrency
+              ? "Montant superieur a votre capacite disponible (wallet + credit disponible)."
+              : "Montant superieur a votre capacite disponible dans la devise du wallet."
       );
       setLoading(false);
       return;
@@ -508,7 +585,11 @@ export default function ExternalTransferPage() {
           country_destination: form.country_destination,
           recipient_name: form.recipient_name,
           recipient_phone: normalizedPhone,
-          amount: requestedAmount.toFixed(2),
+          amount:
+            amountMode === "receive_local" && isBifDestination
+              ? requestedAmount.toFixed(6)
+              : requestedAmount.toFixed(2),
+          use_bonus_balance: useBonusBalance,
         },
         idemKey,
         "external-transfer"
@@ -523,9 +604,9 @@ export default function ExternalTransferPage() {
         country_destination: form.country_destination,
         partner_name: form.partner_name,
         amount: requestedAmount.toFixed(2),
-        fee_amount: feesAmountSource.toFixed(2),
-        total_amount: (requestedAmount + feesAmountSource).toFixed(2),
-        recipient_amount: recipientAmount.toFixed(2),
+        fee_amount: effectiveFeesAmount.toFixed(2),
+        total_amount: (requestedAmount + effectiveFeesAmount).toFixed(2),
+        recipient_amount: formatCurrencyAmount(recipientAmount, destinationCurrency),
       });
       if (createdReference) {
         window.localStorage.setItem(
@@ -538,12 +619,13 @@ export default function ExternalTransferPage() {
         recipient_name: "",
         recipient_phone: "",
         country_destination: getDefaultDestinationCountry(countries),
-        partner_name: PARTNERS[0],
+        partner_name: getDefaultPartnerName(partners),
         amount: "",
         local_amount: "",
       });
       setSelectedBeneficiary("");
       await loadFinancialCapacity();
+      await loadBonusBalance();
       await loadWalletLimits();
       await loadKycProfile();
       await loadLimitsInsights();
@@ -624,13 +706,13 @@ export default function ExternalTransferPage() {
             {hasEnteredAmount ? (
               <>
                 {" "} | Frais:{" "}
-                <span className="font-semibold">{feesPercent || 0}% ({feesAmountSource.toFixed(2)} {sourceCurrency})</span>
+                <span className="font-semibold">{effectiveFeesPercent || 0}% ({effectiveFeesAmount.toFixed(2)} {sourceCurrency})</span>
               </>
             ) : null}
           </p>
           {hasEnteredAmount ? (
             <p className="text-[13px] text-blue-700">
-              Montant recu estime: <span className="font-semibold">{recipientAmount.toFixed(2)} </span>
+              Montant recu estime: <span className="font-semibold">{formatCurrencyAmount(recipientAmount, destinationCurrency)} </span>
               {destinationCurrency}
             </p>
           ) : null}
@@ -918,7 +1000,7 @@ export default function ExternalTransferPage() {
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
             >
-              {PARTNERS.map((opt) => (
+              {partnerOptions.map((opt) => (
                 <option key={opt} value={opt}>
                   {opt}
                 </option>
@@ -941,7 +1023,8 @@ export default function ExternalTransferPage() {
               placeholder="150000"
             />
             <p className="text-xs text-slate-500 mt-1">
-              Le beneficiaire recevra {parseDecimalInput(form.local_amount).toFixed(2)} BIF et il faudra {totalDebitSourceAmount.toFixed(2)} {sourceCurrency} au total, frais inclus.
+              Pour garantir au moins {desiredLocalAmount.toFixed(0)} BIF, le debit sera calcule avec arrondi superieur:{" "}
+              {totalDebitSourceAmount.toFixed(2)} {sourceCurrency} (frais inclus). Estimation recu: {formatCurrencyAmount(recipientAmount, "BIF")} BIF.
             </p>
           </div>
         ) : (
@@ -957,9 +1040,26 @@ export default function ExternalTransferPage() {
               className="w-full px-3 py-2 border rounded-md text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
               placeholder="100.00"
             />
-            <p className="text-xs text-slate-500 mt-1">Frais estimes : {feesAmountSource.toFixed(2)} {sourceCurrency} ({feesPercent || 0}%)</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Frais estimes : {effectiveFeesAmount.toFixed(2)} {sourceCurrency} ({effectiveFeesPercent || 0}%)
+            </p>
           </div>
         )}
+
+        <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
+          <span className="text-slate-700">
+            Utiliser le solde bonus (sans frais)
+            <span className="ml-2 text-xs text-slate-500">
+              Disponible: {formatCurrencyAmount(bonusBalance, sourceCurrency)} {sourceCurrency}
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            checked={useBonusBalance}
+            onChange={(e) => setUseBonusBalance(e.target.checked)}
+            className="h-4 w-4"
+          />
+        </label>
 
         <div className="rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700 space-y-1">
           <div className="flex justify-between">
@@ -968,12 +1068,12 @@ export default function ExternalTransferPage() {
           </div>
           <div className="flex justify-between">
             <span>Frais</span>
-            <span className="font-semibold">{feesAmountSource.toFixed(2)} {sourceCurrency} ({feesPercent || 0}%)</span>
+            <span className="font-semibold">{effectiveFeesAmount.toFixed(2)} {sourceCurrency} ({effectiveFeesPercent || 0}%)</span>
           </div>
           <div className="flex justify-between">
             <span>Montant recu estime</span>
-            <span className="font-semibold">
-              {recipientAmount.toFixed(2)} {destinationCurrency}
+              <span className="font-semibold">
+              {formatCurrencyAmount(recipientAmount, destinationCurrency)} {destinationCurrency}
             </span>
           </div>
           {isBifDestination ? (
