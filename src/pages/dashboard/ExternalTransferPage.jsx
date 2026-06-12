@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Info, Send } from "lucide-react";
+import { Globe, Info, Send } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
 import api, { fetchPublicApi } from "@/services/api";
@@ -682,9 +682,18 @@ export default function ExternalTransferPage() {
 
   return (
     <div className="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
-      <h2 className="text-2xl font-bold text-[#0b3b64] mb-6 flex items-center gap-2">
-        <Send size={22} /> Transfert externe
-      </h2>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="flex items-center gap-2 text-2xl font-bold text-[#0b3b64]">
+          <Send size={22} /> Transfert externe
+        </h2>
+        <Link
+          to="/dashboard/client/external-transfer/ihela-sandbox"
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-900 hover:bg-blue-100"
+        >
+          <Globe size={16} />
+          Test iHela
+        </Link>
+      </div>
 
       <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 mb-5 flex items-start gap-3 text-sm">
         <Info size={18} className="mt-0.5" />
