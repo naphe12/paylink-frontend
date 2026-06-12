@@ -550,6 +550,7 @@ export default function AdminSidebar() {
             {renderNavLink("wallets", Wallet, "Portefeuilles", onNavigate)}
             {renderNavLink("client-wallets", Users, "Wallets clients", onNavigate)}
             {renderNavLink("wallet-corrections", Wallet, "Corrections wallet", onNavigate)}
+            {renderNavLink("users/bonus-corrections", Gift, "Correction bonus", onNavigate)}
             {renderNavLink("wallet-analysis", LineChart, "Analyse wallets", onNavigate)}
             {renderNavLink("mobilemoney", Wallet, "Mobile Money", onNavigate)}
             {renderNavLink("transfers", GitPullRequest, "Transferts externes", onNavigate)}
