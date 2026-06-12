@@ -20,10 +20,12 @@ export default function IhelaSandboxTestPage() {
   const [loadingWithdrawal, setLoadingWithdrawal] = useState(false);
   const [loadingLookup, setLoadingLookup] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(false);
+  const [loadingCashout, setLoadingCashout] = useState(false);
   const [error, setError] = useState("");
   const [withdrawalResult, setWithdrawalResult] = useState(null);
   const [lookupResult, setLookupResult] = useState(null);
   const [statusResult, setStatusResult] = useState(null);
+  const [cashoutResult, setCashoutResult] = useState(null);
 
   const onChangeWithdrawal = (key, value) => {
     setWithdrawalForm((prev) => ({ ...prev, [key]: value }));
@@ -79,6 +81,20 @@ export default function IhelaSandboxTestPage() {
       setError(err?.message || "Erreur pendant le test iHela (status).");
     } finally {
       setLoadingStatus(false);
+    }
+  };
+
+  const submitCashout = async () => {
+    setError("");
+    setCashoutResult(null);
+    setLoadingCashout(true);
+    try {
+      const data = await api.get("/providers/ihela/test/bank-cashout");
+      setCashoutResult(data);
+    } catch (err) {
+      setError(err?.message || "Erreur pendant le test iHela (bank cashout).");
+    } finally {
+      setLoadingCashout(false);
     }
   };
 
@@ -189,6 +205,18 @@ export default function IhelaSandboxTestPage() {
         </form>
       </section>
 
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 className="text-lg font-semibold text-slate-900">4) Test bank cashout</h2>
+        <button
+          type="button"
+          onClick={submitCashout}
+          disabled={loadingCashout}
+          className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+        >
+          {loadingCashout ? "Chargement..." : "Tester bank cashout"}
+        </button>
+      </section>
+
       {withdrawalResult ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-5">
           <h3 className="text-sm font-semibold text-slate-900">Resultat withdrawal</h3>
@@ -212,6 +240,15 @@ export default function IhelaSandboxTestPage() {
           <h3 className="text-sm font-semibold text-slate-900">Resultat transaction-status</h3>
           <pre className="mt-3 overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-100">
             {JSON.stringify(statusResult, null, 2)}
+          </pre>
+        </section>
+      ) : null}
+
+      {cashoutResult ? (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5">
+          <h3 className="text-sm font-semibold text-slate-900">Resultat bank cashout</h3>
+          <pre className="mt-3 overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-100">
+            {JSON.stringify(cashoutResult, null, 2)}
           </pre>
         </section>
       ) : null}
