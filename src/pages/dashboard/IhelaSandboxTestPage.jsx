@@ -17,7 +17,7 @@ function initialMobileCashoutForm() {
   return {
     amount: "5000",
     recipient: "67225225",
-    provider: "ECOCASH",
+    provider: "LUMICASH",
     merchant_reference: "TXN_2026_001",
     description: "Transfert de 5000 BIF vers le numero 67225225",
   };
