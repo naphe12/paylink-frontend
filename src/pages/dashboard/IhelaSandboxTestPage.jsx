@@ -13,17 +13,30 @@ function initialWithdrawalForm() {
   };
 }
 
+function initialMobileCashoutForm() {
+  return {
+    amount: "5000",
+    recipient: "67225225",
+    provider: "ECOCASH",
+    merchant_reference: "TXN_2026_001",
+    description: "Transfert de 5000 BIF vers le numero 67225225",
+  };
+}
+
 export default function IhelaSandboxTestPage() {
   const [withdrawalForm, setWithdrawalForm] = useState(initialWithdrawalForm);
+  const [mobileCashoutForm, setMobileCashoutForm] = useState(initialMobileCashoutForm);
   const [lookupForm, setLookupForm] = useState({ account_number: "16-01" });
   const [statusForm, setStatusForm] = useState({ reference: "" });
   const [loadingWithdrawal, setLoadingWithdrawal] = useState(false);
+  const [loadingMobileCashout, setLoadingMobileCashout] = useState(false);
   const [loadingLookup, setLoadingLookup] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [loadingCashout, setLoadingCashout] = useState(false);
   const [loadingCashin, setLoadingCashin] = useState(false);
   const [error, setError] = useState("");
   const [withdrawalResult, setWithdrawalResult] = useState(null);
+  const [mobileCashoutResult, setMobileCashoutResult] = useState(null);
   const [lookupResult, setLookupResult] = useState(null);
   const [statusResult, setStatusResult] = useState(null);
   const [cashoutResult, setCashoutResult] = useState(null);
@@ -31,6 +44,10 @@ export default function IhelaSandboxTestPage() {
 
   const onChangeWithdrawal = (key, value) => {
     setWithdrawalForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const onChangeMobileCashout = (key, value) => {
+    setMobileCashoutForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const submitWithdrawal = async (event) => {
@@ -68,6 +85,25 @@ export default function IhelaSandboxTestPage() {
       setError(err?.message || "Erreur pendant le test iHela (lookup).");
     } finally {
       setLoadingLookup(false);
+    }
+  };
+
+  const submitMobileCashout = async (event) => {
+    event.preventDefault();
+    setError("");
+    setMobileCashoutResult(null);
+    setLoadingMobileCashout(true);
+    try {
+      const payload = {
+        ...mobileCashoutForm,
+        amount: Number(mobileCashoutForm.amount),
+      };
+      const data = await api.post("/providers/ihela/test/mobile-cashout", payload);
+      setMobileCashoutResult(data);
+    } catch (err) {
+      setError(err?.message || "Erreur pendant le test iHela (mobile cashout).");
+    } finally {
+      setLoadingMobileCashout(false);
     }
   };
 
@@ -202,7 +238,56 @@ export default function IhelaSandboxTestPage() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <h2 className="text-lg font-semibold text-slate-900">3) Test transaction-status</h2>
+        <h2 className="text-lg font-semibold text-slate-900">3) Test mobile cashout</h2>
+        <form onSubmit={submitMobileCashout} className="mt-4 grid gap-3 md:grid-cols-2">
+          <input
+            className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+            placeholder="recipient"
+            value={mobileCashoutForm.recipient}
+            onChange={(e) => onChangeMobileCashout("recipient", e.target.value)}
+            required
+          />
+          <input
+            className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+            placeholder="amount"
+            type="number"
+            min="1"
+            value={mobileCashoutForm.amount}
+            onChange={(e) => onChangeMobileCashout("amount", e.target.value)}
+            required
+          />
+          <input
+            className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+            placeholder="provider"
+            value={mobileCashoutForm.provider}
+            onChange={(e) => onChangeMobileCashout("provider", e.target.value)}
+            required
+          />
+          <input
+            className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+            placeholder="merchant_reference"
+            value={mobileCashoutForm.merchant_reference}
+            onChange={(e) => onChangeMobileCashout("merchant_reference", e.target.value)}
+            required
+          />
+          <input
+            className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+            placeholder="description"
+            value={mobileCashoutForm.description}
+            onChange={(e) => onChangeMobileCashout("description", e.target.value)}
+          />
+          <button
+            type="submit"
+            disabled={loadingMobileCashout}
+            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {loadingMobileCashout ? "Envoi..." : "Tester mobile cashout"}
+          </button>
+        </form>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 className="text-lg font-semibold text-slate-900">4) Test transaction-status</h2>
         <form onSubmit={submitStatus} className="mt-4 flex flex-col gap-3 md:flex-row">
           <input
             className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
@@ -222,7 +307,7 @@ export default function IhelaSandboxTestPage() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <h2 className="text-lg font-semibold text-slate-900">4) Test bank payments</h2>
+        <h2 className="text-lg font-semibold text-slate-900">5) Test bank payments</h2>
         <div className="mt-4 flex flex-col gap-3 md:flex-row">
           <button
             type="button"
@@ -257,6 +342,15 @@ export default function IhelaSandboxTestPage() {
           <h3 className="text-sm font-semibold text-slate-900">Resultat account lookup</h3>
           <pre className="mt-3 overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-100">
             {JSON.stringify(lookupResult, null, 2)}
+          </pre>
+        </section>
+      ) : null}
+
+      {mobileCashoutResult ? (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5">
+          <h3 className="text-sm font-semibold text-slate-900">Resultat mobile cashout</h3>
+          <pre className="mt-3 overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-100">
+            {JSON.stringify(mobileCashoutResult, null, 2)}
           </pre>
         </section>
       ) : null}
