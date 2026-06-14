@@ -15,6 +15,7 @@ function initialWithdrawalForm() {
 
 function initialMobileCashoutForm() {
   return {
+    endpoint_path: "/testenv/api/v2/payments/mobile/cashout",
     amount: "5000",
     recipient: "67225225",
     provider: "LUMICASH",
@@ -240,6 +241,12 @@ export default function IhelaSandboxTestPage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="text-lg font-semibold text-slate-900">3) Test mobile cashout</h2>
         <form onSubmit={submitMobileCashout} className="mt-4 grid gap-3 md:grid-cols-2">
+          <input
+            className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+            placeholder="endpoint_path"
+            value={mobileCashoutForm.endpoint_path}
+            onChange={(e) => onChangeMobileCashout("endpoint_path", e.target.value)}
+          />
           <input
             className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
             placeholder="recipient"
