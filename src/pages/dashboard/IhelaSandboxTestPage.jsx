@@ -15,7 +15,7 @@ function initialWithdrawalForm() {
 
 function initialMobileCashoutForm() {
   return {
-    endpoint_path: "/testenv/api/v2/payments/mobile/cashout",
+    endpoint_path: "/testenv/api/v2/payments/mobile/cashin",
     amount: "5000",
     recipient: "67225225",
     provider: "LUMICASH",
@@ -102,7 +102,7 @@ export default function IhelaSandboxTestPage() {
       const data = await api.post("/providers/ihela/test/mobile-cashout", payload);
       setMobileCashoutResult(data);
     } catch (err) {
-      setError(err?.message || "Erreur pendant le test iHela (mobile cashout).");
+      setError(err?.message || "Erreur pendant le test iHela (mobile cashin).");
     } finally {
       setLoadingMobileCashout(false);
     }
@@ -239,7 +239,7 @@ export default function IhelaSandboxTestPage() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <h2 className="text-lg font-semibold text-slate-900">3) Test mobile cashout</h2>
+        <h2 className="text-lg font-semibold text-slate-900">3) Test mobile cashin</h2>
         <form onSubmit={submitMobileCashout} className="mt-4 grid gap-3 md:grid-cols-2">
           <input
             className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
@@ -288,7 +288,7 @@ export default function IhelaSandboxTestPage() {
             disabled={loadingMobileCashout}
             className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
           >
-            {loadingMobileCashout ? "Envoi..." : "Tester mobile cashout"}
+            {loadingMobileCashout ? "Envoi..." : "Tester mobile cashin"}
           </button>
         </form>
       </section>
@@ -355,7 +355,7 @@ export default function IhelaSandboxTestPage() {
 
       {mobileCashoutResult ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h3 className="text-sm font-semibold text-slate-900">Resultat mobile cashout</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Resultat mobile cashin</h3>
           <pre className="mt-3 overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-100">
             {JSON.stringify(mobileCashoutResult, null, 2)}
           </pre>
