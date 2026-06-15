@@ -15,7 +15,7 @@ function initialWithdrawalForm() {
 
 function initialMobileCashoutForm() {
   return {
-    endpoint_path: "/testenv/api/v2/payments/mobile/cashin",
+    endpoint_path: "/testenv/api/v2/payments/bank/cashin",
     amount: "5000",
     recipient: "67225225",
     provider: "LUMICASH",
