@@ -1317,8 +1317,9 @@ const api = {
       stepUpToken ? { "X-Admin-Step-Up-Token": stepUpToken } : {}
     );
   },
-  async getPendingExternalTransfers() {
-    return this.get("/agent/external/pending");
+  async getPendingExternalTransfers(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.get(`/agent/external/pending${query ? `?${query}` : ""}`);
   },
   async searchAgentCashUsers(q = "", limit = 50) {
     const search = new URLSearchParams();

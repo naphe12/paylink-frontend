@@ -35,6 +35,7 @@ const ChangePasswordPage = lazy(() => import("@/pages/dashboard/ChangePasswordPa
 const AgentTransfersPage = lazy(() => import("@/pages/dashboard/AgentTransfersPage"));
 const ExternalTransferPage = lazy(() => import("@/pages/dashboard/ExternalTransferPage"));
 const ExternalTransferLimitsPage = lazy(() => import("@/pages/dashboard/ExternalTransferLimitsPage"));
+const IhelaSandboxTestPage = lazy(() => import("@/pages/dashboard/IhelaSandboxTestPage"));
 const FxRatesPage = lazy(() => import("@/pages/dashboard/FxRatesPage"));
 const BonusPage = lazy(() => import("@/pages/dashboard/BonusPage"));
 const AgentChatPage = lazy(() => import("@/pages/dashboard/AgentChatPage"));
@@ -218,6 +219,7 @@ export default function AppRouter() {
         <Route path="agent-transfers" element={<AgentTransfersPage />} />
         <Route path="external-transfer" element={<ExternalTransferPage />} />
         <Route path="external-transfer-limits" element={<ExternalTransferLimitsPage />} />
+        <Route path="external-transfer/ihela-sandbox" element={<IhelaSandboxTestPage />} />
         <Route path="fx-rates" element={<FxRatesPage />} />
         <Route path="bonus" element={<BonusPage />} />
         <Route path="agent-chat" element={<AgentChatPage />} />

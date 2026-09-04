@@ -322,7 +322,7 @@ export default function AdminAuditSearchPage() {
             <div className="py-8 text-sm text-slate-500">Aucun evenement pour ce filtre.</div>
           ) : (
             <div className="mt-4 overflow-x-auto">
-              <table className="min-w-full text-sm">
+              <table data-no-auto-pagination className="min-w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-slate-500">
                     <th className="pb-2 pr-4 font-medium">Date</th>

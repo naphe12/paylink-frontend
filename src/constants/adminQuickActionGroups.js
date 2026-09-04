@@ -120,6 +120,7 @@ const ADMIN_QUICK_ACTION_GROUPS = [
       { label: "Portefeuilles", to: "/dashboard/admin/wallets", icon: Wallet, description: "Wallets globaux" },
       { label: "Wallets clients", to: "/dashboard/admin/client-wallets", icon: Users, description: "Wallets utilisateurs" },
       { label: "Corrections wallet", to: "/dashboard/admin/wallet-corrections", icon: Wallet, description: "Correction admin des soldes" },
+      { label: "Correction bonus", to: "/dashboard/admin/users/bonus-corrections", icon: Gift, description: "Ajustements bonus" },
       { label: "Analyse wallets", to: "/dashboard/admin/wallet-analysis", icon: LineChart, description: "Analyse des soldes" },
       { label: "Propension clients", to: "/dashboard/admin/client-intent", icon: TrendingUp, description: "Prediction transfert/depot" },
       { label: "Mobile Money", to: "/dashboard/admin/mobilemoney", icon: Wallet, description: "Operations mobile money" },

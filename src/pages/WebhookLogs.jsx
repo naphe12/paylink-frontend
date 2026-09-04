@@ -5,7 +5,9 @@ export default function WebhookLogs() {
   const [rows, setRows] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [limit, setLimit] = useState(200);
+  const [limit, setLimit] = useState(25);
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [eventFilter, setEventFilter] = useState("all");
@@ -16,9 +18,14 @@ export default function WebhookLogs() {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await api.get(`/backoffice/webhooks?limit=${limit}`);
-      const list = Array.isArray(data) ? data : [];
+      const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+      if (statusFilter !== "all") params.set("status", statusFilter);
+      if (eventFilter !== "all") params.set("event_type", eventFilter);
+      if (query.trim()) params.set("query", query.trim());
+      const data = await api.get(`/backoffice/webhooks?${params.toString()}`);
+      const list = Array.isArray(data?.items) ? data.items : [];
       setRows(list);
+      setTotal(Number(data?.total || 0));
       setError("");
       if (selected) {
         const refreshed = list.find((r) => r.id === selected.id);
@@ -33,13 +40,17 @@ export default function WebhookLogs() {
 
   useEffect(() => {
     load();
-  }, [limit]);
+  }, [limit, offset, statusFilter, eventFilter, query]);
+
+  useEffect(() => {
+    setOffset(0);
+  }, [limit, statusFilter, eventFilter, query]);
 
   useEffect(() => {
     if (!autoRefresh) return undefined;
     const i = setInterval(load, 10000);
     return () => clearInterval(i);
-  }, [autoRefresh, limit, selected]);
+  }, [autoRefresh, limit, offset, statusFilter, eventFilter, query, selected]);
 
   const statuses = useMemo(() => {
     const s = new Set(rows.map((r) => String(r.status || "-")));
@@ -157,10 +168,10 @@ export default function WebhookLogs() {
             value={String(limit)}
             onChange={(e) => setLimit(Number(e.target.value))}
           >
-            <option value="50">50 lignes</option>
-            <option value="100">100 lignes</option>
-            <option value="200">200 lignes</option>
-            <option value="500">500 lignes</option>
+            <option value="10">10 lignes / page</option>
+            <option value="25">25 lignes / page</option>
+            <option value="50">50 lignes / page</option>
+            <option value="100">100 lignes / page</option>
           </select>
         </div>
 
@@ -172,7 +183,7 @@ export default function WebhookLogs() {
 
         <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
           <div className="max-h-[560px] overflow-auto">
-            <table className="min-w-full text-sm">
+            <table data-no-auto-pagination className="min-w-full text-sm">
               <thead className="sticky top-0 bg-slate-100 text-slate-700">
                 <tr>
                   <th className="text-left px-3 py-2 font-medium">Date</th>
@@ -233,6 +244,13 @@ export default function WebhookLogs() {
                 ) : null}
               </tbody>
             </table>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-3 text-sm text-slate-600">
+          <span>{total ? `${offset + 1}-${Math.min(offset + rows.length, total)} sur ${total}` : "0 résultat"}</span>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setOffset((value) => Math.max(0, value - limit))} disabled={offset === 0 || loading} className="rounded-lg border px-3 py-1.5 disabled:opacity-40">Précédent</button>
+            <button type="button" onClick={() => setOffset((value) => value + limit)} disabled={offset + rows.length >= total || loading} className="rounded-lg border px-3 py-1.5 disabled:opacity-40">Suivant</button>
           </div>
         </div>
       </div>

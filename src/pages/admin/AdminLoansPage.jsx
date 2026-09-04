@@ -370,7 +370,7 @@ export default function AdminLoansPage() {
           )}
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table data-no-auto-pagination className="w-full text-sm">
             <thead>
               <tr className="text-left text-slate-400">
                 <th className="py-3">Client</th>

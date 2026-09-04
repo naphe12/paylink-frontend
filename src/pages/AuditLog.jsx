@@ -6,7 +6,11 @@ export default function AuditLog() {
   const [webhookRows, setWebhookRows] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [limit, setLimit] = useState(200);
+  const [limit, setLimit] = useState(25);
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [webhookOffset, setWebhookOffset] = useState(0);
+  const [webhookTotal, setWebhookTotal] = useState(0);
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [entityFilter, setEntityFilter] = useState("all");
@@ -28,13 +32,13 @@ export default function AuditLog() {
   const load = async () => {
     setLoading(true);
     try {
-      const auditQuery = new URLSearchParams({ limit: String(limit) });
+      const auditQuery = new URLSearchParams({ limit: String(limit), offset: String(offset) });
       if (roleFilter !== "all") auditQuery.append("actor_role", roleFilter);
       if (entityFilter !== "all") auditQuery.append("entity_type", entityFilter);
       if (actionFilter !== "all") auditQuery.append("action", actionFilter);
       if (query.trim()) auditQuery.append("query", query.trim());
 
-      const webhookQuery = new URLSearchParams({ limit: "100", event_type: "P2P_CHAIN_DEPOSIT" });
+      const webhookQuery = new URLSearchParams({ limit: String(limit), offset: String(webhookOffset), event_type: "P2P_CHAIN_DEPOSIT" });
       if (webhookStatusFilter !== "all") webhookQuery.append("status", webhookStatusFilter);
       if (webhookProviderFilter !== "all") webhookQuery.append("provider", webhookProviderFilter);
       if (query.trim()) webhookQuery.append("query", query.trim());
@@ -45,8 +49,10 @@ export default function AuditLog() {
         api.get("/backoffice/webhooks/providers?event_type=P2P_CHAIN_DEPOSIT"),
         api.get("/backoffice/webhooks/stats?event_type=P2P_CHAIN_DEPOSIT"),
       ]);
-      setRows(Array.isArray(auditData) ? auditData : []);
-      setWebhookRows(Array.isArray(webhookData) ? webhookData : []);
+      setRows(Array.isArray(auditData?.items) ? auditData.items : []);
+      setTotal(Number(auditData?.total || 0));
+      setWebhookRows(Array.isArray(webhookData?.items) ? webhookData.items : []);
+      setWebhookTotal(Number(webhookData?.total || 0));
       setWebhookProviders(Array.isArray(webhookProvidersData) ? webhookProvidersData : []);
       setWebhookStats({
         total: Number(webhookStatsData?.total || 0),
@@ -73,7 +79,15 @@ export default function AuditLog() {
 
   useEffect(() => {
     load();
-  }, [limit, roleFilter, entityFilter, actionFilter, webhookStatusFilter, webhookProviderFilter]);
+  }, [limit, offset, webhookOffset, roleFilter, entityFilter, actionFilter, webhookStatusFilter, webhookProviderFilter]);
+
+  useEffect(() => {
+    setOffset(0);
+  }, [limit, roleFilter, entityFilter, actionFilter, query]);
+
+  useEffect(() => {
+    setWebhookOffset(0);
+  }, [limit, webhookStatusFilter, webhookProviderFilter, query]);
 
   const roles = useMemo(() => {
     const s = new Set(rows.map((r) => String(r.actor_role || "-")));
@@ -209,10 +223,10 @@ export default function AuditLog() {
             value={String(limit)}
             onChange={(e) => setLimit(Number(e.target.value))}
           >
-            <option value="50">50 lignes</option>
-            <option value="100">100 lignes</option>
-            <option value="200">200 lignes</option>
-            <option value="500">500 lignes</option>
+            <option value="10">10 lignes / page</option>
+            <option value="25">25 lignes / page</option>
+            <option value="50">50 lignes / page</option>
+            <option value="100">100 lignes / page</option>
           </select>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -251,7 +265,7 @@ export default function AuditLog() {
 
         <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
           <div className="max-h-[540px] overflow-auto">
-            <table className="min-w-full text-sm">
+            <table data-no-auto-pagination className="min-w-full text-sm">
               <thead className="sticky top-0 bg-slate-100 text-slate-700">
                 <tr>
                   <th className="text-left px-3 py-2 font-medium">Date</th>
@@ -300,6 +314,13 @@ export default function AuditLog() {
                 ) : null}
               </tbody>
             </table>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
+          <span>{total ? `${offset + 1}-${Math.min(offset + rows.length, total)} sur ${total}` : "0 résultat"}</span>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setOffset((value) => Math.max(0, value - limit))} disabled={offset === 0 || loading} className="rounded-lg border px-3 py-1.5 disabled:opacity-40">Précédent</button>
+            <button type="button" onClick={() => setOffset((value) => value + limit)} disabled={offset + rows.length >= total || loading} className="rounded-lg border px-3 py-1.5 disabled:opacity-40">Suivant</button>
           </div>
         </div>
       </div>
@@ -383,7 +404,7 @@ export default function AuditLog() {
         </div>
         <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
           <div className="max-h-[280px] overflow-auto">
-            <table className="min-w-full text-sm">
+            <table data-no-auto-pagination className="min-w-full text-sm">
               <thead className="sticky top-0 bg-slate-100 text-slate-700">
                 <tr>
                   <th className="text-left px-3 py-2 font-medium">Date</th>
@@ -435,6 +456,13 @@ export default function AuditLog() {
                 ) : null}
               </tbody>
             </table>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
+          <span>{webhookTotal ? `${webhookOffset + 1}-${Math.min(webhookOffset + webhookRows.length, webhookTotal)} sur ${webhookTotal}` : "0 résultat"}</span>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setWebhookOffset((value) => Math.max(0, value - limit))} disabled={webhookOffset === 0 || loading} className="rounded-lg border px-3 py-1.5 disabled:opacity-40">Précédent</button>
+            <button type="button" onClick={() => setWebhookOffset((value) => value + limit)} disabled={webhookOffset + webhookRows.length >= webhookTotal || loading} className="rounded-lg border px-3 py-1.5 disabled:opacity-40">Suivant</button>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import api from "@/services/api";
 import AdminStepUpDialog from "@/components/admin/AdminStepUpDialog";
 import useAdminStepUp from "@/hooks/useAdminStepUp";
 import useSessionStorageState from "@/hooks/useSessionStorageState";
+import ServerPagination from "@/components/ServerPagination";
 
 const statusBadge = (status) => {
   const base = "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium";
@@ -42,6 +43,9 @@ export default function AdminTransfersPage() {
     runWithStepUp,
   } = useAdminStepUp();
   const [transfers, setTransfers] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const limit = 25;
   const [summary, setSummary] = useState(null);
   const [status, setStatus] = useState("");
   const [channel, setChannel] = useState("");
@@ -71,8 +75,10 @@ export default function AdminTransfersPage() {
     if (status) params.set("status", status);
     if (channel) params.set("channel", channel);
     if (userId) params.set("user_id", userId);
+    params.set("limit", String(limit));
+    params.set("offset", String(offset));
     return params.toString();
-  }, [status, channel, userId]);
+  }, [status, channel, userId, offset]);
 
   const loadData = async () => {
     setLoading(true);
@@ -82,7 +88,8 @@ export default function AdminTransfersPage() {
         api.get(`/admin/transfers${queryString ? `?${queryString}` : ""}`),
       ]);
       setSummary(summaryData);
-      setTransfers(Array.isArray(transfersData) ? transfersData : []);
+      setTransfers(Array.isArray(transfersData?.items) ? transfersData.items : []);
+      setTotal(Number(transfersData?.total || 0));
     } catch (err) {
       console.error("Erreur chargement transferts:", err);
     } finally {
@@ -93,6 +100,8 @@ export default function AdminTransfersPage() {
   useEffect(() => {
     loadData();
   }, [queryString]);
+
+  useEffect(() => setOffset(0), [status, channel, userId]);
 
   useEffect(() => {
     if (userId) {
@@ -384,7 +393,7 @@ export default function AdminTransfersPage() {
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-white shadow">
-        <table className="w-full text-sm">
+        <table data-no-auto-pagination className="w-full text-sm">
           <thead className="bg-slate-50 text-slate-600">
             <tr>
               <th className="p-3 text-left">Initiateur</th>
@@ -473,6 +482,7 @@ export default function AdminTransfersPage() {
           </tbody>
         </table>
       </div>
+      <ServerPagination offset={offset} limit={limit} total={total} count={transfers.length} loading={loading} onOffsetChange={setOffset} />
 
       {simulationResult ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
