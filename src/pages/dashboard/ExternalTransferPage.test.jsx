@@ -42,7 +42,9 @@ describe("ExternalTransferPage", () => {
     });
     api.get.mockImplementation((path) => {
       if (path === "/wallet/transfer/external/beneficiaries") return Promise.resolve([]);
-      if (path === "/wallet/transfer/external/mine?limit=8") return Promise.resolve([]);
+      if (path === "/wallet/transfer/external/mine?limit=25&offset=0") {
+        return Promise.resolve({ items: [], total: 0, limit: 25, offset: 0 });
+      }
       if (path === "/auth/me") {
         return Promise.resolve({
           kyc_status: "verified",

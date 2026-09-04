@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Globe, Info, Send } from "lucide-react";
 
 import ApiErrorAlert from "@/components/ApiErrorAlert";
+import ServerPagination from "@/components/ServerPagination";
 import api, { fetchPublicApi } from "@/services/api";
 import { normalizeDecimalInput, parseDecimalInput } from "@/utils/decimalInput";
 
@@ -156,6 +157,9 @@ export default function ExternalTransferPage() {
   const [partners, setPartners] = useState(FALLBACK_PARTNERS);
   const [countries, setCountries] = useState([]);
   const [recentTransfers, setRecentTransfers] = useState([]);
+  const [recentTransfersTotal, setRecentTransfersTotal] = useState(0);
+  const [recentTransfersOffset, setRecentTransfersOffset] = useState(0);
+  const recentTransfersLimit = 25;
   const [sourceCurrency, setSourceCurrency] = useState("EUR");
   const [creditCurrency, setCreditCurrency] = useState("EUR");
   const [form, setForm] = useState({
@@ -369,8 +373,9 @@ export default function ExternalTransferPage() {
 
   const loadRecentTransfers = async () => {
     try {
-      const data = await api.get("/wallet/transfer/external/mine?limit=8");
-      setRecentTransfers(Array.isArray(data) ? data : []);
+      const data = await api.get(`/wallet/transfer/external/mine?limit=${recentTransfersLimit}&offset=${recentTransfersOffset}`);
+      setRecentTransfers(Array.isArray(data?.items) ? data.items : []);
+      setRecentTransfersTotal(Number(data?.total || 0));
     } catch (err) {
       setLoadError((current) => current || err?.message || "Impossible de charger l'historique des transferts externes.");
     }
@@ -487,8 +492,11 @@ export default function ExternalTransferPage() {
     loadWalletLimits();
     loadKycProfile();
     loadLimitsInsights();
-    loadRecentTransfers();
   }, []);
+
+  useEffect(() => {
+    loadRecentTransfers();
+  }, [recentTransfersOffset]);
 
   const retryLoad = async () => {
     await Promise.allSettled([
@@ -1227,7 +1235,7 @@ export default function ExternalTransferPage() {
           <p className="mt-4 text-sm italic text-slate-500">Aucune demande recente.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
-	            <table className="w-full min-w-[980px] text-left text-sm">
+	            <table data-no-auto-pagination className="w-full min-w-[980px] text-left text-sm">
 	              <thead className="text-slate-500">
 	                <tr>
 	                  <th className="py-2 pr-4">Reference</th>
@@ -1306,6 +1314,7 @@ export default function ExternalTransferPage() {
                 })}
               </tbody>
             </table>
+            <ServerPagination offset={recentTransfersOffset} limit={recentTransfersLimit} total={recentTransfersTotal} count={recentTransfers.length} onOffsetChange={setRecentTransfersOffset} />
           </div>
         )}
       </section>

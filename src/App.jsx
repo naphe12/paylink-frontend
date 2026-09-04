@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import { bootstrapAuth } from "@/services/authStore";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
 import useCurrencyDisplayAlias from "@/hooks/useCurrencyDisplayAlias";
+import AutoTablePagination from "@/components/AutoTablePagination";
 
 export default function App() {
   useCurrencyDisplayAlias();
@@ -26,6 +27,7 @@ export default function App() {
     <AppErrorBoundary>
       <>
         <AppRouter />
+        <AutoTablePagination />
         <Toaster
           position="top-right"
           toastOptions={{

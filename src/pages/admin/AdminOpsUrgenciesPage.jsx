@@ -714,7 +714,7 @@ export default function AdminOpsUrgenciesPage() {
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table data-no-auto-pagination className="min-w-full text-sm">
               <thead className="bg-slate-50 text-slate-500">
                 <tr>
                   <th className="px-4 py-3 text-left">

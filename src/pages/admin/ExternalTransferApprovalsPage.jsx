@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "@/services/api";
+import ServerPagination from "@/components/ServerPagination";
 import { CheckCircle, RefreshCcw, AlertTriangle } from "lucide-react";
 
 function getAgeHours(value) {
@@ -44,6 +45,9 @@ function normalizeTransfer(transfer) {
 
 export default function ExternalTransferApprovalsPage() {
   const [transfers, setTransfers] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const limit = 25;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [approving, setApproving] = useState({});
@@ -54,9 +58,10 @@ export default function ExternalTransferApprovalsPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getPendingExternalTransfers();
-      const mapped = Array.isArray(data) ? data.map(normalizeTransfer) : [];
+      const data = await api.getPendingExternalTransfers({ limit, offset });
+      const mapped = Array.isArray(data?.items) ? data.items.map(normalizeTransfer) : [];
       setTransfers(mapped);
+      setTotal(Number(data?.total || 0));
     } catch (err) {
       setError(err.message || "Impossible de charger les transferts en attente.");
     } finally {
@@ -66,7 +71,7 @@ export default function ExternalTransferApprovalsPage() {
 
   useEffect(() => {
     fetchTransfers();
-  }, []);
+  }, [offset]);
 
   const approve = async (transferId) => {
     setApproving((prev) => ({ ...prev, [transferId]: true }));
@@ -131,7 +136,7 @@ export default function ExternalTransferApprovalsPage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border bg-white shadow-sm">
-          <table className="min-w-full text-left text-sm">
+          <table data-no-auto-pagination className="min-w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-3">Réf.</th>
@@ -232,6 +237,7 @@ export default function ExternalTransferApprovalsPage() {
           </table>
         </div>
       )}
+      <ServerPagination offset={offset} limit={limit} total={total} count={transfers.length} loading={loading} onOffsetChange={setOffset} />
 
       <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800">
         <div className="flex items-start gap-3">
