@@ -613,6 +613,10 @@ const api = {
   async listScheduledTransfers() {
     return this.get("/wallet/scheduled-transfers");
   },
+  async searchInternalTransferRecipients(query, limit = 10) {
+    const search = new URLSearchParams({ query: String(query || ""), limit: String(limit) });
+    return this.get(`/wallet/internal-transfer-recipients/search?${search.toString()}`);
+  },
   async createScheduledTransfer(payload = {}, idempotencyKey = null) {
     return this.postIdempotent("/wallet/scheduled-transfers", payload, idempotencyKey, "scheduled-transfer-create");
   },

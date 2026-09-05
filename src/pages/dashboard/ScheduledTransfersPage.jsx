@@ -123,6 +123,9 @@ export default function ScheduledTransfersPage() {
   const [editingScheduleId, setEditingScheduleId] = useState(null);
   const [diagnostics, setDiagnostics] = useState({});
   const [diagnosticLoading, setDiagnosticLoading] = useState({});
+  const [recipientResults, setRecipientResults] = useState([]);
+  const [recipientSearchLoading, setRecipientSearchLoading] = useState(false);
+  const [recipientSearchOpen, setRecipientSearchOpen] = useState(false);
   const [amountMode, setAmountMode] = useState("send_eur");
   const [countries, setCountries] = useState([]);
   const [sourceCurrency, setSourceCurrency] = useState("EUR");
@@ -249,6 +252,33 @@ export default function ScheduledTransfersPage() {
   }, [isExternalTransfer, destinationCurrency, sourceCurrency]);
 
   useEffect(() => {
+    const query = String(form.receiver_identifier || "").trim();
+    if (isExternalTransfer || query.length < 2 || !recipientSearchOpen) {
+      setRecipientResults([]);
+      setRecipientSearchLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        setRecipientSearchLoading(true);
+        const results = await api.searchInternalTransferRecipients(query);
+        if (!cancelled) setRecipientResults(Array.isArray(results) ? results : []);
+      } catch {
+        if (!cancelled) setRecipientResults([]);
+      } finally {
+        if (!cancelled) setRecipientSearchLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [form.receiver_identifier, isExternalTransfer, recipientSearchOpen]);
+
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (location.pathname.endsWith("/scheduled-transfers") && params.get("type") === "external") {
       navigate("/dashboard/client/scheduled-transfers/external", { replace: true });
@@ -264,6 +294,8 @@ export default function ScheduledTransfersPage() {
 
   const resetForm = () => {
     setForm({ ...INITIAL_FORM, transfer_type: defaultTransferType });
+    setRecipientResults([]);
+    setRecipientSearchOpen(false);
   };
 
   const switchTransferType = (nextType) => {
@@ -670,15 +702,60 @@ export default function ScheduledTransfersPage() {
         {!isExternalTransfer ? (
           <div className="mt-4 rounded-2xl border border-cyan-100 bg-cyan-50/50 p-4">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-cyan-700">Cible interne</p>
-            <Field label="Destinataire (email ou paytag)">
-              <input
-                type="text"
-                aria-label="Destinataire programme"
-                placeholder="nom@email.com ou @paytag"
-                value={form.receiver_identifier}
-                onChange={(e) => setForm((prev) => ({ ...prev, receiver_identifier: e.target.value }))}
-                className={baseInputClassName("max-w-xl")}
-              />
+            <Field label="Destinataire (email, telephone ou paytag)">
+              <div className="relative max-w-xl">
+                <input
+                  type="text"
+                  role="combobox"
+                  aria-label="Destinataire programme"
+                  aria-autocomplete="list"
+                  aria-expanded={recipientSearchOpen && form.receiver_identifier.trim().length >= 2}
+                  placeholder="Commencez a saisir un nom, email, telephone ou @paytag"
+                  value={form.receiver_identifier}
+                  onFocus={() => setRecipientSearchOpen(true)}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, receiver_identifier: e.target.value }));
+                    setRecipientSearchOpen(true);
+                  }}
+                  className={baseInputClassName()}
+                />
+                {recipientSearchOpen && form.receiver_identifier.trim().length >= 2 ? (
+                  <div
+                    role="listbox"
+                    className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+                  >
+                    {recipientSearchLoading ? (
+                      <p className="px-3 py-2 text-sm text-slate-500">Recherche...</p>
+                    ) : recipientResults.length ? (
+                      recipientResults.map((recipient) => {
+                        const identifier = recipient.paytag || recipient.email || recipient.phone || recipient.username;
+                        return (
+                          <button
+                            key={recipient.user_id}
+                            type="button"
+                            role="option"
+                            onClick={() => {
+                              setForm((prev) => ({ ...prev, receiver_identifier: identifier }));
+                              setRecipientResults([]);
+                              setRecipientSearchOpen(false);
+                            }}
+                            className="block w-full rounded-lg px-3 py-2 text-left hover:bg-cyan-50"
+                          >
+                            <span className="block text-sm font-semibold text-slate-900">
+                              {recipient.full_name || recipient.username || identifier}
+                            </span>
+                            <span className="block text-xs text-slate-500">
+                              {[recipient.email, recipient.phone, recipient.paytag].filter(Boolean).join(" · ")}
+                            </span>
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <p className="px-3 py-2 text-sm text-slate-500">Aucun client trouve.</p>
+                    )}
+                  </div>
+                ) : null}
+              </div>
             </Field>
           </div>
         ) : (
