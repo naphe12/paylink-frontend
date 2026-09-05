@@ -143,6 +143,7 @@ function getGroupForPath(pathname = "") {
     pathname.includes("/agent-offline-ops") ||
     pathname.includes("/ops/liquidity-bif") ||
     pathname.includes("/ops/errors") ||
+    pathname.includes("/ops/scheduled-transfer-errors") ||
     pathname.includes("/ops-urgencies")
   ) {
     return "operations";
@@ -565,6 +566,7 @@ export default function AdminSidebar() {
             {renderNavLink("ops-urgencies", ShieldAlert, "Urgences OPS", onNavigate)}
             {renderNavLink("ops/liquidity-bif", Droplets, "Liquidite BIF (OPS)", onNavigate)}
             {renderNavLink("ops/errors", Activity, "Erreurs API", onNavigate)}
+            {renderNavLink("ops/scheduled-transfer-errors", Activity, "Erreurs transferts programmes", onNavigate)}
           </div>
         )}
 
