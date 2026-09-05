@@ -1267,6 +1267,12 @@ const api = {
     ).toString();
     return this.get(`/admin/errors${query ? `?${query}` : ""}`);
   },
+  async getAdminScheduledTransfers(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+    ).toString();
+    return this.get(`/admin/scheduled-transfers${query ? `?${query}` : ""}`);
+  },
   async getAdminWalletAnalysis(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
