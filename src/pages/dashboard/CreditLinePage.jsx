@@ -73,7 +73,7 @@ export default function CreditLinePage() {
             currency={summary.currency_code}
           />
           <StatCard
-            label="Utilisé"
+            label="Montant de la dette"
             value={formatAmount(summary.used_amount)}
             currency={summary.currency_code}
           />

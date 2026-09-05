@@ -95,6 +95,8 @@ export default function AdminUserProfilePanel() {
   const creditAvailable = Number(summary?.credit_available || 0);
   const hasDebt = walletAvailable < 0 || creditUsed > 0;
   const latestCreditLine = creditLines[0] || null;
+  const debtCurrency =
+    latestCreditLine?.currency_code || summary?.credit_currency || summary?.wallet_currency || "EUR";
   const trustProfile = trustDetail?.profile || null;
   const formatRate = (value) => {
     if (value === undefined || value === null || value === "") return "-";
@@ -375,6 +377,11 @@ export default function AdminUserProfilePanel() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Dette et credit</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <MetricCard
+              label="Montant de la dette"
+              value={`${formatNumber(creditUsed)} ${debtCurrency}`}
+              tone={creditUsed > 0 ? "rose" : "slate"}
+            />
             <MetricCard label="Limite journaliere" value={formatNumber(user.daily_limit)} tone="slate" />
             <MetricCard label="Utilise aujourd'hui" value={formatNumber(user.used_daily)} tone="blue" />
             <MetricCard label="Limite mensuelle" value={formatNumber(user.monthly_limit)} tone="slate" />
