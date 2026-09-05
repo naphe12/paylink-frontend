@@ -114,6 +114,7 @@ const OpsDashboardPage = lazy(() => import("@/pages/admin/OpsDashboardPage"));
 const OnChainSimulatorPage = lazy(() => import("@/pages/admin/OnChainSimulatorPage"));
 const AdminErrorLogsPage = lazy(() => import("@/pages/admin/AdminErrorLogsPage"));
 const AdminScheduledTransfersPage = lazy(() => import("@/pages/admin/AdminScheduledTransfersPage"));
+const AdminScheduledTransferExecutionsPage = lazy(() => import("@/pages/admin/AdminScheduledTransferExecutionsPage"));
 const AdminAiFeedbackPage = lazy(() => import("@/pages/admin/AdminAiFeedbackPage"));
 const AdminAiSynonymsPage = lazy(() => import("@/pages/admin/AdminAiSynonymsPage"));
 const AdminDisputeCodesPage = lazy(() => import("@/pages/admin/AdminDisputeCodesPage"));
@@ -315,6 +316,7 @@ export default function AppRouter() {
         <Route path="ledger/idempotency-scopes" element={<IdempotencyScopesPage />} />
         <Route path="ops/errors" element={<AdminErrorLogsPage />} />
         <Route path="ops/scheduled-transfers" element={<AdminScheduledTransfersPage />} />
+        <Route path="ops/scheduled-transfer-errors" element={<AdminScheduledTransferExecutionsPage />} />
         <Route path="ai-feedback" element={<AdminAiFeedbackPage />} />
         <Route path="ai-synonyms" element={<AdminAiSynonymsPage />} />
         <Route path="dispute-codes" element={<AdminDisputeCodesPage />} />

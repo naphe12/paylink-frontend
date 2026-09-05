@@ -1273,6 +1273,12 @@ const api = {
     ).toString();
     return this.get(`/admin/scheduled-transfers${query ? `?${query}` : ""}`);
   },
+  async getAdminScheduledTransferExecutions(params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+    ).toString();
+    return this.get(`/admin/scheduled-transfer-executions${query ? `?${query}` : ""}`);
+  },
   async getAdminWalletAnalysis(params = {}) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
