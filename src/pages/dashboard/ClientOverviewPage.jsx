@@ -151,7 +151,7 @@ export default function ClientOverviewPage() {
         <MetricCard
           title="Ligne de credit disponible"
           value={formatAmount(financial.credit_available, walletCurrency)}
-          subtitle={`Utilise: ${formatAmount(financial.credit_used, walletCurrency)}`}
+          subtitle={`Montant de la dette: ${formatAmount(financial.credit_used, walletCurrency)}`}
           icon={CreditCard}
           tone="amber"
         />

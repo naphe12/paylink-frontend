@@ -123,7 +123,7 @@ export default function FinancialSituationPage() {
       icon: <CreditCard size={18} />,
       value: summary ? `${Number(summary.credit_limit).toLocaleString()} EUR` : "-",
       sub: summary
-        ? `Disponible: ${Number(summary.credit_available).toLocaleString()} EUR | Utilise: ${Number(summary.credit_used).toLocaleString()} EUR`
+        ? `Disponible: ${Number(summary.credit_available).toLocaleString()} EUR | Montant de la dette: ${Number(summary.credit_used).toLocaleString()} EUR`
         : null,
     },
     {

@@ -142,7 +142,7 @@ export default function AdminCreditRepayPage() {
               <p><span className="font-semibold text-slate-900">Email:</span> {selectedDebtor.email || "-"}</p>
               <p><span className="font-semibold text-slate-900">Origine de la dette:</span> {selectedDebtor.debt_origin_label}</p>
               <p><span className="font-semibold text-slate-900">Wallet:</span> {Number(selectedDebtor.wallet_available || 0).toLocaleString()} {selectedDebtor.wallet_currency}</p>
-              <p><span className="font-semibold text-slate-900">Credit du:</span> {Number(selectedDebtor.credit_due || 0).toLocaleString()} {selectedDebtor.credit_line_currency || selectedDebtor.wallet_currency}</p>
+              <p><span className="font-semibold text-slate-900">Montant de la dette:</span> {Number(selectedDebtor.credit_due || 0).toLocaleString()} {selectedDebtor.credit_line_currency || selectedDebtor.wallet_currency}</p>
               <p><span className="font-semibold text-slate-900">Disponible ligne:</span> {Number(selectedDebtor.credit_available || 0).toLocaleString()} {selectedDebtor.credit_line_currency || selectedDebtor.wallet_currency}</p>
             </div>
           ) : (
@@ -180,7 +180,7 @@ export default function AdminCreditRepayPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <StatCard label="Wallet" value={selectedDebtor.wallet_available} currency={selectedDebtor.wallet_currency} />
-                <StatCard label="Credit du" value={selectedDebtor.credit_due} currency={selectedDebtor.credit_line_currency || selectedDebtor.wallet_currency} />
+                <StatCard label="Montant de la dette" value={selectedDebtor.credit_due} currency={selectedDebtor.credit_line_currency || selectedDebtor.wallet_currency} />
                 <StatCard label="Disponible ligne" value={selectedDebtor.credit_available} currency={selectedDebtor.credit_line_currency || selectedDebtor.wallet_currency} />
               </div>
 
