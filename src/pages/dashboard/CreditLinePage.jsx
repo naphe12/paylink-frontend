@@ -1,3 +1,6 @@
+import AmountEvolution from "@/components/finance/AmountEvolution";
+import { evolutionRows } from "@/utils/amountEvolution";
+import CreditUsage from "@/components/finance/CreditUsage";
 import { useEffect, useState } from "react";
 import api from "@/services/api";
 
@@ -78,12 +81,15 @@ export default function CreditLinePage() {
             currency={summary.currency_code}
           />
           <StatCard
-            label="Restant"
+            label="Crédit disponible"
             value={formatAmount(summary.outstanding_amount)}
             currency={summary.currency_code}
           />
         </div>
       )}
+
+      {summary && <CreditUsage limit={summary.initial_amount} used={summary.used_amount} available={summary.outstanding_amount} currency={summary.currency_code} />}
+      <AmountEvolution title="Évolution du crédit disponible" rows={evolutionRows(events, { before: "old_limit", after: "new_limit", currency: "currency_code" })} loading={loading} error={error} note="Crédit disponible avant et après les 100 derniers événements enregistrés." />
 
       <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b bg-slate-50">
@@ -95,8 +101,8 @@ export default function CreditLinePage() {
               <tr>
                 <th className="p-3 text-left">Date</th>
                 <th className="p-3 text-left">Δ Montant</th>
-                <th className="p-3 text-left">Ancien plafond</th>
-                <th className="p-3 text-left">Nouveau plafond</th>
+                <th className="p-3 text-left">Disponible avant</th>
+                <th className="p-3 text-left">Disponible après</th>
                 <th className="p-3 text-left">Statut</th>
                 <th className="p-3 text-left">Source</th>
               </tr>
@@ -123,10 +129,10 @@ export default function CreditLinePage() {
                       </td>
                       <td
                         className={`p-3 font-semibold ${
-                          isCredit ? "text-emerald-600" : "text-red-600"
+                          delta === 0 ? "text-slate-600" : isCredit ? "text-indigo-600" : "text-rose-600"
                         }`}
                       >
-                        {isCredit ? "+" : "-"} {formatAmount(Math.abs(delta))} {ev.currency_code}
+                        {delta > 0 ? "+" : delta < 0 ? "-" : ""} {formatAmount(Math.abs(delta))} {ev.currency_code}
                       </td>
                       <td className="p-3 text-slate-700">
                         {ev.old_limit != null ? formatAmount(ev.old_limit) : "-"}

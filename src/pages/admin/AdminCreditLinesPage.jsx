@@ -1,3 +1,6 @@
+import AmountEvolution from "@/components/finance/AmountEvolution";
+import { evolutionRows } from "@/utils/amountEvolution";
+import CreditUsage from "@/components/finance/CreditUsage";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -636,6 +639,9 @@ export default function AdminCreditLinesPage() {
                 <StatCard label="Utilise" value={detail.credit_line.used_amount} currency={detail.credit_line.currency_code} />
                 <StatCard label="Restant" value={detail.credit_line.outstanding_amount} currency={detail.credit_line.currency_code} />
               </div>
+
+              <CreditUsage limit={detail.credit_line.initial_amount} used={detail.credit_line.used_amount} available={detail.credit_line.outstanding_amount} currency={detail.credit_line.currency_code} />
+              <AmountEvolution key={detail.credit_line.credit_line_id} title="Évolution du crédit disponible" rows={evolutionRows(detail.events || [], { before: "old_limit", after: "new_limit", currency: "currency_code", fallbackCurrency: detail.credit_line.currency_code })} />
 
               <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
                 <div className="border-b bg-slate-50 px-4 py-3">

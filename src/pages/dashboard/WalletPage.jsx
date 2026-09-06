@@ -1,3 +1,5 @@
+import AmountEvolution from "@/components/finance/AmountEvolution";
+import { evolutionRows } from "@/utils/amountEvolution";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowDown, ArrowUp } from "lucide-react";
@@ -32,6 +34,8 @@ const CRYPTO_THEME = {
 };
 
 export default function WalletPage() {
+  const [balanceEvents, setBalanceEvents] = useState([]);
+  const [evolutionError, setEvolutionError] = useState("");
   const [wallet, setWallet] = useState(null);
   const [walletSummary, setWalletSummary] = useState(null);
   const [usdcWallet, setUsdcWallet] = useState(null);
@@ -54,7 +58,8 @@ export default function WalletPage() {
   const loadWallet = async () => {
     try {
       setLoading(true);
-      const [fiatWallet, balancesSummary, usdc, balances, usdcInstruction, usdtInstruction] =
+      setEvolutionError("");
+      const [fiatWallet, balancesSummary, usdc, balances, usdcInstruction, usdtInstruction, history] =
         await Promise.all([
         api.get("/wallet/"),
         api.getWalletBalancesSummary().catch(() => null),
@@ -62,7 +67,12 @@ export default function WalletPage() {
         api.getCryptoWalletBalances().catch(() => ({ balances: { USDC: 0, USDT: 0 } })),
         api.getCryptoDepositInstructions("USDC").catch(() => null),
         api.getCryptoDepositInstructions("USDT").catch(() => null),
+        api.get("/wallet/balance-events?limit=200&offset=0").catch(() => {
+          setEvolutionError("Impossible de charger l’évolution du wallet. Réessayez avec Actualiser.");
+          return [];
+        }),
         ]);
+      setBalanceEvents(Array.isArray(history) ? history : []);
       setWallet(fiatWallet);
       setWalletSummary(balancesSummary);
       setUsdcWallet(usdc);
@@ -398,6 +408,8 @@ export default function WalletPage() {
           </div>
         )}
       </section>
+
+      <AmountEvolution title="Évolution du solde wallet" rows={evolutionRows(balanceEvents, { before: "balance_before", after: "balance_after" })} error={evolutionError} note="Soldes enregistrés, par devise, sur les 200 derniers événements disponibles. Les équivalents de change ne sont pas inclus." />
 
       {showHistory.fiat && (
         <WalletHistoryTable

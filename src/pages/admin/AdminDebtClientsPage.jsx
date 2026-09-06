@@ -117,6 +117,10 @@ export default function AdminDebtClientsPage() {
                 </div>
               </div>
 
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-indigo-50 px-4 py-3">
+                <p className="text-xs text-slate-600">Montants actuels ; les dates indiquent le dernier événement connu, pas le début de la dette.</p>
+                <Link to={`/dashboard/admin/credit-lines?user_id=${row.user_id}`} className="text-sm font-semibold text-indigo-700 hover:underline">Suivre l’évolution du crédit →</Link>
+              </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead className="bg-slate-50 text-slate-600">

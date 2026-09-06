@@ -1,3 +1,5 @@
+import AmountEvolution from "@/components/finance/AmountEvolution";
+import { evolutionRows } from "@/utils/amountEvolution";
 import { useEffect, useMemo, useState } from "react";
 import { Filter, RefreshCw, Search } from "lucide-react";
 
@@ -134,6 +136,8 @@ export default function BalanceHistoryPage() {
           Rafraichir
         </button>
       </header>
+
+      <AmountEvolution title="Évolution du solde wallet" rows={evolutionRows(filteredRows, { before: "balance_before", after: "balance_after" })} loading={loading} error={error} />
 
       {loading && <div className="text-slate-600">Chargement...</div>}
       {error && <div className="text-sm text-red-600">{error}</div>}
