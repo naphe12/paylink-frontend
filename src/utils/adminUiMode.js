@@ -42,6 +42,7 @@ const ADMIN_UI_ALLOWED_PREFIXES = {
     "/dashboard/admin/credit-history",
     "/dashboard/admin/financial-summary",
     "/dashboard/admin/interface-mode",
+    "/dashboard/admin/ihela-sandbox",
     "/dashboard/admin/settings",
     "/dashboard/admin/kyc/reviews",
     "/dashboard/admin/analytics",
@@ -78,6 +79,7 @@ const ADMIN_UI_ALLOWED_PREFIXES = {
     "/dashboard/admin/kyc/reviews",
     "/dashboard/admin/analytics",
     "/dashboard/admin/interface-mode",
+    "/dashboard/admin/ihela-sandbox",
   ],
   expert: ["*"],
 };

@@ -600,6 +600,7 @@ export default function AdminSidebar() {
           <div className="space-y-2">
             {renderNavLink("interface-mode", Settings, "Mode interface", onNavigate)}
             {renderNavLink("settings", Settings, "Parametres", onNavigate)}
+            {renderNavLink("ihela-sandbox", Settings, "Test iHela", onNavigate)}
             {renderNavLink("kyc/reviews", UserCheck, "Verif KYC", onNavigate)}
             {renderNavLink("analytics", BarChart3, "Statistiques", onNavigate)}
           </div>

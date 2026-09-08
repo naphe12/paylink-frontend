@@ -175,6 +175,7 @@ const ADMIN_QUICK_ACTION_GROUPS = [
     className: "border-sky-200 bg-sky-50 hover:bg-sky-100/60",
     actions: [
       { label: "Mode interface", to: "/dashboard/admin/interface-mode", icon: Settings, description: "Complexite de la console" },
+      { label: "Test iHela", to: "/dashboard/admin/ihela-sandbox", icon: Settings, description: "Tests de l’integration iHela" },
       { label: "Parametres", to: "/dashboard/admin/settings", icon: Settings, description: "Configuration generale" },
       { label: "Verif KYC", to: "/dashboard/admin/kyc/reviews", icon: UserCheck, description: "Revue KYC" },
       { label: "Statistiques", to: "/dashboard/admin/analytics", icon: BarChart3, description: "Analyses consolidees" },
